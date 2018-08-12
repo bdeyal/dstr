@@ -71,6 +71,7 @@
 #define dstrcat_bl          dstr_append_bl
 
 #define dstrfree            dstr_destroy
+#define dstrmove(p)         dstr_move_destory((p), NULL)
 #define dstrtrunc           dstr_truncate
 #define dstrresize          dstr_resize
 #define dstrerase           dstr_remove

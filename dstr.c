@@ -82,7 +82,7 @@ static __inline char* dstr_tail(DSTR p)
 static size_t my_strnlen(const char* s, size_t maxlen)
 {
     const char* p;
-   
+
     if (maxlen == DSTR_NPOS)
         return strlen(s);
 
@@ -98,27 +98,38 @@ static size_t my_strnlen(const char* s, size_t maxlen)
  *  e.g strcasecmp, stricmp, _stricmp, strcmpi etc...
  *  Simpler to implement in C instead of clutter the code with tons of #ifdefs
  */
-static int my_strcasecmp(const char* s1, const char* s2)
+static __inline int my_strcasecmp(const char* s1, const char* s2)
 {
+#if 1
+    return strcasecmp(s1, s2);
+#else
     while (*s1 && (toupper(*s1) == toupper(*s2)) ) {
         ++s1;
         ++s2;
     }
     return (toupper(*s1) - toupper(*s2));
+#endif
 }
 /*-------------------------------------------------------------------------------*/
 
 static const char* my_strcasechr(const char* s, int c)
 {
-    for (c = toupper(c); *s && (toupper(*s) != c); ++s)
-        ;
+    c = toupper(c);
 
-    return (*s ? s : NULL);
+    for ( ; *s ; ++s) {
+        if (toupper(*s) == c)
+            return s;
+    }
+
+    return NULL;
 }
 /*-------------------------------------------------------------------------------*/
 
-static const char* my_strcasestr(const char* haystack, const char* needle)
+static __inline const char* my_strcasestr(const char* haystack, const char* needle)
 {
+#if 1
+    return strcasestr(haystack, needle);
+#else
     const char* cp = haystack;
     const char* s1;
     const char* s2;;
@@ -142,6 +153,7 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
     }
 
     return NULL;
+#endif
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -619,6 +631,20 @@ void dstr_destroy(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
+char* dstr_move_destory(DSTR p, size_t* plen)
+{
+    char* result = p->data;
+    if (plen) {
+        *plen = DLEN(p);
+    }
+
+    p->data = NULL;
+    free(p);
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
 void dstr_truncate(DSTR p)
 {
     dstr_assert_valid(p);
@@ -915,13 +941,14 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
 
 #else
 
-	 char buff[512];
+    char buff[512];
 
     va_copy(argptr2, argptr);
+
 	 if ((len = vsnprintf(buff, sizeof buff, fmt, argptr2)) < 0)
 		 return DSTR_FAIL;
 
-	 if (len < sizeof(buff)) {
+	 if (len < (int)sizeof(buff)) {
 		 if (!dstr_append_imp(p, buff, len))
 			  return DSTR_FAIL;
 	 }
@@ -1382,4 +1409,3 @@ int dstr_isxdigits(const DSTR src)
     return dstr_isdigits_imp(src, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
-

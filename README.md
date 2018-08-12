@@ -9,7 +9,6 @@ scons -c
 
 # Test
 ## Linux
-LD_LIBRARY_PATH=`pwd` ./dstrtest
+./dstrtest
 ## Windows
 dstrtest.exe
-

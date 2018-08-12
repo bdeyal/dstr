@@ -58,7 +58,10 @@ DSTR dstr_create_sprintf(const char* fmt, ...);
 DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
 
 /* destroy a DSTR object*/
-void dstr_destroy(DSTR p);
+void  dstr_destroy(DSTR p);
+
+/* transfer data to c string, destory object, use plen for length or NULL */
+char* dstr_move_destory(DSTR p, size_t* plen);
 
 /*
  *  Assign | Insert | Append | Replace
