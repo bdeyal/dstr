@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include "dstr_impl.h"
 
@@ -19,9 +20,9 @@ typedef struct DSTR_IMP* DSTR;
 #define DSTR_NPOS        ((size_t)(-1))
 #define DSTR_NULL        NULL
 #define DSTR_IS_NULL(p)  ((p) == NULL)
-#define DSTR_BOOL        int
-#define DSTR_TRUE        1
-#define DSTR_FALSE       0
+#define DSTR_BOOL        bool
+#define DSTR_TRUE        true
+#define DSTR_FALSE       false
 #define DSTR_SUCCESS     DSTR_TRUE
 #define DSTR_FAIL        DSTR_FALSE
 

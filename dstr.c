@@ -125,11 +125,14 @@ static const char* my_strcasechr(const char* s, int c)
 }
 /*-------------------------------------------------------------------------------*/
 
+#ifdef _GNU_SOURCE
 static __inline const char* my_strcasestr(const char* haystack, const char* needle)
 {
-#if 1
     return strcasestr(haystack, needle);
+}
 #else
+static const char* my_strcasestr(const char* haystack, const char* needle)
+{
     const char* cp = haystack;
     const char* s1;
     const char* s2;;
@@ -153,8 +156,8 @@ static __inline const char* my_strcasestr(const char* haystack, const char* need
     }
 
     return NULL;
-#endif
 }
+#endif
 /*-------------------------------------------------------------------------------*/
 
 static DSTR dstr_alloc_empty(void)
@@ -889,7 +892,7 @@ size_t dstr_ffno_ds(const DSTR p, size_t pos, const DSTR s)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_isblank(const DSTR p)
+DSTR_BOOL dstr_isblank(const DSTR p)
 {
     return dstr_ffno_sz(p, 0, " \t") == DSTR_NPOS;
 }
@@ -1080,7 +1083,7 @@ int dstr_compare_ds(const DSTR lhs, const DSTR rhs)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_equal_sz(const DSTR lhs, const char* sz)
+DSTR_BOOL dstr_equal_sz(const DSTR lhs, const char* sz)
 {
     dstr_assert_valid(lhs);
 
@@ -1091,7 +1094,7 @@ int dstr_equal_sz(const DSTR lhs, const char* sz)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_iequal_sz(const DSTR lhs, const char* sz)
+DSTR_BOOL dstr_iequal_sz(const DSTR lhs, const char* sz)
 {
     dstr_assert_valid(lhs);
 
@@ -1102,7 +1105,7 @@ int dstr_iequal_sz(const DSTR lhs, const char* sz)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_equal_ds(const DSTR lhs, const DSTR rhs)
+DSTR_BOOL dstr_equal_ds(const DSTR lhs, const DSTR rhs)
 {
     dstr_assert_valid(lhs);
     dstr_assert_valid(rhs);
@@ -1398,13 +1401,13 @@ long dstr_atoi(const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_isdigits(const DSTR src)
+DSTR_BOOL dstr_isdigits(const DSTR src)
 {
     return dstr_isdigits_imp(src, DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_isxdigits(const DSTR src)
+DSTR_BOOL dstr_isxdigits(const DSTR src)
 {
     return dstr_isdigits_imp(src, DSTR_TRUE);
 }

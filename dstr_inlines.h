@@ -29,7 +29,7 @@ static __inline size_t dstr_capacity(const DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline int dstr_isempty(const DSTR p)
+static __inline DSTR_BOOL dstr_isempty(const DSTR p)
 {
     return (DLEN(p) == 0);
 }
@@ -41,7 +41,7 @@ static __inline const char* dstr_cstring(const DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline int dstr_valid_index(const DSTR p, size_t pos)
+static __inline DSTR_BOOL dstr_valid_index(const DSTR p, size_t pos)
 {
     return (pos < DLEN(p));
 }
