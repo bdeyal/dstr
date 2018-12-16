@@ -60,7 +60,9 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
 /* destroy a DSTR object*/
 void  dstr_destroy(DSTR p);
 
-/* transfer data to c string, destory object, use plen for length or NULL */
+/* transfer data to c string, destory object, caller must free result
+   if PLEN is not NULL, write length to it.
+ */
 char* dstr_move_destory(DSTR p, size_t* plen);
 
 /*

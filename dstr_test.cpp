@@ -815,7 +815,7 @@ void test_getline()
 
     FILE* fp = fopen(__FILE__, "r");
     if (!fp) {
-        fprintf(stderr, "couldn't open file: %s\n", strerror(errno));
+        fprintf(stderr, "couldn't open file %s: %s\n", __FILE__, strerror(errno));
         return;
     }
 
@@ -838,13 +838,13 @@ void test_fgets()
 {
     TRACE_FN();
 
-    FILE* fp = fopen("words.txt", "r");
+    FILE* fp = fopen(__FILE__, "r");
     if (!fp) {
-        fprintf(stderr, "couldn't open file: %s\n", strerror(errno));
+        fprintf(stderr, "couldn't open %s: %s\n", __FILE__, strerror(errno));
         return;
     }
 
-    DSTR s1 = dstrnew_reserve(100);
+    DSTR s1 = dstrnew_reserve(500);
 
     while (dgets(s1, fp) != EOF)
         printf("\t%s\n", dstrdata(s1));
