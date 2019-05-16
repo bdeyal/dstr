@@ -96,19 +96,25 @@ static size_t my_strnlen(const char* s, size_t maxlen)
 /*
  *  All 'ignore case' functions highly non-portable. We see a mix of names
  *  e.g strcasecmp, stricmp, _stricmp, strcmpi etc...
- *  Simpler to implement in C instead of clutter the code with tons of #ifdefs
+ *  Simpler to implement in C instead of tons of #ifdefs
  */
-static __inline int my_strcasecmp(const char* s1, const char* s2)
+static int my_strcasecmp(const char* s1, const char* s2)
 {
-#if 1
-    return strcasecmp(s1, s2);
-#else
-    while (*s1 && (toupper(*s1) == toupper(*s2)) ) {
-        ++s1;
-        ++s2;
+	const unsigned char* p1 = (const unsigned char*) s1;
+	const unsigned char* p2 = (const unsigned char*) s2;
+	int res;
+
+	if (p1 == p2)
+		return 0;
+
+    while ((res = (toupper(*p1) - toupper(*p2))) == 0) {
+		if (*p1 == 0)
+			break;
+
+        ++p1;
+        ++p2;
     }
-    return (toupper(*s1) - toupper(*s2));
-#endif
+    return res;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -125,7 +131,7 @@ static const char* my_strcasechr(const char* s, int c)
 }
 /*-------------------------------------------------------------------------------*/
 
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) && !defined(_WIN32)
 static __inline const char* my_strcasestr(const char* haystack, const char* needle)
 {
     return strcasestr(haystack, needle);
@@ -924,6 +930,22 @@ size_t dstr_substr(const DSTR p, size_t pos, size_t count, char dest[], size_t d
 
 int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
 {
+#if defined(_GNU_SOURCE)
+	char* tail = NULL;
+	int len = 0;
+	int result = DSTR_SUCCESS;
+
+	len = vasprintf(&tail, fmt, argptr);
+	if (len == -1)
+		return DSTR_FAIL;
+
+	if (tail) {
+		result = dstr_append_imp(p, tail, len);
+		free(tail);
+	}
+	return result;
+
+#else
     int len;
     va_list argptr2;
 
@@ -969,6 +991,7 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
 
     dstr_assert_valid(p);
     return DSTR_SUCCESS;
+#endif
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1301,38 +1324,22 @@ int dstr_fgets(DSTR p, FILE* fp)
 int dstr_fgetline(DSTR p, FILE* fp)
 {
     int c;
-    char line[120];
-    size_t index = 0;
 
     dstr_assert_valid(p);
     dstr_truncate_imp(p, 0);
 
-    /*
-     *  Cache chars into a buffer and append to the string objects in blocks.
-     */
-    while ((c = fgetc(fp)) != EOF && c != '\n') {
-        line[index++] = (char) c;
-        if (index == sizeof(line)) {
-            if (!dstr_append_bl(p, line, index)) {
-                dstr_truncate_imp(p, 0);
-                return EOF;
-            }
-            index = 0;
-        }
-    }
+	/* make room for at least 120 chars */
+	if (DCAP(p) < 120)
+		dstr_grow(p, 120);
 
-    /*
-     *  Although at end, don't forget to append the chars we already read
-     */
-    if (index > 0) {
-        if (!dstr_append_bl(p, line, index)) {
+    while ((c = fgetc(fp)) != EOF && c != '\n') {
+        if (!dstr_append_c(p, c)) {
             dstr_truncate_imp(p, 0);
             return EOF;
         }
-        return DSTR_SUCCESS;
     }
 
-    if (c == '\n')
+	if (DLEN(p) > 0 || (c == '\n'))
         return DSTR_SUCCESS;
 
     return EOF;

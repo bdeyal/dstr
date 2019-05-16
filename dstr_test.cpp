@@ -607,6 +607,7 @@ void test_replace()
     dreplace_cc(s2, 0, 2,'\0', 100);
     assert( dstreq_sz(s2, ""));
 
+    dstrfree(sn);
     dstrfree(s1);
     dstrfree(s2);
 }
@@ -732,6 +733,8 @@ void test_find()
     assert( dstrchr_i(s1, 15, 'f') == 22);
     assert( dstrchr_i(s1, 100, 'f') == DSTR_NPOS);
     assert( dstrchr_i(s1, 0, 'X') == DSTR_NPOS);
+
+    dstrfree(s1);
 }
 //-------------------------------------------------
 
@@ -826,11 +829,11 @@ void test_getline()
         ++line_count;
         printf("%s\n", dstrdata(s1));
     }
+    fclose(fp);
+    dstrfree(s1);
 
     printf("Line Count of %s is %d\n", __FILE__, line_count);
 
-    dstrfree(s1);
-    fclose(fp);
 }
 //-------------------------------------------------
 
@@ -1002,6 +1005,8 @@ void test_ffno()
     }
 
     dstrfree(s1);
+    dstrfree(rhs);
+    dstrfree(s2);
 }
 //-------------------------------------------------
 
@@ -1022,6 +1027,8 @@ void test_prefix()
     assert( dstartswith_i(s1, "GooD morNiNg Today is Friday"));
     assert( !dstartswith(s1, "H"));
     assert( !dstartswith_i(s1, "H"));
+
+    dstrfree(s1);
 }
 //-------------------------------------------------
 
@@ -1042,6 +1049,8 @@ void test_suffix()
     assert( dendswith_i(s1, "DaY"));
     assert( !dendswith(s1, "H"));
     assert( !dendswith_i(s1, "H"));
+
+    dstrfree(s1);
 }
 //-------------------------------------------------
 
@@ -1191,9 +1200,9 @@ int main()
     test_fgets();
     test_atoi_itoa();
     test_isdigit();
-    test_shared_dstr();
+    //test_shared_dstr();
     test_move();
 
     // last test
-    // test_getline();
+    test_getline();
 }

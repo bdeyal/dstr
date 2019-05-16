@@ -1,8 +1,7 @@
 # top level sconscript file -*- Python -*-
 
-platform = str(Platform())
-
-CC = ARGUMENTS.get('compiler', "gcc")
+plat = ARGUMENTS.get('OS', Platform())
+platform = str(plat)
 
 # Compile as C++ for better type checks
 #
@@ -15,13 +14,14 @@ else:
    #FLAGS='-x c++ -Wall -g -O0 -fprofile-arcs -ftest-coverage -fno-rtti -fno-exceptions'
    #FLAGS='-x c++ -Wall -O2 -fno-rtti -fno-exceptions'
    #FLAGS='-x c -std=c89 -Wall -g -O0 -fprofile-arcs -ftest-coverage'
-   FLAGS='-Wall -O2 -DNDEBUG -D_GNU_SOURCE'
+   #LAGS='-x c -Wall -g -Os -D_GNU_SOURCE'
+   FLAGS='-Wall -Wextra -Ofast -DNDEBUG  -D_GNU_SOURCE'
    #LIBRARIES=['gcov']
    LIBRARIES=[]
    #LIBRARIES=['gc']
 
 Library('dstr' ,
-        CC=CC,
+        CC='gcc',
         CFLAGS=Split(FLAGS),
         LIBS=Split(LIBRARIES),
         source = ['dstr.c'])
@@ -30,5 +30,5 @@ Program ( target = 'dstrtest',
           source = ['dstr_test.cpp'],
           LIBPATH = ['.'],
           LIBS=['dstr'],
-          CXX=CC
+          CXX='gcc'
         )
