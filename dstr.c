@@ -9,31 +9,25 @@
 /*
  *	 garbage collector / memory checker
  */
-#ifndef _WIN32
-#ifdef GC_DEBUG
-#include <gc/gc.h>
-#define malloc	 GC_MALLOC
-#define free	 GC_FREE
-#define realloc GC_REALLOC
-#endif
-#endif
-
-#ifdef _WIN32
-#define get_vsprintf_len(f, a) _vscprintf(f, a)
-#ifdef _MSC_VER
-#define vsnprintf _vsnprintf
-#endif
+#if !defined(_WIN32)
+   #ifdef GC_DEBUG
+      #include <gc/gc.h>
+      #define malloc  GC_MALLOC
+      #define free    GC_FREE
+      #define realloc GC_REALLOC
+   #endif
+   #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
 #else
-#define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
+   #define get_vsprintf_len(f, a) _vscprintf(f, a)
 #endif
 /*-------------------------------------------------------------------------------*/
 
-#ifndef va_copy
-#ifdef __va_copy
-#define va_copy __va_copy
-#else
-#define va_copy(d,s) ((d) = (s))
-#endif
+#if !defined(va_copy)
+   #ifdef __va_copy
+      #define va_copy __va_copy
+   #else
+      #define va_copy(d,s) ((d) = (s))
+   #endif
 #endif
 /*-------------------------------------------------------------------------------*/
 
