@@ -27,7 +27,7 @@ typedef struct DSTR_IMP
 #define DVAL(p, i)	  DBUF(p)[(i)]
 /*--------------------------------------------------------------------------*/
 
-#define dstr_assert_valid(p) do {							 \
+#define dstr_assert_valid(p) do {						   \
 	assert((p) != NULL);											\
 	assert(DBUF(p) != NULL);									\
 	assert(DCAP(p) > 0);											\
