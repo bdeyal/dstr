@@ -6,25 +6,37 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdbool.h>
+
+#if !defined(__cplusplus)
+	#if defined(NO_STDBOOL)
+		#if !defined(bool)
+			typedef enum {false_ = 0, true_ = 1} bool_;
+			#define bool bool_
+			#define false false_
+			#define true  true_
+		#endif
+	#else
+		#include <stdbool.h>
+	#endif
+#endif
 
 #include "dstr_impl.h"
 
 /*
- *  Dynamic string type. See 'dstr_impl.h'
+ *	 Dynamic string type. See 'dstr_impl.h'
  */
 typedef struct DSTR_IMP* DSTR;
 
 /*--------------------------------------------------------------------------*/
 
-#define DSTR_NPOS        ((size_t)(-1))
-#define DSTR_NULL        NULL
-#define DSTR_IS_NULL(p)  ((p) == NULL)
-#define DSTR_BOOL        bool
-#define DSTR_TRUE        true
-#define DSTR_FALSE       false
-#define DSTR_SUCCESS     DSTR_TRUE
-#define DSTR_FAIL        DSTR_FALSE
+#define DSTR_NPOS			 ((size_t)(-1))
+#define DSTR_NULL			 NULL
+#define DSTR_IS_NULL(p)	 ((p) == NULL)
+#define DSTR_BOOL			 bool
+#define DSTR_TRUE			 true
+#define DSTR_FALSE		 false
+#define DSTR_SUCCESS		 DSTR_TRUE
+#define DSTR_FAIL			 DSTR_FALSE
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,16 +71,16 @@ DSTR dstr_create_sprintf(const char* fmt, ...);
 DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
 
 /* destroy a DSTR object*/
-void  dstr_destroy(DSTR p);
+void	dstr_destroy(DSTR p);
 
 /* transfer data to c string, destory object, caller must free result
-   if PLEN is not NULL, write length to it.
+	if PLEN is not NULL, write length to it.
  */
 char* dstr_move_destory(DSTR p, size_t* plen);
 
 /*
- *  Assign | Insert | Append | Replace
- *  a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
+ *	 Assign | Insert | Append | Replace
+ *	 a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
  */
 int  dstr_assign_cc(DSTR dest, char c, size_t count);
 int  dstr_assign_sz(DSTR dest, const char* value);
@@ -103,51 +115,51 @@ int  dstr_resize(DSTR dest, size_t len);
 
 /* Following operations manipulate data but no allocation / free
  */
-void  dstr_ascii_upper(DSTR p);
-void  dstr_ascii_lower(DSTR p);
-void  dstr_swap(DSTR d1, DSTR d2);
-void  dstr_reverse(DSTR p);
-void  dstr_trim_right(DSTR p);
-void  dstr_trim_left(DSTR p);
-void  dstr_trim_both(DSTR p);
-void  dstr_truncate(DSTR p);
-void  dstr_remove(DSTR p, size_t pos, size_t count);
+void	dstr_ascii_upper(DSTR p);
+void	dstr_ascii_lower(DSTR p);
+void	dstr_swap(DSTR d1, DSTR d2);
+void	dstr_reverse(DSTR p);
+void	dstr_trim_right(DSTR p);
+void	dstr_trim_left(DSTR p);
+void	dstr_trim_both(DSTR p);
+void	dstr_truncate(DSTR p);
+void	dstr_remove(DSTR p, size_t pos, size_t count);
 
 /*
  * trivial operations implemented inline. see "dstr_inlines.h"
  */
-static __inline const char*  dstr_cstring(const DSTR p);
-static __inline size_t       dstr_length(const DSTR p);
-static __inline size_t       dstr_capacity(const DSTR p);
-static __inline DSTR_BOOL    dstr_isempty(const DSTR p);
-static __inline void         dstr_chop(DSTR p);
+static inline const char*	dstr_cstring(const DSTR p);
+static inline size_t			dstr_length(const DSTR p);
+static inline size_t			dstr_capacity(const DSTR p);
+static inline DSTR_BOOL		dstr_isempty(const DSTR p);
+static inline void			dstr_chop(DSTR p);
 
 /* negative indexes are from the end */
-static __inline DSTR_BOOL    dstr_valid_index(const DSTR p, size_t pos);
-static __inline char         dstr_getchar(const DSTR p, size_t pos);
-static __inline void         dstr_putchar(DSTR p, size_t pos, char c);
+static inline DSTR_BOOL		dstr_valid_index(const DSTR p, size_t pos);
+static inline char			dstr_getchar(const DSTR p, size_t pos);
+static inline void			dstr_putchar(DSTR p, size_t pos, char c);
 
 /*
  * 'safe' won't read or write beyond dstr limits.
  * Negetiv index are from the end. i.e last character is an pos -1
  */
-static __inline char         dstr_getchar_safe(const DSTR p, long pos);
-static __inline void         dstr_putchar_safe(DSTR p, long pos, char c);
+static inline char			dstr_getchar_safe(const DSTR p, long pos);
+static inline void			dstr_putchar_safe(DSTR p, long pos, char c);
 
 /* 31 bit hash value */
 unsigned int dstr_hash(const DSTR src);
 
-/*  atoi integer conversion
+/*	 atoi integer conversion
  *
- *  '0b110111' => binary
- *  '0xABCD12' => hex
- *  '\324'     => octal
- *  '123'      => decimal
- *  '0123'     => decimal !
+ *	 '0b110111' => binary
+ *	 '0xABCD12' => hex
+ *	 '\324'		=> octal
+ *	 '123'		=> decimal
+ *	 '0123'		=> decimal !
  */
-long      dstr_atoi(const DSTR src);
-long      dstr_atoll(const DSTR src);
-int       dstr_itoa(DSTR dest, long n);
+long		 dstr_atoi(const DSTR src);
+long		 dstr_atoll(const DSTR src);
+int		 dstr_itoa(DSTR dest, long n);
 DSTR_BOOL dstr_isdigits(const DSTR src);
 DSTR_BOOL dstr_isxdigits(const DSTR src);
 
@@ -169,7 +181,7 @@ DSTR_BOOL dstr_isuffix_sz(const DSTR p, const char* s);
 DSTR_BOOL dstr_prefix_sz(const DSTR p, const char* s);
 DSTR_BOOL dstr_iprefix_sz(const DSTR p, const char* s);
 
-/*  ffo  = find_first of, ffno = find first not of */
+/*	 ffo	= find_first of, ffno = find first not of */
 size_t dstr_ffo_sz(const DSTR p, size_t pos, const char* s);
 size_t dstr_ffo_ds(const DSTR p, size_t pos, const DSTR s);
 size_t dstr_ffno_sz(const DSTR p, size_t pos, const char* s);

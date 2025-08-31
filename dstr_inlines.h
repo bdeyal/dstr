@@ -17,73 +17,73 @@ extern "C" {
 }
 #endif
 
-static __inline size_t dstr_length(const DSTR p)
+static inline size_t dstr_length(const DSTR p)
 {
-    return DLEN(p);
+	return DLEN(p);
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline size_t dstr_capacity(const DSTR p)
+static inline size_t dstr_capacity(const DSTR p)
 {
-    return DCAP(p);
+	return DCAP(p);
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline DSTR_BOOL dstr_isempty(const DSTR p)
+static inline DSTR_BOOL dstr_isempty(const DSTR p)
 {
-    return (DLEN(p) == 0);
+	return (DLEN(p) == 0);
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline const char* dstr_cstring(const DSTR p)
+static inline const char* dstr_cstring(const DSTR p)
 {
-    return DBUF(p);
+	return DBUF(p);
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline DSTR_BOOL dstr_valid_index(const DSTR p, size_t pos)
+static inline DSTR_BOOL dstr_valid_index(const DSTR p, size_t pos)
 {
-    return (pos < DLEN(p));
+	return (pos < DLEN(p));
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline char dstr_getchar(const DSTR p, size_t pos)
+static inline char dstr_getchar(const DSTR p, size_t pos)
 {
-    return DVAL(p, pos);
+	return DVAL(p, pos);
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline void dstr_putchar(DSTR p, size_t pos, char c)
+static inline void dstr_putchar(DSTR p, size_t pos, char c)
 {
-    DVAL(p, pos) = c;
+	DVAL(p, pos) = c;
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline char dstr_getchar_safe(const DSTR p, long pos)
+static inline char dstr_getchar_safe(const DSTR p, long pos)
 {
-    if (pos < 0)
-        pos += (long) DLEN(p);
+	if (pos < 0)
+		pos += (long) DLEN(p);
 
-    return dstr_valid_index(p, pos) ? DVAL(p, pos) : (char)'\0';
+	return dstr_valid_index(p, pos) ? DVAL(p, pos) : (char)'\0';
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline void dstr_putchar_safe(DSTR p, long pos, char c)
+static inline void dstr_putchar_safe(DSTR p, long pos, char c)
 {
-    if (pos < 0)
-        pos += (long) DLEN(p);
+	if (pos < 0)
+		pos += (long) DLEN(p);
 
-    if (dstr_valid_index(p, pos))
-        DVAL(p, pos) = c;
+	if (dstr_valid_index(p, pos))
+		DVAL(p, pos) = c;
 }
 /*-------------------------------------------------------------------------------*/
 
-static __inline void dstr_chop(DSTR p)
+static inline void dstr_chop(DSTR p)
 {
-    if (DLEN(p) > 0) {
-        DLEN(p) -= 1;
-        DVAL(p, DLEN(p)) = '\0';
-    }
+	if (DLEN(p) > 0) {
+		DLEN(p) -= 1;
+		DVAL(p, DLEN(p)) = '\0';
+	}
 }
 /*-------------------------------------------------------------------------------*/
 
