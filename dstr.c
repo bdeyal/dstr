@@ -18,7 +18,11 @@
    #endif
    #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
 #else
-   #define get_vsprintf_len(f, a) _vscprintf(f, a)
+   #if defined(__BORLANDC__) && (__BORLANDC__  < 0x550) || defined(_MSC_VER) &&_MSC_VER <= 1200
+      #define get_vsprintf_len(f, a) _vscprintf(f, a)
+   #else
+      #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
+   #endif
 #endif
 /*-------------------------------------------------------------------------------*/
 
@@ -32,7 +36,7 @@
 /*-------------------------------------------------------------------------------*/
 
 #ifdef _WIN32
-#if (defined(_MSC_VER) &&_MSC_VER <= 1200) || defined(__BORLANDC__)
+#if (defined(_MSC_VER) &&_MSC_VER <= 1200) || (defined(__BORLANDC__) && (__BORLANDC__  < 0x550))
 static int _vscprintf(const char* fmt, va_list argptr)
 {
 	int len;

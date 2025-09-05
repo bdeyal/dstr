@@ -7,7 +7,8 @@ cmake_minimum_required(VERSION 3.15...4.0)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall -W -Wextra")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall -W -Wextra")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -W -Wextra")
 
 #add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
 #add_link_options(-fsanitize=address)
@@ -15,14 +16,15 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall -W -Wextra")
 project(
   Dstr
   VERSION 1.0
-  LANGUAGES C)
+  LANGUAGES C CXX)
 
-add_library(dstr SHARED dstr.c dstr.h dstr_impl.h dstr_inlines.h)
-
+add_library(dstr STATIC dstr.c dstr.h dstr_impl.h dstr_inlines.h)
 add_executable(dstrtest dstr_test.c)
+add_executable(dgets test_dgets.cpp)
 
 target_link_libraries(dstrtest PRIVATE dstr)
+target_link_libraries(dgets PRIVATE dstr)
 
 enable_testing()
-
-add_test(Test dstrtest COMMAND ./dstrtest)
+add_test(NAME dstrtest COMMAND ./dstrtest)
+add_test(NAME dgets COMMAND ./dgets ../Doxyfile)

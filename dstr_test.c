@@ -29,8 +29,8 @@
 #define TRACE_DS(s) do {								\
 		printf("LINE = %d, ", __LINE__);				\
 		printf("DS name = %s, ", #s);					\
-		printf("CAPACITY = %lu, ", dstrcap(s));	\
-		printf("LEN = %lu, ", dstrlen(s));			\
+		printf("CAPACITY = %zu, ", dstrcap(s));	\
+		printf("LEN = %zu, ", dstrlen(s));			\
 		printf("ADDR = %p, ", (s));					\
 		printf("BUFF = %p, ", dstrdata(s));			\
 		printf("Contents = %s\n", dstrdata(s));	\
@@ -351,16 +351,18 @@ void test_append()
 	int step = 1000;
 	int limit = 10 * step;
 	for (int i = 0; i < limit; ++i) {
-		if ((i % step) == 0)
-			printf("step: %d LEN=%lu, CAP=%lu\n", i, dstrlen(s5), dstrcap(s5));
+		if ((i % step) == 0) {
+			printf("step: %d LEN=%zu, CAP=%zu\n", i, dstrlen(s5), dstrcap(s5));
+		}
 		dstrcat_c(s5, 'X');
 	}
 
 	dstrtrunc(s5);
 
 	for (int i = 0; i < limit; ++i) {
-		if ((i % step) == 0)
-			printf("step: %d LEN=%lu, CAP=%lu\n", i, dstrlen(s5), dstrcap(s5));
+		if ((i % step) == 0) {
+			printf("step: %d LEN=%zu, CAP=%zu\n", i, dstrlen(s5), dstrcap(s5));
+		}
 		dstrcat_sz(s5, "hello");
 	}
 
@@ -373,7 +375,6 @@ void test_append()
 	dstrfree(s5);
 }
 //-------------------------------------------------
-
 
 void test_format()
 {
@@ -876,7 +877,6 @@ void test_fgets()
 	fclose(fp);
 }
 //-------------------------------------------------
-
 
 #define TEST_ASCII_UPPER(before, after) do {		\
 		DSTR s = dstrnew_sz(before);					\

@@ -43,7 +43,7 @@ void test_dgets(const char* fname)
 		assert(s1 == dstrdata(d1));
 	}
 
-	cout << "Good! all lines were equal" << endl;
+	cout << "test_dgets: Good! all lines were equal" << endl;
 
 	dstrfree(d1);
 	fclose(fp);
@@ -82,7 +82,7 @@ void test_getline(const char* fname)
 		assert(s1 == dstrdata(d1));
 	}
 
-	cout << "Good! all lines were equal" << endl;
+	cout << "test_getline: Good! all lines were equal" << endl;
 
 	dstrfree(d1);
 	fclose(fp);
@@ -96,6 +96,7 @@ int main(int argc, char* argv[])
 		argv[1] :
 		__FILE__;
 
+	cout << "Testing file: " << fname << endl;
 	test_dgets(fname);
 	test_getline(fname);
 }
