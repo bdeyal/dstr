@@ -1,0 +1,51 @@
+# dstr NMakefile
+#
+!IF "$(COMP)" == "clang"
+CC = clang-cl.exe
+CXX = clang-cl.exe
+CFLAGS = -O2 /MD /D_CRT_SECURE_NO_WARNINGS
+CXXFLAGS = $(CFLAGS)
+!ELSE
+CC = cl.exe
+CXX = cl.exe
+CFLAGS = /EHsc /O2 /nologo /MD
+CXXFLAGS = /EHsc $(CFLAGS)
+!ENDIF
+
+PROGRAMS = dstrtest.exe dstrtest_pp.exe test_dgets.exe
+DEPS = dstr.h
+DEPS_PP = dstring.hpp dstr.h
+
+all: $(PROGRAMS)
+
+dstrtest.exe: dstr.obj dstrtest.obj
+	$(CC) /nologo /MD -Fe"dstrtest.exe" dstr.obj dstrtest.obj
+
+dstrtest_pp.exe: dstr.obj dstrtest_pp.obj
+	$(CXX) /nologo /MD -Fe"dstrtest_pp.exe" dstr.obj dstrtest_pp.obj
+
+test_dgets.exe: dstr.obj test_dgets.obj
+	$(CXX) /nologo /MD -Fe"test_dgets.exe" dstr.obj test_dgets.obj
+
+clean:
+	del *~ *.obj
+
+distclean: clean
+	del $(PROGRAMS)
+
+test: $(PROGRAMS)
+	.\dstrtest.exe
+	.\dstrtest_pp.exe
+	.\test_dgets.exe
+
+dstr.obj: dstr.c $(DEPS)
+	$(CC) -c $(CFLAGS) -DNDEBUG dstr.c
+
+dstrtest.obj: dstrtest.c $(DEPS)
+	$(CC) -c $(CFLAGS) dstrtest.c
+
+dstrtest_pp.obj: dstrtest_pp.cpp $(DEPS_PP)
+	$(CXX) -c $(CXXFLAGS) dstrtest_pp.cpp
+
+test_dgets.obj: test_dgets.cpp $(DEPS_PP)
+	$(CXX) -c $(CXXFLAGS) test_dgets.cpp

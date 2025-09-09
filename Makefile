@@ -53,3 +53,6 @@ dstrtest.o: dstrtest.c $(DEPS)
 
 dstrtest_pp.o: dstrtest_pp.cpp $(DEPS_PP)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
+
+test_dgets.o: test_dgets.cpp $(DEPS)
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
