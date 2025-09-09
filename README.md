@@ -1,17 +1,15 @@
 # dstr
-dynamic C strings, similar to C++ std::string
+dynamic C strings, similar to C++ std::string with lean, header only C++ wrapper
 
 # Build
-mkdir ./build
-cd ./build
-cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
-make
+Just run make
+On Windows run nmake -f NMakefile
 
 # Clean
-make clean
+make clean OR
+nmake -f NMakefile clean
 
 # Test
 ## Linux
-make test
-or:
-./dstrtest
+make test OR
+nmake -f NMakefile test
