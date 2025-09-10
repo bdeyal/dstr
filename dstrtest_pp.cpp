@@ -1143,6 +1143,65 @@ void test_isdigit()
 }
 //-------------------------------------------------
 
+DString rvo_move_ctor()
+{
+    return DString('X', 100000);
+}
+
+void test_move_ctor_assign()
+{
+#if __cplusplus >= 201103L
+    TRACE_FN();
+
+    DString src("hello");
+    DString dest(std::move(src));
+
+    assert(dest == "hello");
+    assert(src.empty());
+
+    src = "world";
+    dest = std::move(src);
+
+    assert(dest == "world");
+    assert(src == "hello");
+
+    DString x = rvo_move_ctor();
+    printf("x length = %zu\n", x.length());
+#endif
+}
+//-------------------------------------------------
+
+void test_push_back_front()
+{
+    TRACE_FN();
+
+    DString src("hello");
+
+    src.push_back('X');
+    assert(src == "helloX");
+
+    src.chop();
+    src.push_front('X');
+    assert(src == "Xhello");
+
+}
+//-------------------------------------------------
+
+void test_pop_back_front()
+{
+    TRACE_FN();
+
+    DString src("hello");
+
+    src.pop_back();
+    assert(src == "hell");
+
+    src.pop_front();
+    assert(src == "ell");
+}
+//-------------------------------------------------
+
+
 int main()
 {
     test_ctor();
@@ -1178,5 +1237,8 @@ int main()
     test_blank();
     test_atoi_itoa();
     test_isdigit();
+    test_move_ctor_assign();
+    test_push_back_front();
+    test_pop_back_front();
     // last test
 }
