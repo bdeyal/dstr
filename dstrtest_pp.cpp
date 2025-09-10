@@ -229,7 +229,7 @@ void test_assign()
     assert(s5.length() == strlen("world"));
 
     DString s6(100);
-	s6.assign(s5, 0, DSTR_NPOS);
+    s6.assign(s5, 0, DSTR_NPOS);
     assert(s5 == s6);
 
     s6.assign(s5, 0, 2);
@@ -256,7 +256,7 @@ void test_append()
     s3.append(s2);
 
     assert(s3 == "helloworld");
-	assert(s3.length() == s2.length() + s1.length());
+    assert(s3.length() == s2.length() + s1.length());
 
     DString s4;
     s4 = s1;
@@ -326,7 +326,7 @@ void test_move()
     TRACE_FN();
 
     DString s1;
-	s1.sprintf("%d", 100);
+    s1.sprintf("%d", 100);
 
     for (int i = 0; i < 80; ++i) {
         s1.append(' ' + i);
@@ -428,24 +428,24 @@ void test_remove()
 }
 //-------------------------------------------------
 
-#define TEST_TRIM_LEFT(before, after) do {					\
-        DString s(before);									\
-        s.trim_left();										\
-        assert(s == after);									\
+#define TEST_TRIM_LEFT(before, after) do {                  \
+        DString s(before);                                  \
+        s.trim_left();                                      \
+        assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
 #define TEST_TRIM_RIGHT(before, after) do {                 \
-        DString s(before);									\
-        s.trim_right();										\
-        assert(s == after);									\
+        DString s(before);                                  \
+        s.trim_right();                                     \
+        assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
 #define TEST_TRIM_BOTH(before, after) do {                  \
-        DString s(before);									\
-        s.trim();											\
-        assert(s == after);									\
+        DString s(before);                                  \
+        s.trim();                                           \
+        assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
@@ -486,7 +486,7 @@ void test_insert()
     s1 = hello;
     assert(s1 == hello);
 
-	s1.insert(1000, 'X', 1);
+    s1.insert(1000, 'X', 1);
     assert(s1 == "helloX");
 
     s1.insert(4, "XX");
@@ -570,7 +570,7 @@ void test_replace()
     s1.replace(0, DString::NPOS, (char*)NULL, 100);
     assert(s1 == "");
 
-	s2.replace(2, 8,'\0', 100);
+    s2.replace(2, 8,'\0', 100);
     assert(s2 == "wo");
 
     s2.replace(0, 2,'\0', 100);
@@ -582,9 +582,9 @@ void test_replace()
 //
 void test_fgets()
 {
-	using namespace std;
+    using namespace std;
 
-	const char* fname = __FILE__;
+    const char* fname = __FILE__;
     FILE* fp = fopen(fname, "r");
     if (!fp) {
         fprintf(stderr, "couldn't open %s: %s\n", fname, strerror(errno));
@@ -623,9 +623,9 @@ void test_fgets()
 //
 void test_getline()
 {
-	using namespace std;
+    using namespace std;
 
-	const char* fname = __FILE__;
+    const char* fname = __FILE__;
     FILE* fp = fopen(fname, "r");
     if (!fp) {
         fprintf(stderr, "couldn't open %s: %s\n", fname, strerror(errno));
@@ -663,7 +663,7 @@ void test_getline()
 //
 std::string file_slurp(const char* fname)
 {
-	using namespace std;
+    using namespace std;
 
     ifstream in(fname);
     if (!in) {
@@ -679,16 +679,16 @@ std::string file_slurp(const char* fname)
 
 void test_fromfile()
 {
-	using namespace std;
+    using namespace std;
 
-	const char* fname = __FILE__;
+    const char* fname = __FILE__;
 
     DString d1;
-	if (!d1.from_file(fname)) {
-		perror("from_file");
-		return;
-	}
-	std::string s1 = file_slurp(fname);
+    if (!d1.from_file(fname)) {
+        perror("from_file");
+        return;
+    }
+    std::string s1 = file_slurp(fname);
 
     assert(s1 == d1.c_str());
     assert(d1 == s1.c_str());
@@ -731,8 +731,8 @@ void test_substr()
     assert(n == 10);
     assert(strcmp(buff, "day is Fr") == 0);
 
-	DString s2(s1, 5, 7);
-	assert( s2 == "morning");
+    DString s2(s1, 5, 7);
+    assert( s2 == "morning");
 
     s2.assign(s1, 0, 4);
     assert( s2 == "Good");
@@ -861,7 +861,7 @@ void test_put_get_safe()
 
     // Now test the 'safe' part
     //
-	size_t index = s1.length() + 5;
+    size_t index = s1.length() + 5;
     assert(s1.getchar(index) == '\0');
     assert(s1.getchar(-(long)index) == '\0');
 
@@ -875,30 +875,30 @@ void test_put_get_safe()
         long i = -(long)n;
         char c = s2.getchar(i);
         assert(c == s2[s2.length() - n]);
-		s2.putchar(i, toupper(c));
+        s2.putchar(i, toupper(c));
     }
     assert(s2 == str_upper);
 }
 //-------------------------------------------------
 
 #define TEST_ASCII_UPPER(before, after) do {                \
-        DString s(before);									\
-        s.upper();											\
-        assert(s == after);									\
+        DString s(before);                                  \
+        s.upper();                                          \
+        assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
-#define TEST_ASCII_LOWER(before, after) do {				\
-        DString s(before);									\
-        s.lower();											\
-        assert( s == after );								\
+#define TEST_ASCII_LOWER(before, after) do {                \
+        DString s(before);                                  \
+        s.lower();                                          \
+        assert( s == after );                               \
     } while (0)
 //-------------------------------------------------
 
-#define TEST_REVERSE(before, after) do {				  \
-        DString s(before);								  \
-        s.reverse();									  \
-        assert( s == after );							  \
+#define TEST_REVERSE(before, after) do {                  \
+        DString s(before);                                \
+        s.reverse();                                      \
+        assert( s == after );                             \
     } while (0)
 //-------------------------------------------------
 
@@ -934,8 +934,8 @@ void test_swap()
 {
     TRACE_FN();
 
-	// 'nullptr' is OK but C++98 does not have it
-	//
+    // 'nullptr' is OK but C++98 does not have it
+    //
     DString s1((char*)NULL);
     DString s2("hello");
 
@@ -1079,19 +1079,19 @@ void test_blank()
 }
 //-------------------------------------------------
 
-#define TEST_ATOI(src, result) do {								   \
-        DString s(src);											   \
-        long n = s.atoi();										   \
+#define TEST_ATOI(src, result) do {                                \
+        DString s(src);                                            \
+        long n = s.atoi();                                         \
         printf("Converted = %ld, Expected = %ld\n", n, result);    \
         assert( n == result );                                     \
     } while (0)
 //-------------------------------------------------
 
-#define TEST_ITOA(n, result) do {										\
-        DString s;														\
-        s.itoa(n);														\
-        printf("Converted = %s, Expected = %s\n", s.c_str(), result);	\
-        assert(s == result);											\
+#define TEST_ITOA(n, result) do {                                       \
+        DString s;                                                      \
+        s.itoa(n);                                                      \
+        printf("Converted = %s, Expected = %s\n", s.c_str(), result);   \
+        assert(s == result);                                            \
     } while (0)
 //-------------------------------------------------
 
@@ -1113,13 +1113,13 @@ void test_atoi_itoa()
 //-------------------------------------------------
 
 #define TEST_DIGIT(s, result) do {                          \
-        DString d(s);										\
-        assert( d.isdigits() == result );					\
+        DString d(s);                                       \
+        assert( d.isdigits() == result );                   \
     } while (0)
 
 #define TEST_XDIGIT(s, result) do {                         \
-        DString d(s);										\
-        assert( d.isxdigits() == result );					\
+        DString d(s);                                       \
+        assert( d.isxdigits() == result );                  \
     } while (0)
 //-------------------------------------------------
 

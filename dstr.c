@@ -677,13 +677,13 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
     DVAL(result, sread) = '\0';
     DLEN(result) = sread;
 
-	if (p) {
-		dstr_swap(result, p);
-		dstr_destroy(result);
-	}
-	else {
-		p = result;
-	}
+    if (p) {
+        dstr_swap(result, p);
+        dstr_destroy(result);
+    }
+    else {
+        p = result;
+    }
 
     dstr_assert_valid(p);
     return p;
@@ -704,7 +704,7 @@ err_close_fp:
 
 DSTR dstr_create_fromfile(const char* fname)
 {
-	return dstr_assign_fromfile(NULL, fname);
+    return dstr_assign_fromfile(NULL, fname);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1151,7 +1151,7 @@ int dstr_compare_sz(const DSTR lhs, const char* sz)
     }
     else {
         result = strcmp(DBUF(lhs), sz);
-	}
+    }
 
     return result;
 }
