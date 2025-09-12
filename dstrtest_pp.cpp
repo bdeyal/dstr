@@ -317,6 +317,16 @@ void test_append()
         s5.append("hello");
     }
 
+    DString s6;
+    s6 += "Hello";
+
+    DString w(", World");
+    s6 += w;
+
+    s6 += ' ';
+    s6 += 'X';
+    assert(s6 == "Hello, World X");
+
     putchar('\n');
 }
 //-------------------------------------------------
@@ -1036,6 +1046,11 @@ void test_prefix()
     assert( s1.startswith("GooD morNiNg Today is Friday", DString::IgnoreCase));
     assert( !s1.startswith("H"));
     assert( !s1.startswith("H", DString::IgnoreCase));
+
+    DString s2("Good");
+    const char* longer_str = "GoodXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+    assert(s2.startswith("Good"));
+    assert(!s2.startswith(longer_str));
 }
 //-------------------------------------------------
 

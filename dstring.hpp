@@ -172,11 +172,6 @@ public:
         append(c);
     }
 
-    void pop_back()
-    {
-        chop();
-    }
-
     void push_front(char c)
     {
         insert(0, c, 1);
@@ -219,6 +214,28 @@ public:
     {
         dstr_append_vsprintf(this->p, fmt, args);
     }
+
+    DString& operator+=(char c) {
+        append(c);
+        return *this;
+    }
+
+    DString& operator+=(const char* sz) {
+        append(sz);
+        return *this;
+    }
+
+    DString& operator+=(const DString& ds) {
+        append(ds);
+        return *this;
+    }
+
+#if 0
+    // TODO complere operator+
+    DString  operator+(char c);
+    DString  operator+(const char* sz);
+    DString  operator+(const DString& ds);
+#endif
 
     // Replace functions
     //
@@ -294,6 +311,11 @@ public:
     void chop()
     {
         dstr_chop(this->p);
+    }
+
+    void pop_back()
+    {
+        chop();
     }
 
     void swap(DString& rhs)

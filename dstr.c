@@ -472,12 +472,16 @@ static DSTR_BOOL dstr_prefix_sz_imp(const DSTR p,
 
     pbuf = DBUF(p);
     if (ignore_case) {
-        for ( ; *s && (toupper(*pbuf) == toupper(*s)) ;  ++pbuf, ++s )
-            ;
+        while (*s && (toupper(*pbuf) == toupper(*s))) {
+            ++pbuf;
+            ++s;
+        }
     }
     else {
-        for ( ; *s && (*pbuf == *s) ;    ++pbuf, ++s )
-            ;
+        while (*s && (*pbuf == *s)) {
+            ++pbuf;
+            ++s;
+        }
     }
     return (*s == '\0');
 }
@@ -665,10 +669,11 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
     if ((fsize = ftell(fp)) == -1)
         goto err_close_fp;
 
+    rewind(fp);
+
     if ((result = dstr_create_len_imp(fsize)) == NULL)
         goto err_close_fp;
 
-    rewind(fp);
     if ((sread = fread(DBUF(result), sizeof(char), fsize, fp)) != fsize)
         goto err_clean_result;
 
@@ -710,15 +715,11 @@ DSTR dstr_create_fromfile(const char* fname)
 
 void dstr_destroy(DSTR p)
 {
-    if (!p)
-        return;
-
-    dstr_assert_valid(p);
-
-    if (p->data)
-        free(p->data);
-
-    free(p);
+    if (p) {
+        if (p->data)
+            free(p->data);
+        free(p);
+    }
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -821,8 +822,8 @@ int dstr_assign_substr(DSTR dest, const DSTR p, size_t pos, size_t count)
         return DSTR_SUCCESS;
 
     return dstr_assign_imp( dest,
-                                    DBUF(p) + pos,
-                                    min_2(count, DLEN(p)-pos) );
+                            DBUF(p) + pos,
+                            min_2(count, DLEN(p)-pos) );
 }
 /*-------------------------------------------------------------------------------*/
 
