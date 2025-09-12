@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "dstr.h"
+#include <dstr/dstr.h>
 
 /* allocation size at creation */
 #define DSTR_INITIAL_CAPACITY (32UL)

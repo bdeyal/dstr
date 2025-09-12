@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 #
-CFLAGS=-O3 -W -Wall -Wextra -Wshadow
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
+CFLAGS=-O3 -W -Wall -Wextra -Wshadow -Iinclude
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++11 -Isrc
 LDFLAGS=-s
 
 ifeq ($(COMP),)
@@ -18,41 +18,41 @@ ifeq ($(COMP),clang)
 	CXX=clang++
 endif
 
-PROGRAMS = dstrtest dstrtest_pp test_dgets
-DEPS = dstr.h
-DEPS_PP = dstring.hpp dstr.h
+PROGRAMS = ./test/dstrtest ./test/dstrtest_pp ./test/test_dgets
+DEPS = ./include/dstr/dstr.h
+DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
 
 all: $(PROGRAMS)
 
-dstrtest: dstr.o dstrtest.o
-	$(CC) dstr.o dstrtest.o -o dstrtest $(LDFLAGS)
+./test/dstrtest: ./src/dstr.o ./test/dstrtest.o
+	$(CC) ./src/dstr.o ./test/dstrtest.o -o ./test/dstrtest $(LDFLAGS)
 
-dstrtest_pp: dstr.o dstrtest_pp.o
-	$(CXX) dstr.o dstrtest_pp.o -o dstrtest_pp $(LDFLAGS)
+./test/dstrtest_pp: ./src/dstr.o ./test/dstrtest_pp.o
+	$(CXX) ./src/dstr.o ./test/dstrtest_pp.o -o ./test/dstrtest_pp $(LDFLAGS)
 
-test_dgets: dstr.o test_dgets.o
-	$(CXX) dstr.o test_dgets.o -o test_dgets $(LDFLAGS)
+./test/test_dgets: ./src/dstr.o ./test/test_dgets.o
+	$(CXX) ./src/dstr.o ./test/test_dgets.o -o ./test/test_dgets $(LDFLAGS)
 
 test: $(PROGRAMS)
-	./dstrtest_pp
-	./dstrtest
-	man gcc 2>/dev/null > test_file.txt
-	./test_dgets test_file.txt
+	./test/dstrtest_pp
+	./test/dstrtest
+	man gcc 2>/dev/null > ./test/test_file.txt
+	./test/test_dgets ./test/test_file.txt
 
-test_various: dstr_test.sh
-	./dstr_test.sh
+test_various: ./test/dstr_test.sh
+	cd ./test && ./dstr_test.sh
 
 clean:
-	rm -f *.o test_file.txt $(PROGRAMS)
+	rm -f ./test/*.o ./src/*.o ./test/test_file.txt $(PROGRAMS)
 
-dstr.o: dstr.c $(DEPS)
+./src/dstr.o: ./src/dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG -o $@ $<
 
-dstrtest.o: dstrtest.c $(DEPS)
+./test/dstrtest.o: ./test/dstrtest.c $(DEPS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-dstrtest_pp.o: dstrtest_pp.cpp $(DEPS_PP)
+./test/dstrtest_pp.o: ./test/dstrtest_pp.cpp $(DEPS_PP)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-test_dgets.o: test_dgets.cpp $(DEPS)
+./test/test_dgets.o: ./test/test_dgets.cpp $(DEPS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

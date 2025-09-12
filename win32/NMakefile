@@ -3,18 +3,18 @@
 !IF "$(COMP)" == "clang"
 CC = clang-cl.exe
 CXX = clang-cl.exe
-CFLAGS = -O2 /MD /D_CRT_SECURE_NO_WARNINGS
+CFLAGS = -O2 /MD /D_CRT_SECURE_NO_WARNINGS /I..\include
 CXXFLAGS = $(CFLAGS)
 !ELSE
 CC = cl.exe
 CXX = cl.exe
-CFLAGS = /EHsc /O2 /nologo /MD
+CFLAGS = /EHsc /O2 /nologo /MD /I..\include
 CXXFLAGS = /EHsc $(CFLAGS)
 !ENDIF
 
 PROGRAMS = dstrtest.exe dstrtest_pp.exe test_dgets.exe
-DEPS = dstr.h
-DEPS_PP = dstring.hpp dstr.h
+DEPS = ..\include\dstr\dstr.h
+DEPS_PP = ..\include\dstr\dstring.hpp ..\include\dstr\dstr.h
 
 all: $(PROGRAMS)
 
@@ -38,14 +38,14 @@ test: $(PROGRAMS)
 	.\dstrtest_pp.exe
 	.\test_dgets.exe
 
-dstr.obj: dstr.c $(DEPS)
-	$(CC) -c $(CFLAGS) -DNDEBUG dstr.c
+dstr.obj: ..\src\dstr.c $(DEPS)
+	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c
 
-dstrtest.obj: dstrtest.c $(DEPS)
-	$(CC) -c $(CFLAGS) dstrtest.c
+dstrtest.obj: ..\test\dstrtest.c $(DEPS)
+	$(CC) -c $(CFLAGS) ..\test\dstrtest.c
 
-dstrtest_pp.obj: dstrtest_pp.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) dstrtest_pp.cpp
+dstrtest_pp.obj: ..\test\dstrtest_pp.cpp $(DEPS_PP)
+	$(CXX) -c $(CXXFLAGS) ..\test\dstrtest_pp.cpp
 
-test_dgets.obj: test_dgets.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) test_dgets.cpp
+test_dgets.obj: ..\test\test_dgets.cpp $(DEPS_PP)
+	$(CXX) -c $(CXXFLAGS) ..\test\test_dgets.cpp

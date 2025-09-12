@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "dstr.h"
+#include <dstr/dstr.h>
 
 /*
  *   garbage collector / memory checker

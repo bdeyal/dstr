@@ -1,7 +1,7 @@
 #ifndef DSTRING_H_INCLUDED
 #define DSTRING_H_INCLUDED
 
-#include "dstr.h"
+#include <dstr/dstr.h>
 
 class DString {
 public:

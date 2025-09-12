@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "dstring.hpp"
+#include <dstr/dstring.hpp>
 
 /*
  *   garbage collector / memory checker
