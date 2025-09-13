@@ -8,24 +8,40 @@ CXXFLAGS = $(CFLAGS)
 !ELSE
 CC = cl.exe
 CXX = cl.exe
-CFLAGS = /EHsc /O2 /nologo /MD /I..\include
+CFLAGS = /O2 /nologo /MD /I..\include
 CXXFLAGS = /EHsc $(CFLAGS)
 !ENDIF
 
-PROGRAMS = dstrtest.exe dstrtest_pp.exe test_dgets.exe
+PROGRAMS = \
+	dstrtest.exe \
+	dstrtest_pp.exe \
+	test_dgets.exe \
+	test_map.exe \
+	test_vector.exe \
+	test_tokens.exe
+
 DEPS = ..\include\dstr\dstr.h
 DEPS_PP = ..\include\dstr\dstring.hpp ..\include\dstr\dstr.h
 
 all: $(PROGRAMS)
 
-dstrtest.exe: dstr.obj dstrtest.obj
-	$(CC) /nologo /MD -Fe"dstrtest.exe" dstr.obj dstrtest.obj
+dstrtest.exe: ..\test\dstrtest.c dstr.obj
+	$(CC) $(CFLAGS) /nologo /MD ..\test\dstrtest.c dstr.obj /Fe"$@"
 
-dstrtest_pp.exe: dstr.obj dstrtest_pp.obj
-	$(CXX) /nologo /MD -Fe"dstrtest_pp.exe" dstr.obj dstrtest_pp.obj
+dstrtest_pp.exe: ..\test\dstrtest_pp.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\dstrtest_pp.cpp dstr.obj /Fe"$@"
 
-test_dgets.exe: dstr.obj test_dgets.obj
-	$(CXX) /nologo /MD -Fe"test_dgets.exe" dstr.obj test_dgets.obj
+test_dgets.exe: ..\test\test_dgets.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_dgets.cpp  dstr.obj /Fe"$@"
+
+test_vector.exe: ..\test\test_vector.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_vector.cpp dstr.obj /Fe"$@"
+
+test_map.exe: ..\test\test_map.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_map.cpp dstr.obj /Fe"$@"
+
+test_tokens.exe: ..\test\test_tokens.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_tokens.cpp dstr.obj /Fe"$@"
 
 clean:
 	del *~ *.obj
@@ -37,15 +53,9 @@ test: $(PROGRAMS)
 	.\dstrtest.exe
 	.\dstrtest_pp.exe
 	.\test_dgets.exe
+	.\test_vector.exe
+	.\test_map.exe
+	.\test_tokens.exe
 
 dstr.obj: ..\src\dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c
-
-dstrtest.obj: ..\test\dstrtest.c $(DEPS)
-	$(CC) -c $(CFLAGS) ..\test\dstrtest.c
-
-dstrtest_pp.obj: ..\test\dstrtest_pp.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) ..\test\dstrtest_pp.cpp
-
-test_dgets.obj: ..\test\test_dgets.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) ..\test\test_dgets.cpp
