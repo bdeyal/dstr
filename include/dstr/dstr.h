@@ -37,8 +37,8 @@ typedef struct DSTR_IMP
 #define DLEN(p)       (BASE(p)->length)
 #define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
-#define DSSO_BUF(p)   (&(p)->sso_buffer[0])
-#define DSSO(p)       (DBUF(p) == DSSO_BUF(p))
+#define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
+#define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))
@@ -351,7 +351,7 @@ static inline int dstr_append_inline(DSTR p, char c) {
 #define dstrupper           dstr_ascii_upper
 #define dstrlower           dstr_ascii_lower
 #define dstrrev             dstr_reverse
-#define dstrswap(p1,p2)     dstr_swap((&p1),(&p2))
+#define dstrswap(p1,p2)     dstr_swap(&(p1),&(p2))
 #define dgetline            dstr_fgetline
 #define dgets               dstr_fgets
 

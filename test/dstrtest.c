@@ -376,7 +376,7 @@ void test_append()
     dstrtrunc(s5);
     dstrcat_sz(s5, "hello");
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 20; ++i) {
         printf("step: %d LEN=%zu, CAP=%zu\n", i, dstrlen(s5), dstrcap(s5));
         if (!dstrcat_ds(s5, s5)) {
             perror("dstrcat_ds");
@@ -646,9 +646,16 @@ void test_replace()
     dreplace_cc(s2, 0, 2,'\0', 100);
     assert( dstreq_sz(s2, ""));
 
+    DSTR s3 = dstrnew_sz("H World");
+    const char* ps3 = dstrdata(s3) + dstrstr(s3, 0, "World");
+    dreplace_sz(s3, 0, 1, ps3);
+    printf("%s\n", dstrdata(s3));
+    assert( dstreq_sz(s3, "World World"));
+
     dstrfree(sn);
     dstrfree(s1);
     dstrfree(s2);
+    dstrfree(s3);
 }
 //-------------------------------------------------
 

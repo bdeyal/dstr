@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include <dstr/dstr.h>
 
@@ -208,7 +209,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
     }
 
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
-        assert(DSSO(p));
+        assert(D_IS_SSO(p));
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
             return NULL;
         }
@@ -217,7 +218,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
         p->data[0] = '\0';
     }
     else {
-        assert(!DSSO(p));
+        assert(!D_IS_SSO(p));
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
             return NULL;
         }
@@ -249,7 +250,16 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
     size_t bytes_to_move;
-    bool self_insert = (DBUF(p) == buff);
+    char* first = DBUF(p);
+    char* last = first + DLEN(p);
+    ptrdiff_t overlap = -1;
+
+    // different handling if source data within the DSTR allocated
+    // buffer
+    //
+    if (first <= buff && buff <= last) {
+        overlap = buff - first;
+    }
 
     if (len == 0)
         return DSTR_SUCCESS;
@@ -257,10 +267,10 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
     if (!dstr_grow_by(p, len))
         return DSTR_FAIL;
 
-    // check if reallocation moved the buffer
+    // in case of overlap, check if realloc() moved the buffer
     //
-    if (self_insert && (DBUF(p) != buff)) {
-        buff = DBUF(p);
+    if (overlap >= 0 && (DBUF(p) != first)) {
+        buff = DBUF(p) + overlap;
     }
 
     index = min_2(index, DLEN(p));
@@ -345,18 +355,40 @@ static int dstr_replace_imp(DSTR p,
                             const char* buff,
                             size_t buflen)
 {
+    bool nothing_to_replace =
+        (buff == NULL) || \
+        (buflen == 0)  || \
+        ((buflen = my_strnlen(buff, buflen)) == 0);
+
+    if (nothing_to_replace) {
+        dstr_remove_imp(p, pos, count);
+        return DSTR_SUCCESS;
+    }
+
+    // Check for overlap, must copy src if so
+    //
+    char* first = DBUF(p);
+    char* last = first + DLEN(p);
+    DSTR tmp = NULL;
+
+    if (first <= buff && buff <= last) {
+        tmp = dstr_create_bl(buff, buflen);
+        if (!tmp)
+            return DSTR_FAIL;
+        buff = DBUF(tmp);
+    }
+
+    // Do the actial remove and insert
+    //
     dstr_remove_imp(p, pos, count);
+    int result = dstr_insert_imp(p, pos, buff, buflen);
 
-    if (buff == NULL)
-        return DSTR_SUCCESS;
+    // If we used a tmp buffer dut to overlap - free it
+    //
+    if (tmp)
+        dstr_destroy(tmp);
 
-    if (buflen == 0)
-        return DSTR_SUCCESS;
-
-    if ((buflen = my_strnlen(buff, buflen)) == 0)
-        return DSTR_SUCCESS;
-
-    return dstr_insert_imp(p, pos, buff, buflen);
+    return result;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -723,7 +755,7 @@ DSTR dstr_create_fromfile(const char* fname)
 void dstr_destroy(DSTR p)
 {
     if (p) {
-        if (!DSSO(p)) {
+        if (!D_IS_SSO(p)) {
             free(p->data);
         }
         free(p);
