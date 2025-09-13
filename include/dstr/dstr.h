@@ -21,19 +21,24 @@
 #endif
 /*--------------------------------------------------------------------------*/
 
+/* allocation size at creation */
+#define DSTR_INITIAL_CAPACITY (32UL)
+
 typedef struct DSTR_IMP
 {
     size_t length;
     size_t capacity;
     char*  data;
+    char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } *DSTR;
-/*--------------------------------------------------------------------------*/
 
 #define BASE(p)       (p)
 #define DBUF(p)       (BASE(p)->data)
 #define DLEN(p)       (BASE(p)->length)
 #define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
+#define DSSO_BUF(p)   (&(p)->sso_buffer[0])
+#define DSSO(p)       (DBUF(p) == DSSO_BUF(p))
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))
@@ -82,12 +87,6 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
 void dstr_destroy(DSTR p);
 
 /*
- *  transfer data to c string, destory object, caller must free result
- *  if PLEN is not NULL, write length to it.
- */
-char* dstr_move_destroy(DSTR p, size_t* plen);
-
-/*
  *   Assign | Insert | Append | Replace
  *   a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
  */
@@ -129,7 +128,7 @@ int  dstr_resize(DSTR dest, size_t len);
  */
 void dstr_ascii_upper(DSTR p);
 void dstr_ascii_lower(DSTR p);
-void dstr_swap(DSTR d1, DSTR d2);
+void dstr_swap(DSTR* d1, DSTR* d2);
 void dstr_reverse(DSTR p);
 void dstr_trim_right(DSTR p);
 void dstr_trim_left(DSTR p);
@@ -240,6 +239,19 @@ inline void dstr_chop(DSTR p) {
     }
 }
 
+static inline int dstr_append_inline(DSTR p, char c) {
+    if (DLEN(p) + 1 < DCAP(p)) {
+        if (c) {
+            DVAL(p, DLEN(p)) = c;
+            DLEN(p) += 1;
+            DVAL(p, DLEN(p)) = '\0';
+        }
+        return DSTR_SUCCESS;
+    }
+    /*else*/
+    return dstr_append_c(p, c);
+}
+
 #ifdef __cplusplus
 }
 #endif
@@ -309,12 +321,11 @@ inline void dstr_chop(DSTR p) {
 
 #define dstrcat_sz          dstr_append_sz
 #define dstrcat_cc          dstr_append_cc
-#define dstrcat_c           dstr_append_c
+#define dstrcat_c           dstr_append_inline
 #define dstrcat_ds          dstr_append_ds
 #define dstrcat_bl          dstr_append_bl
 
 #define dstrfree            dstr_destroy
-#define dstrmove(p)         dstr_move_destroy((p), NULL)
 #define dstrtrunc           dstr_truncate
 #define dstrresize          dstr_resize
 #define dstrerase           dstr_remove
@@ -340,7 +351,7 @@ inline void dstr_chop(DSTR p) {
 #define dstrupper           dstr_ascii_upper
 #define dstrlower           dstr_ascii_lower
 #define dstrrev             dstr_reverse
-#define dstrswap            dstr_swap
+#define dstrswap(p1,p2)     dstr_swap((&p1),(&p2))
 #define dgetline            dstr_fgetline
 #define dgets               dstr_fgets
 

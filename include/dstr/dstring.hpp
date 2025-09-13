@@ -77,14 +77,6 @@ public:
         return DSTR_FAIL;
     }
 
-    // Move the C string. Caller must free()
-    //
-    char* move_data(size_t* plen = 0)
-    {
-        char* result = dstr_move_destroy(this->p, plen);
-        p = dstr_create();
-        return result;
-    }
 
 #if __cplusplus >= 201103L
     // Assignments operator and functions
@@ -92,7 +84,7 @@ public:
     DString& operator=(DString&& rhs) noexcept
     {
         if (&rhs != this)
-            dstr_swap(p, rhs.p);
+            swap(rhs);
         return *this;
     }
 #endif
@@ -320,7 +312,9 @@ public:
 
     void swap(DString& rhs)
     {
-        dstr_swap(this->p, rhs.p);
+        DSTR tmp = rhs.p;
+        rhs.p = p;
+        p = tmp;
     }
 
     size_t copy_substr(size_t pos, size_t numbytes, char dest[], size_t destsize)

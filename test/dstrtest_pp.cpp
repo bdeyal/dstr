@@ -12,18 +12,6 @@
 
 #include <dstr/dstring.hpp>
 
-/*
- *   garbage collector / memory checker
- */
-#ifndef _WIN32
-#ifdef GC_DEBUG
-#include <gc/gc.h>
-#define malloc   GC_MALLOC
-#define free     GC_FREE
-#define realloc  GC_REALLOC
-#endif
-#endif
-
 #if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER <= 1200))
 #define TRACE_FN() printf("%d\n", __LINE__)
 #else
@@ -328,23 +316,6 @@ void test_append()
     assert(s6 == "Hello, World X");
 
     putchar('\n');
-}
-//-------------------------------------------------
-
-void test_move()
-{
-    TRACE_FN();
-
-    DString s1;
-    s1.sprintf("%d", 100);
-
-    for (int i = 0; i < 80; ++i) {
-        s1.append(' ' + i);
-    }
-
-    char* p = s1.move_data();
-    printf("%s\n", p);
-    free(p);
 }
 //-------------------------------------------------
 
@@ -1227,7 +1198,6 @@ int main()
     test_buff_ctor();
     test_assign();
     test_append();
-    test_move();
     test_format();
     test_remove();
     test_trim();

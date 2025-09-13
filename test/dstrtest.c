@@ -6,17 +6,6 @@
 #include <stdlib.h>
 #include <dstr/dstr.h>
 
-/*
- *   garbage collector / memory checker
- */
-#ifndef _WIN32
-#ifdef GC_DEBUG
-#include <gc/gc.h>
-#define malloc   GC_MALLOC
-#define free     GC_FREE
-#define realloc  GC_REALLOC
-#endif
-#endif
 
 #if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER <= 1200))
 #define TRACE_FN() printf("%d\n", __LINE__)
@@ -382,6 +371,17 @@ void test_append()
             printf("step: %d LEN=%zu, CAP=%zu\n", i, dstrlen(s5), dstrcap(s5));
         }
         dstrcat_sz(s5, "hello");
+    }
+
+    dstrtrunc(s5);
+    dstrcat_sz(s5, "hello");
+
+    for (int i = 0; i < 10; ++i) {
+        printf("step: %d LEN=%zu, CAP=%zu\n", i, dstrlen(s5), dstrcap(s5));
+        if (!dstrcat_ds(s5, s5)) {
+            perror("dstrcat_ds");
+            break;
+        }
     }
 
     putchar('\n');
@@ -1193,27 +1193,6 @@ void test_shared_dstr()
 }
 //-------------------------------------------------
 
-void test_move()
-{
-    TRACE_FN();
-
-    DSTR s1 =   dstrnew_sprintf("%d", 100);
-    TRACE_LN();
-
-    for (int i=0; i < 80; ++i) {
-        dstrcat_c(s1, ' ' + i);
-    }
-    TRACE_LN();
-
-    char* p = dstrmove(s1);
-    printf("%s\n", p);
-    TRACE_LN();
-    free(p);
-    TRACE_LN();
-}
-//-------------------------------------------------
-
-
 int main()
 {
     test_ctor();
@@ -1225,7 +1204,6 @@ int main()
     test_assign();
     test_fromfile();
     test_append();
-    test_move();
     test_format();
     test_remove();
     test_insert();
@@ -1249,7 +1227,6 @@ int main()
     test_atoi_itoa();
     test_isdigit();
     //test_shared_dstr();
-    test_move();
 
     // last test
     test_getline();

@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdint.h>
 
 #include <dstr/dstr.h>
-
-/* allocation size at creation */
-#define DSTR_INITIAL_CAPACITY (32UL)
 
 #define dstr_assert_valid(p) do {                               \
     assert((p) != NULL);                                        \
@@ -178,9 +176,13 @@ static DSTR dstr_alloc_empty(void)
 
     if (p) {
         p->length = 0;
-        p->capacity = 0;
-        p->data = NULL;
+        p->capacity = DSTR_INITIAL_CAPACITY;
+        p->sso_buffer[0] = '\0';
+        p->data = &p->sso_buffer[0];
+
     }
+
+    dstr_assert_valid(p);
     return p;
 }
 /*-------------------------------------------------------------------------------*/
@@ -192,35 +194,37 @@ static DSTR dstr_grow(DSTR p, size_t len)
 
     assert(p != NULL);
 
-    if (DBUF(p) == NULL) {
-        new_capacity = DSTR_INITIAL_CAPACITY;
+    if (p->capacity > len) {
+        return p;
+    }
 
-        while (new_capacity <= len)
-            new_capacity *= 2;
+    new_capacity = p->capacity;
+    while (new_capacity <= len)
+        new_capacity *= 2;
 
-        if ((newbuff = (char*) malloc(new_capacity)) == NULL)
+    if (new_capacity > UINT32_MAX) {
+        errno = ERANGE;
+        return NULL;
+    }
+
+    if (p->capacity == DSTR_INITIAL_CAPACITY) {
+        assert(DSSO(p));
+        if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
             return NULL;
+        }
 
-        p->capacity = new_capacity;
-        p->length   = 0;
-        p->data     = newbuff;
-        DBUF(p)[0] = '\0';
+        memcpy(newbuff, p->data, p->length + 1);
+        p->data[0] = '\0';
     }
     else {
-        if (p->capacity > len)
-            return p;
-
-        new_capacity = p->capacity;
-
-        while (new_capacity <= len)
-            new_capacity *= 2;
-
-        if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL)
+        assert(!DSSO(p));
+        if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
             return NULL;
-
-        p->capacity = new_capacity;
-        p->data = newbuff;
+        }
     }
+
+    p->capacity = new_capacity;
+    p->data = newbuff;
 
     dstr_assert_valid(p);
     assert(len < DCAP(p));
@@ -230,10 +234,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
 
 static inline DSTR dstr_grow_by(DSTR p, size_t n)
 {
-    if (p->data)
-        n += DLEN(p);
-
-    return dstr_grow(p, n);
+    return dstr_grow(p, n + DLEN(p));
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -248,6 +249,7 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
     size_t bytes_to_move;
+    bool self_insert = (DBUF(p) == buff);
 
     if (len == 0)
         return DSTR_SUCCESS;
@@ -255,14 +257,20 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
     if (!dstr_grow_by(p, len))
         return DSTR_FAIL;
 
+    // check if reallocation moved the buffer
+    //
+    if (self_insert && (DBUF(p) != buff)) {
+        buff = DBUF(p);
+    }
+
     index = min_2(index, DLEN(p));
     bytes_to_move = DLEN(p) - index;
 
     if (bytes_to_move > 0) {
         assert(index + len + bytes_to_move < DCAP(p));
         memmove( dstr_address(p, index + len),
-                    dstr_address(p, index),
-                    bytes_to_move );
+                 dstr_address(p, index),
+                 bytes_to_move );
     }
 
     memcpy(dstr_address(p, index), buff, len);
@@ -578,7 +586,7 @@ static DSTR_BOOL dstr_isdigits_imp(const DSTR src, DSTR_BOOL is_hex)
  */
 DSTR dstr_create(void)
 {
-    return dstr_create_len_imp(1);
+    return dstr_alloc_empty();
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -602,7 +610,7 @@ DSTR dstr_create_bl(const char* buff, size_t len)
 DSTR dstr_create_sz(const char* sz)
 {
     if (sz == NULL)
-        return dstr_create_len_imp(1);
+        return dstr_alloc_empty();
 
     return dstr_create_buff_imp(sz, strlen(sz));
 }
@@ -657,8 +665,8 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
 {
     FILE* fp;
     long fsize, sread;
-    DSTR result;
     int original_errno = 0;
+    bool create_new = (p == NULL);
 
     if ((fp = fopen(fname, "r")) == NULL)
         return NULL;
@@ -671,32 +679,31 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
 
     rewind(fp);
 
-    if ((result = dstr_create_len_imp(fsize)) == NULL)
-        goto err_close_fp;
+    if (create_new) {
+        if ((p = dstr_create_len_imp(fsize)) == NULL)
+            goto err_close_fp;
+    }
+    else {
+        if ((p = dstr_grow(p, fsize)) == NULL)
+            goto err_close_fp;
+    }
 
-    if ((sread = fread(DBUF(result), sizeof(char), fsize, fp)) != fsize)
+    if ((sread = fread(DBUF(p), sizeof(char), fsize, fp)) != fsize)
         goto err_clean_result;
 
     fclose(fp);
 
-    DVAL(result, sread) = '\0';
-    DLEN(result) = sread;
-
-    if (p) {
-        dstr_swap(result, p);
-        dstr_destroy(result);
-    }
-    else {
-        p = result;
-    }
+    DVAL(p, sread) = '\0';
+    DLEN(p) = sread;
 
     dstr_assert_valid(p);
     return p;
 
 err_clean_result:
     original_errno = errno;
-    free(result->data);
-    free(result);
+    if (create_new) {
+        dstr_destroy(p);
+    }
 
 err_close_fp:
     if (!original_errno)
@@ -716,24 +723,11 @@ DSTR dstr_create_fromfile(const char* fname)
 void dstr_destroy(DSTR p)
 {
     if (p) {
-        if (p->data)
+        if (!DSSO(p)) {
             free(p->data);
+        }
         free(p);
     }
-}
-/*-------------------------------------------------------------------------------*/
-
-char* dstr_move_destroy(DSTR p, size_t* plen)
-{
-    char* result = p->data;
-    if (plen) {
-        *plen = DLEN(p);
-    }
-
-    p->data = NULL;
-    free(p);
-
-    return result;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1329,28 +1323,20 @@ void dstr_reverse(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_swap(DSTR d1, DSTR d2)
+void dstr_swap(DSTR* pd1, DSTR* pd2)
 {
-    char*    s;
-    size_t n;
+    assert(pd1 != NULL);
+    assert(pd2 != NULL);
 
-    dstr_assert_valid(d1);
-    dstr_assert_valid(d2);
+    dstr_assert_valid(*pd1);
+    dstr_assert_valid(*pd2);
 
-    n = d1->length;
-    d1->length = d2->length;
-    d2->length = n;
+    DSTR tmp = *pd1;
+    *pd1 = *pd2;
+    *pd2 = tmp;
 
-    n = d1->capacity;
-    d1->capacity = d2->capacity;
-    d2->capacity = n;
-
-    s = d1->data;
-    d1->data = d2->data;
-    d2->data = s;
-
-    dstr_assert_valid(d1);
-    dstr_assert_valid(d2);
+    dstr_assert_valid(*pd1);
+    dstr_assert_valid(*pd2);
 }
 /*-------------------------------------------------------------------------------*/
 

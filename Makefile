@@ -67,8 +67,8 @@ test: $(PROGRAMS) ./test/test_file.txt
 
 .PHONY: testvg
 testvg: $(PROGRAMS) ./test/test_file.txt
-	valgrind ./test/dstrtest_pp
 	valgrind ./test/dstrtest
+	valgrind ./test/dstrtest_pp
 	valgrind ./test/test_dgets ./test/test_file.txt
 	valgrind ./test/test_map
 	valgrind ./test/test_vector
