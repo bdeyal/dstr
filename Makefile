@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 #
 CFLAGS=-O3 -W -Wall -Wextra -Wshadow -Iinclude
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++11 -Isrc
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS=-L./lib64 -Wl,-rpath,./lib64 -s
 
 ifeq ($(COMP),)
@@ -18,25 +18,41 @@ ifeq ($(COMP),clang)
 	CXX=clang++
 endif
 
-PROGRAMS = ./test/dstrtest ./test/dstrtest_pp ./test/test_dgets
+PROGRAMS = \
+	./test/dstrtest \
+	./test/dstrtest_pp \
+	./test/test_dgets \
+	./test/test_map \
+	./test/test_vector \
+	./test/test_tokens
+
 DEPS = ./include/dstr/dstr.h
 DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
 LIB=./lib64/libdstr.so
 
 all: $(PROGRAMS)
 
-./test/dstrtest: $(LIB) ./test/dstrtest.o
-	$(CC) ./test/dstrtest.o -o ./test/dstrtest $(LDFLAGS) -ldstr
+./test/dstrtest: ./test/dstrtest.c $(LIB) $(DEPS)
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-./test/dstrtest_pp: $(LIB) ./test/dstrtest_pp.o
-	$(CXX) ./test/dstrtest_pp.o -o ./test/dstrtest_pp $(LDFLAGS) -ldstr
+./test/dstrtest_pp: ./test/dstrtest_pp.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-./test/test_dgets: $(LIB) ./test/test_dgets.o
-	$(CXX) ./test/test_dgets.o -o ./test/test_dgets $(LDFLAGS) -ldstr
+./test/test_dgets: ./test/test_dgets.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-$(LIB): ./src/dstr.o
+./test/test_map: ./test/test_map.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+
+./test/test_vector: ./test/test_vector.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+
+./test/test_tokens: ./test/test_tokens.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+
+$(LIB): ./src/dstr.c $(DEPS) Makefile
 	mkdir -p ./lib64
-	gcc -shared -fPIC ./src/dstr.o -o ./lib64/libdstr.so.1.0.0
+	gcc $(CFLAGS) -shared -fPIC ./src/dstr.c -o ./lib64/libdstr.so.1.0.0
 	ln -sf libdstr.so.1.0.0 ./lib64/libdstr.so.1
 	ln -sf libdstr.so.1.0.0 ./lib64/libdstr.so
 
@@ -45,6 +61,18 @@ test: $(PROGRAMS) ./test/test_file.txt
 	./test/dstrtest_pp
 	./test/dstrtest
 	./test/test_dgets ./test/test_file.txt
+	./test/test_map
+	./test/test_vector
+	./test/test_tokens
+
+.PHONY: testvg
+testvg: $(PROGRAMS) ./test/test_file.txt
+	valgrind ./test/dstrtest_pp
+	valgrind ./test/dstrtest
+	valgrind ./test/test_dgets ./test/test_file.txt
+	valgrind ./test/test_map
+	valgrind ./test/test_vector
+	valgrind ./test/test_tokens
 
 ./test/test_file.txt:
 	man gcc 2>/dev/null > ./test/test_file.txt
@@ -55,16 +83,4 @@ test_various: ./test/dstr_test.sh
 
 clean:
 	rm -rf ./lib64
-	rm -f ./test/*.o ./src/*.o ./test/test_file.txt $(PROGRAMS)
-
-./src/dstr.o: ./src/dstr.c $(DEPS)
-	$(CC) -c $(CFLAGS) -fPIC -DPIC -DNDEBUG -o $@ $<
-
-./test/dstrtest.o: ./test/dstrtest.c $(DEPS)
-	$(CC) -c $(CFLAGS) -o $@ $<
-
-./test/dstrtest_pp.o: ./test/dstrtest_pp.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
-
-./test/test_dgets.o: ./test/test_dgets.cpp $(DEPS)
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	rm -f ./test/test_file.txt $(PROGRAMS)

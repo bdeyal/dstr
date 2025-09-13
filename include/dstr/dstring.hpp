@@ -28,7 +28,7 @@ public:
     {
     }
 
-    explicit DString(const char* sz)
+    DString(const char* sz)
         :
         p(dstr_create_sz(sz))
     {
@@ -231,7 +231,7 @@ public:
     }
 
 #if 0
-    // TODO complere operator+
+    // TODO complete operator+
     DString  operator+(char c);
     DString  operator+(const char* sz);
     DString  operator+(const DString& ds);

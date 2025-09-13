@@ -30,9 +30,9 @@ typedef struct DSTR_IMP
 /*--------------------------------------------------------------------------*/
 
 #define BASE(p)       (p)
-#define DBUF(p)       BASE(p)->data
-#define DLEN(p)       BASE(p)->length
-#define DCAP(p)       BASE(p)->capacity
+#define DBUF(p)       (BASE(p)->data)
+#define DLEN(p)       (BASE(p)->length)
+#define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
 /*--------------------------------------------------------------------------*/
 
@@ -91,32 +91,32 @@ char* dstr_move_destroy(DSTR p, size_t* plen);
  *   Assign | Insert | Append | Replace
  *   a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
  */
-int  dstr_assign_cc(DSTR dest, char c, size_t count);
-int  dstr_assign_sz(DSTR dest, const char* value);
-int  dstr_assign_ds(DSTR dest, const DSTR src);
-int  dstr_assign_bl(DSTR dest, const char* buff, size_t len);
-int  dstr_assign_substr(DSTR dest, const DSTR p, size_t pos, size_t count);
-int  dstr_assign_sprintf(DSTR dest, const char* fmt, ...);
-int  dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
+int dstr_assign_cc(DSTR dest, char c, size_t count);
+int dstr_assign_sz(DSTR dest, const char* value);
+int dstr_assign_ds(DSTR dest, const DSTR src);
+int dstr_assign_bl(DSTR dest, const char* buff, size_t len);
+int dstr_assign_substr(DSTR dest, const DSTR p, size_t pos, size_t count);
+int dstr_assign_sprintf(DSTR dest, const char* fmt, ...);
+int dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
-int  dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
-int  dstr_insert_sz(DSTR dest, size_t index, const char* value);
-int  dstr_insert_ds(DSTR dest, size_t index, const DSTR src);
-int  dstr_insert_bl(DSTR dest, size_t index, const char* buff, size_t len);
+int dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
+int dstr_insert_sz(DSTR dest, size_t index, const char* value);
+int dstr_insert_ds(DSTR dest, size_t index, const DSTR src);
+int dstr_insert_bl(DSTR dest, size_t index, const char* buff, size_t len);
 
-int  dstr_append_c(DSTR dest, char c);
-int  dstr_append_cc(DSTR dest, char c, size_t count);
-int  dstr_append_sz(DSTR dest, const char* value);
-int  dstr_append_ds(DSTR dest, const DSTR src);
+int dstr_append_c(DSTR dest, char c);
+int dstr_append_cc(DSTR dest, char c, size_t count);
+int dstr_append_sz(DSTR dest, const char* value);
+int dstr_append_ds(DSTR dest, const DSTR src);
 
-int  dstr_append_bl(DSTR dest, const char* buff, size_t len);
-int  dstr_append_sprintf(DSTR dest, const char* fmt, ...);
-int  dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
+int dstr_append_bl(DSTR dest, const char* buff, size_t len);
+int dstr_append_sprintf(DSTR dest, const char* fmt, ...);
+int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
-int  dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
-int  dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
-int  dstr_replace_ds(DSTR dest, size_t pos, size_t len, const DSTR src);
-int  dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
+int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
+int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
+int dstr_replace_ds(DSTR dest, size_t pos, size_t len, const DSTR src);
+int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
 
 /*
  *  either truncate to LEN or enlarge capacity to at least LEN without
@@ -127,15 +127,15 @@ int  dstr_resize(DSTR dest, size_t len);
 /*
  *  Following operations manipulate data but no allocation / free
  */
-void    dstr_ascii_upper(DSTR p);
-void    dstr_ascii_lower(DSTR p);
-void    dstr_swap(DSTR d1, DSTR d2);
-void    dstr_reverse(DSTR p);
-void    dstr_trim_right(DSTR p);
-void    dstr_trim_left(DSTR p);
-void    dstr_trim_both(DSTR p);
-void    dstr_truncate(DSTR p);
-void    dstr_remove(DSTR p, size_t pos, size_t count);
+void dstr_ascii_upper(DSTR p);
+void dstr_ascii_lower(DSTR p);
+void dstr_swap(DSTR d1, DSTR d2);
+void dstr_reverse(DSTR p);
+void dstr_trim_right(DSTR p);
+void dstr_trim_left(DSTR p);
+void dstr_trim_both(DSTR p);
+void dstr_truncate(DSTR p);
+void dstr_remove(DSTR p, size_t pos, size_t count);
 
 /* 31 bit hash value */
 unsigned int dstr_hash(const DSTR src);
@@ -172,7 +172,7 @@ DSTR_BOOL dstr_isuffix_sz(const DSTR p, const char* s);
 DSTR_BOOL dstr_prefix_sz(const DSTR p, const char* s);
 DSTR_BOOL dstr_iprefix_sz(const DSTR p, const char* s);
 
-/*   ffo    = find_first of, ffno = find first not of */
+/* ffo = find_first of, ffno = find first not of */
 size_t dstr_ffo_sz(const DSTR p, size_t pos, const char* s);
 size_t dstr_ffo_ds(const DSTR p, size_t pos, const DSTR s);
 size_t dstr_ffno_sz(const DSTR p, size_t pos, const char* s);

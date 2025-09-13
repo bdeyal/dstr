@@ -849,8 +849,11 @@ int dstr_append_c(DSTR p, char c)
     if (c == '\0')
         return DSTR_SUCCESS;
 
-    if (!dstr_grow_by(p, 1))
-        return DSTR_FAIL;
+    if ((DLEN(p) + 1) >= DCAP(p)) {
+        if (!dstr_grow_by(p, 1)) {
+            return DSTR_FAIL;
+        }
+    }
 
     DVAL(p, DLEN(p)) = c;
     DLEN(p) += 1;
