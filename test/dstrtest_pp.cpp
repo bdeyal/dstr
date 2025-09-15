@@ -231,6 +231,18 @@ void test_assign()
 
     s6.assign(s5, 3, 100);
     assert(s6 == "ld");
+
+    DString s7;
+    s7 = 'C';
+    s7 += '+';
+    s7 += '+';
+    assert(s7 == "C++");
+
+    DString s8("Hello World");
+    s8 = 'C';
+    s8 += '+';
+    s8 += '+';
+    assert(s8 == "C++");
 }
 //-------------------------------------------------
 
@@ -314,6 +326,11 @@ void test_append()
     s6 += ' ';
     s6 += 'X';
     assert(s6 == "Hello, World X");
+
+    for (int i = 0; i < 25; ++i) {
+        printf("step: %d LEN=%zu, CAP=%zu\n", i, s6.length(), s6.capacity());
+        s6 += s6;
+    }
 
     putchar('\n');
 }

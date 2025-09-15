@@ -102,6 +102,18 @@ public:
         return *this;
     }
 
+    DString& operator=(char c)
+    {
+        assign(c);
+        return *this;
+    }
+
+    void assign(char c)
+    {
+        clear();
+        append(c);
+    }
+
     void assign(char c, size_t count)
     {
         dstr_assign_cc(this->p, c, count);
@@ -293,6 +305,11 @@ public:
     void truncate()
     {
         dstr_truncate(this->p);
+    }
+
+    void clear()
+    {
+        truncate();
     }
 
     void erase(size_t pos, size_t count = 1)
