@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
 
 #if !defined(__cplusplus)
     #if defined(NO_STDBOOL)
@@ -22,12 +23,12 @@
 /*--------------------------------------------------------------------------*/
 
 /* allocation size at creation */
-#define DSTR_INITIAL_CAPACITY (32UL)
+#define DSTR_INITIAL_CAPACITY (16U)
 
 typedef struct DSTR_IMP
 {
-    size_t length;
-    size_t capacity;
+    uint32_t length;
+    uint32_t capacity;
     char*  data;
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } *DSTR;
@@ -121,14 +122,15 @@ int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t 
  *  either truncate to LEN or enlarge capacity to at least LEN without
  *  changing content
  */
-int  dstr_resize(DSTR dest, size_t len);
+int dstr_resize(DSTR dest, size_t len);
+int dstr_shrink_to_fit(DSTR d);
 
 /*
  *  Following operations manipulate data but no allocation / free
  */
 void dstr_ascii_upper(DSTR p);
 void dstr_ascii_lower(DSTR p);
-void dstr_swap(DSTR* d1, DSTR* d2);
+void dstr_swap(DSTR d1, DSTR d2);
 void dstr_reverse(DSTR p);
 void dstr_trim_right(DSTR p);
 void dstr_trim_left(DSTR p);
@@ -329,6 +331,7 @@ static inline int dstr_append_inline(DSTR p, char c) {
 #define dstrtrunc           dstr_truncate
 #define dstrresize          dstr_resize
 #define dstrerase           dstr_remove
+#define dstrshrink          dstr_shrink_to_fit
 
 #define dsprintf            dstr_assign_sprintf
 #define dvsprintf           dstr_assign_vsprintf
@@ -351,7 +354,7 @@ static inline int dstr_append_inline(DSTR p, char c) {
 #define dstrupper           dstr_ascii_upper
 #define dstrlower           dstr_ascii_lower
 #define dstrrev             dstr_reverse
-#define dstrswap(p1,p2)     dstr_swap(&(p1),&(p2))
+#define dstrswap            dstr_swap
 #define dgetline            dstr_fgetline
 #define dgets               dstr_fgets
 

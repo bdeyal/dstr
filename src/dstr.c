@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-#include <stdint.h>
 #include <stddef.h>
 
 #include <dstr/dstr.h>
@@ -378,12 +377,12 @@ static int dstr_replace_imp(DSTR p,
         buff = DBUF(tmp);
     }
 
-    // Do the actial remove and insert
+    // Do the actual remove and insert
     //
     dstr_remove_imp(p, pos, count);
     int result = dstr_insert_imp(p, pos, buff, buflen);
 
-    // If we used a tmp buffer dut to overlap - free it
+    // If we used a tmp buffer due to overlap - free it
     //
     if (tmp)
         dstr_destroy(tmp);
@@ -790,6 +789,22 @@ int dstr_resize(DSTR p, size_t len)
     }
 
     return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_shrink_to_fit(DSTR p)
+{
+    dstr_assert_valid(p);
+
+    DSTR tmp = dstr_create_ds(p);
+    if (!tmp)
+        return DSTR_FAIL;
+
+    dstr_swap(p, tmp);
+    dstr_destroy(tmp);
+
+    dstr_assert_valid(p);
+    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1355,20 +1370,25 @@ void dstr_reverse(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_swap(DSTR* pd1, DSTR* pd2)
+void dstr_swap(DSTR d1, DSTR d2)
 {
-    assert(pd1 != NULL);
-    assert(pd2 != NULL);
+    dstr_assert_valid(d1);
+    dstr_assert_valid(d2);
 
-    dstr_assert_valid(*pd1);
-    dstr_assert_valid(*pd2);
+    struct DSTR_IMP tmp = *d1;
+    *d1 = *d2;
+    *d2 = tmp;
 
-    DSTR tmp = *pd1;
-    *pd1 = *pd2;
-    *pd2 = tmp;
+    if (d1->capacity == DSTR_INITIAL_CAPACITY) {
+        d1->data = &d1->sso_buffer[0];
+    }
 
-    dstr_assert_valid(*pd1);
-    dstr_assert_valid(*pd2);
+    if (d2->capacity == DSTR_INITIAL_CAPACITY) {
+        d2->data = &d2->sso_buffer[0];
+    }
+
+    dstr_assert_valid(d1);
+    dstr_assert_valid(d2);
 }
 /*-------------------------------------------------------------------------------*/
 

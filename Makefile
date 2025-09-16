@@ -1,6 +1,6 @@
 # -*- Makefile -*-
 #
-CFLAGS=-O3 -W -Wall -Wextra -Wshadow -Iinclude
+CFLAGS=-O3 -march=x86-64-v3 -W -Wall -Wextra -Wshadow -Iinclude
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS=-L./lib64 -Wl,-rpath,./lib64 -s
 

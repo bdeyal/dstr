@@ -573,6 +573,12 @@ void test_replace()
 
     s2.replace(0, 2,'\0', 100);
     assert(s2 == "");
+
+    DString s3("H World");
+    const char* ps3 = s3.c_str() + s3.find("World");
+    s3.replace(0, 1, ps3);
+    printf("%s\n", s3.c_str());
+    assert( s3 == "World World");
 }
 //-------------------------------------------------
 

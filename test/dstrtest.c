@@ -730,6 +730,27 @@ void test_truncate()
 }
 //-------------------------------------------------
 
+void test_shrink()
+{
+    TRACE_FN();
+
+    const char* shortstr = "Good morning";
+    DSTR s1 = dstrnew_reserve(1000);
+
+    dstrcpy_sz(s1, shortstr);
+    assert(dstrcap(s1) >= 1000);
+    assert(dstreq_sz(s1, shortstr));
+
+    dstrshrink(s1);
+    assert(dstrcap(s1) == DSTR_INITIAL_CAPACITY);
+    assert(dstreq_sz(s1, shortstr));
+
+    dstrfree(s1);
+}
+//-------------------------------------------------
+
+
+
 void test_find()
 {
     TRACE_FN();
@@ -1219,6 +1240,7 @@ int main()
     test_trim();
     test_substr();
     test_truncate();
+    test_shrink();
     test_find();
     test_put_get();
     test_put_get_safe();
