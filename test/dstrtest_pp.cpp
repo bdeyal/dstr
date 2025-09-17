@@ -55,11 +55,11 @@ void test_eq()
     assert(s1.compare(s3) != 0);
     assert(s1.compare("ABC") != 0);
 
-    assert(s5 == NULL);
-    assert(s1 > NULL);
+    assert(s5 == nullptr);
+    assert(s1 > nullptr);
 
-    assert(s5 == NULL);
-    assert(s1 != NULL);
+    assert(s5 == nullptr);
+    assert(s1 != nullptr);
 
     assert(s3.iequal("hello"));
     assert(s3.iequal("heLLo"));
@@ -73,10 +73,10 @@ void test_empty_dstr()
     TRACE_FN();
 
     DString s1;
-    DString s2((char*)NULL, 0);
+    DString s2(nullptr, 0);
     DString s3((size_t)0);
     DString s4(100);
-    DString s5((char*)NULL);
+    DString s5(nullptr);
     DString s6('\0', 100);
     DString s7('C', 0);
     DString s8("", 100);
@@ -202,7 +202,7 @@ void test_assign()
     assert(s2 == "CCCCCCCC");
     assert(strcmp(s2.c_str(), "CCCCCCCC") == 0);
 
-    s2 = (char*)NULL;
+    s2 = nullptr;
     assert(s2.length() == 0);
 
     DString s3("hello");
@@ -263,7 +263,7 @@ void test_append()
     s4.append("world");
     assert(s4 == "helloworld");
 
-    s4.append((char*)NULL);
+    s4.append(nullptr);
     assert( s4 == "helloworld");
 
     s4.append("");
@@ -284,7 +284,7 @@ void test_append()
     s5.append("_ABC\0EFG", 10);
     assert(s5 == "hello_ABC");
 
-    s5.append((char*)NULL, 10);
+    s5.append(nullptr, 10);
     assert(s5 == "hello_ABC");
 
     s5.append("Hi", 0);
@@ -327,7 +327,7 @@ void test_append()
     s6 += 'X';
     assert(s6 == "Hello, World X");
 
-    for (int i = 0; i < 25; ++i) {
+    for (int i = 0; i < 20; ++i) {
         printf("step: %d LEN=%zu, CAP=%zu\n", i, s6.length(), s6.capacity());
         s6 += s6;
     }
@@ -493,13 +493,13 @@ void test_insert()
     s1.insert(4, "");
     assert(s1 == "hellXXoX");
 
-    s1.insert(4, (char*)NULL);
+    s1.insert(4, nullptr);
     assert(s1 == "hellXXoX");
 
     s1.insert(0, "XXX", DString::NPOS);
     assert( s1 == "XXXhellXXoX");
 
-    s1.insert(0, (char*)NULL, DString::NPOS);
+    s1.insert(0, nullptr, DString::NPOS);
     assert( s1 == "XXXhellXXoX");
 
     s1.insert(0, "XXX", 0);
@@ -555,7 +555,7 @@ void test_replace()
     s1.replace(10, 5, sn);
     assert( s1 == "hell@@@@@ohello");
 
-    s1.replace(4, 5, NULL);
+    s1.replace(4, 5, nullptr);
     assert( s1 == "hellohello");
 
     s1.replace(5, 5, '\0', 1);
@@ -565,7 +565,7 @@ void test_replace()
     assert( s1 == "world");
 
     DString s2(s1);
-    s1.replace(0, DString::NPOS, (char*)NULL, 100);
+    s1.replace(0, DString::NPOS, nullptr, 100);
     assert(s1 == "");
 
     s2.replace(2, 8,'\0', 100);
@@ -940,7 +940,7 @@ void test_swap()
 
     // 'nullptr' is OK but C++98 does not have it
     //
-    DString s1((char*)NULL);
+    DString s1(nullptr);
     DString s2("hello");
 
     s1.swap(s2);

@@ -80,13 +80,13 @@ static inline size_t min_3(size_t a, size_t b, size_t c)
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline char* dstr_address(const DSTR p, size_t pos)
+static inline char* dstr_address(const DSTR_IMP* p, size_t pos)
 {
     return (char*)(DBUF(p) + pos);
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline char* dstr_tail(DSTR p)
+static inline char* dstr_tail(DSTR_IMP* p)
 {
     return dstr_address(p, DLEN(p));
 }
@@ -170,24 +170,19 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR dstr_alloc_empty(void)
+static DSTR_IMP* dstr_alloc_empty(void)
 {
-    DSTR p = (DSTR) malloc(sizeof(struct DSTR_IMP));
-
+    DSTR_IMP* p = (DSTR_IMP*) malloc(sizeof(struct DSTR_IMP));
     if (p) {
-        p->length = 0;
-        p->capacity = DSTR_INITIAL_CAPACITY;
-        p->sso_buffer[0] = '\0';
-        p->data = &p->sso_buffer[0];
-
+        // inline at dstr.h
+        dstr_init_data(p);
     }
-
     dstr_assert_valid(p);
     return p;
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR dstr_grow(DSTR p, size_t len)
+static DSTR_IMP* dstr_grow(DSTR_IMP* p, size_t len)
 {
     size_t new_capacity;
     char* newbuff;
@@ -232,13 +227,13 @@ static DSTR dstr_grow(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline DSTR dstr_grow_by(DSTR p, size_t n)
+static inline DSTR_IMP* dstr_grow_by(DSTR_IMP* p, size_t n)
 {
     return dstr_grow(p, n + DLEN(p));
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline void dstr_truncate_imp(DSTR p, size_t len)
+static inline void dstr_truncate_imp(DSTR_IMP* p, size_t len)
 {
     assert(len <= DLEN(p));
     DLEN(p) = len;
@@ -246,7 +241,7 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
+static int dstr_insert_imp(DSTR_IMP* p, size_t index, const char* buff, size_t len)
 {
     size_t bytes_to_move;
     char* first = DBUF(p);
@@ -292,7 +287,7 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
+static int dstr_insert_cc_imp(DSTR_IMP* p, size_t index, char c, size_t count)
 {
     size_t bytes_to_move;
 
@@ -325,7 +320,7 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
+static void dstr_remove_imp(DSTR_IMP* p, size_t pos, size_t count)
 {
     size_t bytes_to_move;
 
@@ -348,7 +343,7 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-static int dstr_replace_imp(DSTR p,
+static int dstr_replace_imp(DSTR_IMP* p,
                             size_t pos,
                             size_t count,
                             const char* buff,
@@ -368,7 +363,7 @@ static int dstr_replace_imp(DSTR p,
     //
     char* first = DBUF(p);
     char* last = first + DLEN(p);
-    DSTR tmp = NULL;
+    DSTR_IMP* tmp = NULL;
 
     if (first <= buff && buff <= last) {
         tmp = dstr_create_bl(buff, buflen);
@@ -391,7 +386,7 @@ static int dstr_replace_imp(DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline int dstr_replace_cc_imp(DSTR p,
+static inline int dstr_replace_cc_imp(DSTR_IMP* p,
                                       size_t pos,
                                       size_t count_old,
                                       char c,
@@ -402,22 +397,22 @@ static inline int dstr_replace_cc_imp(DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline int dstr_append_imp(DSTR p, const char* value, size_t len)
+static inline int dstr_append_imp(DSTR_IMP* p, const char* value, size_t len)
 {
     return dstr_insert_imp(p, DLEN(p), value, len);
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
+static inline int dstr_assign_imp(DSTR_IMP* p, const char* value, size_t len)
 {
     dstr_truncate_imp(p, 0);
     return dstr_append_imp(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline DSTR dstr_create_len_imp(size_t len)
+static inline DSTR_IMP* dstr_create_len_imp(size_t len)
 {
-    DSTR p = dstr_alloc_empty();
+    DSTR_IMP* p = dstr_alloc_empty();
     if (!p)
         return NULL;
 
@@ -425,9 +420,9 @@ static inline DSTR dstr_create_len_imp(size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR dstr_create_buff_imp(const char* buff, size_t len)
+static DSTR_IMP* dstr_create_buff_imp(const char* buff, size_t len)
 {
-    DSTR p;
+    DSTR_IMP* p;
 
     if ((p = dstr_create_len_imp(len)) == NULL)
         return NULL;
@@ -445,7 +440,7 @@ static DSTR dstr_create_buff_imp(const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static size_t dstr_find_sz_imp(const DSTR p,
+static size_t dstr_find_sz_imp(const DSTR_IMP* p,
                                size_t pos,
                                const char* s,
                                int ignore_case)
@@ -472,7 +467,7 @@ static size_t dstr_find_sz_imp(const DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR_BOOL dstr_suffix_sz_imp(const DSTR p,
+static DSTR_BOOL dstr_suffix_sz_imp(const DSTR_IMP* p,
                                     const char* s,
                                     int ignore_case)
 {
@@ -500,7 +495,7 @@ static DSTR_BOOL dstr_suffix_sz_imp(const DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR_BOOL dstr_prefix_sz_imp(const DSTR p,
+static DSTR_BOOL dstr_prefix_sz_imp(const DSTR_IMP* p,
                                     const char* s,
                                     int ignore_case)
 {
@@ -526,7 +521,7 @@ static DSTR_BOOL dstr_prefix_sz_imp(const DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static size_t dstr_find_c_imp(const DSTR p,
+static size_t dstr_find_c_imp(const DSTR_IMP* p,
                               size_t pos,
                               char c,
                               int ignore_case)
@@ -553,7 +548,7 @@ static size_t dstr_find_c_imp(const DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static size_t dstr_ffo_imp(const DSTR p,
+static size_t dstr_ffo_imp(const DSTR_IMP* p,
                            size_t pos,
                            const char* pattern,
                            int not_off)
@@ -581,7 +576,7 @@ static size_t dstr_ffo_imp(const DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR_BOOL dstr_isdigits_imp(const DSTR src, DSTR_BOOL is_hex)
+static DSTR_BOOL dstr_isdigits_imp(const DSTR_IMP* src, DSTR_BOOL is_hex)
 {
     size_t n;
 
@@ -615,19 +610,19 @@ static DSTR_BOOL dstr_isdigits_imp(const DSTR src, DSTR_BOOL is_hex)
  *
  * * * * * * * * * * * * * * * * * *
  */
-DSTR dstr_create(void)
+DSTR_IMP* dstr_create(void)
 {
     return dstr_alloc_empty();
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_reserve(size_t len)
+DSTR_IMP* dstr_create_reserve(size_t len)
 {
     return dstr_create_len_imp(len);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_bl(const char* buff, size_t len)
+DSTR_IMP* dstr_create_bl(const char* buff, size_t len)
 {
     if (buff == NULL)
         len = 0;
@@ -638,7 +633,7 @@ DSTR dstr_create_bl(const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_sz(const char* sz)
+DSTR_IMP* dstr_create_sz(const char* sz)
 {
     if (sz == NULL)
         return dstr_alloc_empty();
@@ -647,14 +642,14 @@ DSTR dstr_create_sz(const char* sz)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_ds(const DSTR rhs)
+DSTR_IMP* dstr_create_ds(const DSTR_IMP* rhs)
 {
     dstr_assert_valid(rhs);
     return dstr_create_buff_imp(DBUF(rhs), DLEN(rhs));
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_substr(const DSTR p, size_t pos, size_t count)
+DSTR_IMP* dstr_create_substr(const DSTR_IMP* p, size_t pos, size_t count)
 {
     dstr_assert_valid(p);
 
@@ -667,9 +662,9 @@ DSTR dstr_create_substr(const DSTR p, size_t pos, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_cc(char ch, size_t count)
+DSTR_IMP* dstr_create_cc(char ch, size_t count)
 {
-    DSTR p;
+    DSTR_IMP* p;
 
     if (count == 0)
         return dstr_create();
@@ -692,7 +687,7 @@ DSTR dstr_create_cc(char ch, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_assign_fromfile(DSTR p, const char* fname)
+DSTR_IMP* dstr_assign_fromfile(DSTR_IMP* p, const char* fname)
 {
     FILE* fp;
     long fsize, sread;
@@ -745,24 +740,30 @@ err_close_fp:
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_fromfile(const char* fname)
+DSTR_IMP* dstr_create_fromfile(const char* fname)
 {
     return dstr_assign_fromfile(NULL, fname);
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_destroy(DSTR p)
+void dstr_clean_data(DSTR_IMP* p)
+{
+    if (!D_IS_SSO(p)) {
+        free(p->data);
+    }
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_destroy(DSTR_IMP* p)
 {
     if (p) {
-        if (!D_IS_SSO(p)) {
-            free(p->data);
-        }
+        dstr_clean_data(p);
         free(p);
     }
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_truncate(DSTR p)
+void dstr_truncate(DSTR_IMP* p)
 {
     dstr_assert_valid(p);
     dstr_truncate_imp(p, 0);
@@ -770,7 +771,7 @@ void dstr_truncate(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_resize(DSTR p, size_t len)
+int dstr_resize(DSTR_IMP* p, size_t len)
 {
     int result = DSTR_SUCCESS;
 
@@ -792,11 +793,11 @@ int dstr_resize(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_shrink_to_fit(DSTR p)
+int dstr_shrink_to_fit(DSTR_IMP* p)
 {
     dstr_assert_valid(p);
 
-    DSTR tmp = dstr_create_ds(p);
+    DSTR_IMP* tmp = dstr_create_ds(p);
     if (!tmp)
         return DSTR_FAIL;
 
@@ -808,7 +809,7 @@ int dstr_shrink_to_fit(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_remove(DSTR p, size_t pos, size_t count)
+void dstr_remove(DSTR_IMP* p, size_t pos, size_t count)
 {
     dstr_assert_valid(p);
     dstr_remove_imp(p, pos, count);
@@ -816,7 +817,7 @@ void dstr_remove(DSTR p, size_t pos, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_ds(DSTR dest, const DSTR src)
+int dstr_assign_ds(DSTR_IMP* dest, const DSTR_IMP* src)
 {
     dstr_assert_valid(dest);
     dstr_assert_valid(src);
@@ -825,7 +826,7 @@ int dstr_assign_ds(DSTR dest, const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_sz(DSTR p, const char* value)
+int dstr_assign_sz(DSTR_IMP* p, const char* value)
 {
     dstr_assert_valid(p);
 
@@ -838,7 +839,7 @@ int dstr_assign_sz(DSTR p, const char* value)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_bl(DSTR p, const char* buff, size_t len)
+int dstr_assign_bl(DSTR_IMP* p, const char* buff, size_t len)
 {
     dstr_assert_valid(p);
 
@@ -852,7 +853,7 @@ int dstr_assign_bl(DSTR p, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_substr(DSTR dest, const DSTR p, size_t pos, size_t count)
+int dstr_assign_substr(DSTR_IMP* dest, const DSTR_IMP* p, size_t pos, size_t count)
 {
     dstr_assert_valid(p);
 
@@ -868,7 +869,7 @@ int dstr_assign_substr(DSTR dest, const DSTR p, size_t pos, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_cc(DSTR p, char c, size_t count)
+int dstr_assign_cc(DSTR_IMP* p, char c, size_t count)
 {
     dstr_assert_valid(p);
     dstr_truncate_imp(p, 0);
@@ -876,14 +877,14 @@ int dstr_assign_cc(DSTR p, char c, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_cc(DSTR p, char c, size_t count)
+int dstr_append_cc(DSTR_IMP* p, char c, size_t count)
 {
     dstr_assert_valid(p);
     return dstr_insert_cc_imp(p, DLEN(p), c, count);
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_c(DSTR p, char c)
+int dstr_append_c(DSTR_IMP* p, char c)
 {
     dstr_assert_valid(p);
 
@@ -905,7 +906,7 @@ int dstr_append_c(DSTR p, char c)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_ds(DSTR dest, const DSTR src)
+int dstr_append_ds(DSTR_IMP* dest, const DSTR_IMP* src)
 {
     dstr_assert_valid(dest);
     dstr_assert_valid(src);
@@ -914,7 +915,7 @@ int dstr_append_ds(DSTR dest, const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_sz(DSTR p, const char* value)
+int dstr_append_sz(DSTR_IMP* p, const char* value)
 {
     dstr_assert_valid(p);
 
@@ -925,7 +926,7 @@ int dstr_append_sz(DSTR p, const char* value)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_bl(DSTR p, const char* buff, size_t len)
+int dstr_append_bl(DSTR_IMP* p, const char* buff, size_t len)
 {
     dstr_assert_valid(p);
 
@@ -939,99 +940,99 @@ int dstr_append_bl(DSTR p, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_find_sz(const DSTR p, size_t pos, const char* s)
+size_t dstr_find_sz(const DSTR_IMP* p, size_t pos, const char* s)
 {
     return dstr_find_sz_imp(p, pos, s, DSTR_FALSE); /* don't ignore case */
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_ifind_sz(const DSTR p, size_t pos, const char* s)
+size_t dstr_ifind_sz(const DSTR_IMP* p, size_t pos, const char* s)
 {
     return dstr_find_sz_imp(p, pos, s, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_find_c(const DSTR p, size_t pos, char c)
+size_t dstr_find_c(const DSTR_IMP* p, size_t pos, char c)
 {
     return dstr_find_c_imp(p, pos, c, DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_ifind_c(const DSTR p, size_t pos, char c)
+size_t dstr_ifind_c(const DSTR_IMP* p, size_t pos, char c)
 {
     return dstr_find_c_imp(p, pos, c, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_contains_sz(const DSTR p, const char* s)
+DSTR_BOOL dstr_contains_sz(const DSTR_IMP* p, const char* s)
 {
     return dstr_find_sz(p, 0, s) != DSTR_NPOS;
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_icontains_sz(const DSTR p, const char* s)
+DSTR_BOOL dstr_icontains_sz(const DSTR_IMP* p, const char* s)
 {
     return dstr_ifind_sz(p, 0, s) != DSTR_NPOS;
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_suffix_sz(const DSTR p, const char* s)
+DSTR_BOOL dstr_suffix_sz(const DSTR_IMP* p, const char* s)
 {
     /* don't ignore case */
     return dstr_suffix_sz_imp(p, s, DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_isuffix_sz(const DSTR p, const char* s)
+DSTR_BOOL dstr_isuffix_sz(const DSTR_IMP* p, const char* s)
 {
     /* ignore case */
     return dstr_suffix_sz_imp(p, s, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_prefix_sz(const DSTR p, const char* s)
+DSTR_BOOL dstr_prefix_sz(const DSTR_IMP* p, const char* s)
 {
     return dstr_prefix_sz_imp(p, s, DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_iprefix_sz(const DSTR p, const char* s)
+DSTR_BOOL dstr_iprefix_sz(const DSTR_IMP* p, const char* s)
 {
     return dstr_prefix_sz_imp(p, s, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_ffo_sz(const DSTR p, size_t pos, const char* pattern)
+size_t dstr_ffo_sz(const DSTR_IMP* p, size_t pos, const char* pattern)
 {
     return dstr_ffo_imp(p, pos, pattern, /*not_of*/DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_ffo_ds(const DSTR p, size_t pos, const DSTR pattern)
+size_t dstr_ffo_ds(const DSTR_IMP* p, size_t pos, const DSTR_IMP* pattern)
 {
     return dstr_ffo_imp(p, pos, DBUF(pattern), DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_ffno_sz(const DSTR p, size_t pos, const char* s)
+size_t dstr_ffno_sz(const DSTR_IMP* p, size_t pos, const char* s)
 {
     return dstr_ffo_imp(p, pos, s, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_ffno_ds(const DSTR p, size_t pos, const DSTR s)
+size_t dstr_ffno_ds(const DSTR_IMP* p, size_t pos, const DSTR_IMP* s)
 {
     return dstr_ffo_imp(p, pos, DBUF(s), DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_isblank(const DSTR p)
+DSTR_BOOL dstr_isblank(const DSTR_IMP* p)
 {
     return dstr_ffno_sz(p, 0, " \t") == DSTR_NPOS;
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t dstr_substr(const DSTR p,
+size_t dstr_substr(const DSTR_IMP* p,
                    size_t pos,
                    size_t count,
                    char dest[],
@@ -1059,7 +1060,7 @@ size_t dstr_substr(const DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
+int dstr_append_vsprintf(DSTR_IMP* p, const char* fmt, va_list argptr)
 {
     int len;
     va_list argptr2;
@@ -1084,7 +1085,7 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_sprintf(DSTR p, const char* fmt, ...)
+int dstr_append_sprintf(DSTR_IMP* p, const char* fmt, ...)
 {
     int result;
     va_list argptr;
@@ -1097,7 +1098,7 @@ int dstr_append_sprintf(DSTR p, const char* fmt, ...)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_vsprintf(DSTR p, const char* fmt, va_list argptr)
+int dstr_assign_vsprintf(DSTR_IMP* p, const char* fmt, va_list argptr)
 {
     dstr_assert_valid(p);
     dstr_truncate_imp(p, 0);
@@ -1105,7 +1106,7 @@ int dstr_assign_vsprintf(DSTR p, const char* fmt, va_list argptr)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_assign_sprintf(DSTR p, const char* fmt, ...)
+int dstr_assign_sprintf(DSTR_IMP* p, const char* fmt, ...)
 {
     int result;
     va_list argptr;
@@ -1118,9 +1119,9 @@ int dstr_assign_sprintf(DSTR p, const char* fmt, ...)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_vsprintf(const char* fmt, va_list argptr)
+DSTR_IMP* dstr_create_vsprintf(const char* fmt, va_list argptr)
 {
-    DSTR result = dstr_alloc_empty();
+    DSTR_IMP* result = dstr_alloc_empty();
     if (!result)
         return NULL;
 
@@ -1129,9 +1130,9 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_create_sprintf(const char* fmt, ...)
+DSTR_IMP* dstr_create_sprintf(const char* fmt, ...)
 {
-    DSTR result;
+    DSTR_IMP* result;
     va_list argptr;
 
     va_start(argptr, fmt);
@@ -1142,14 +1143,14 @@ DSTR dstr_create_sprintf(const char* fmt, ...)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_insert_cc(DSTR p, size_t index, char c, size_t count)
+int dstr_insert_cc(DSTR_IMP* p, size_t index, char c, size_t count)
 {
     dstr_assert_valid(p);
     return dstr_insert_cc_imp(p, index, c, count);
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_insert_sz(DSTR p, size_t index, const char* value)
+int dstr_insert_sz(DSTR_IMP* p, size_t index, const char* value)
 {
     dstr_assert_valid(p);
 
@@ -1160,7 +1161,7 @@ int dstr_insert_sz(DSTR p, size_t index, const char* value)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_insert_ds(DSTR dest, size_t index, const DSTR src)
+int dstr_insert_ds(DSTR_IMP* dest, size_t index, const DSTR_IMP* src)
 {
     dstr_assert_valid(dest);
     dstr_assert_valid(src);
@@ -1168,7 +1169,7 @@ int dstr_insert_ds(DSTR dest, size_t index, const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_insert_bl(DSTR p, size_t index, const char* buff, size_t len)
+int dstr_insert_bl(DSTR_IMP* p, size_t index, const char* buff, size_t len)
 {
     dstr_assert_valid(p);
 
@@ -1182,7 +1183,7 @@ int dstr_insert_bl(DSTR p, size_t index, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_compare_sz(const DSTR lhs, const char* sz)
+int dstr_compare_sz(const DSTR_IMP* lhs, const char* sz)
 {
     int result;
 
@@ -1202,7 +1203,7 @@ int dstr_compare_sz(const DSTR lhs, const char* sz)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_compare_ds(const DSTR lhs, const DSTR rhs)
+int dstr_compare_ds(const DSTR_IMP* lhs, const DSTR_IMP* rhs)
 {
     dstr_assert_valid(lhs);
     dstr_assert_valid(rhs);
@@ -1211,7 +1212,7 @@ int dstr_compare_ds(const DSTR lhs, const DSTR rhs)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_equal_sz(const DSTR lhs, const char* sz)
+DSTR_BOOL dstr_equal_sz(const DSTR_IMP* lhs, const char* sz)
 {
     dstr_assert_valid(lhs);
 
@@ -1222,7 +1223,7 @@ DSTR_BOOL dstr_equal_sz(const DSTR lhs, const char* sz)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_iequal_sz(const DSTR lhs, const char* sz)
+DSTR_BOOL dstr_iequal_sz(const DSTR_IMP* lhs, const char* sz)
 {
     dstr_assert_valid(lhs);
 
@@ -1233,7 +1234,7 @@ DSTR_BOOL dstr_iequal_sz(const DSTR lhs, const char* sz)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_equal_ds(const DSTR lhs, const DSTR rhs)
+DSTR_BOOL dstr_equal_ds(const DSTR_IMP* lhs, const DSTR_IMP* rhs)
 {
     dstr_assert_valid(lhs);
     dstr_assert_valid(rhs);
@@ -1245,21 +1246,21 @@ DSTR_BOOL dstr_equal_ds(const DSTR lhs, const DSTR rhs)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_replace_cc(DSTR p, size_t pos, size_t count_old, char c, size_t count_new)
+int dstr_replace_cc(DSTR_IMP* p, size_t pos, size_t count_old, char c, size_t count_new)
 {
     dstr_assert_valid(p);
     return dstr_replace_cc_imp(p, pos, count_old, c, count_new);
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_replace_sz(DSTR p, size_t pos, size_t len, const char* value)
+int dstr_replace_sz(DSTR_IMP* p, size_t pos, size_t len, const char* value)
 {
     dstr_assert_valid(p);
     return dstr_replace_imp(p, pos, len, value, (value ? strlen(value) : 0));
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_replace_ds(DSTR dest, size_t pos, size_t len, const DSTR src)
+int dstr_replace_ds(DSTR_IMP* dest, size_t pos, size_t len, const DSTR_IMP* src)
 {
     dstr_assert_valid(dest);
     dstr_assert_valid(src);
@@ -1267,14 +1268,14 @@ int dstr_replace_ds(DSTR dest, size_t pos, size_t len, const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_replace_bl(DSTR p, size_t pos, size_t count, const char* buff, size_t buflen)
+int dstr_replace_bl(DSTR_IMP* p, size_t pos, size_t count, const char* buff, size_t buflen)
 {
     dstr_assert_valid(p);
     return dstr_replace_imp(p, pos, count, buff, buflen);
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_trim_right(DSTR p)
+void dstr_trim_right(DSTR_IMP* p)
 {
     size_t len;
     dstr_assert_valid(p);
@@ -1294,7 +1295,7 @@ void dstr_trim_right(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_trim_left(DSTR p)
+void dstr_trim_left(DSTR_IMP* p)
 {
     size_t pos = 0;
     dstr_assert_valid(p);
@@ -1313,14 +1314,14 @@ void dstr_trim_left(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_trim_both(DSTR p)
+void dstr_trim_both(DSTR_IMP* p)
 {
     dstr_trim_left(p);
     dstr_trim_right(p);
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_ascii_upper(DSTR p)
+void dstr_ascii_upper(DSTR_IMP* p)
 {
     char* s;
 
@@ -1334,7 +1335,7 @@ void dstr_ascii_upper(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_ascii_lower(DSTR p)
+void dstr_ascii_lower(DSTR_IMP* p)
 {
     char* s;
 
@@ -1348,7 +1349,7 @@ void dstr_ascii_lower(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_reverse(DSTR p)
+void dstr_reverse(DSTR_IMP* p)
 {
     size_t first;
     size_t last;
@@ -1370,7 +1371,7 @@ void dstr_reverse(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_swap(DSTR d1, DSTR d2)
+void dstr_swap(DSTR_IMP* d1, DSTR_IMP* d2)
 {
     dstr_assert_valid(d1);
     dstr_assert_valid(d2);
@@ -1392,7 +1393,7 @@ void dstr_swap(DSTR d1, DSTR d2)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_fgets(DSTR p, FILE* fp)
+int dstr_fgets(DSTR_IMP* p, FILE* fp)
 {
     int c;
 
@@ -1423,7 +1424,7 @@ int dstr_fgets(DSTR p, FILE* fp)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_fgetline(DSTR p, FILE* fp)
+int dstr_fgetline(DSTR_IMP* p, FILE* fp)
 {
     int c;
 
@@ -1448,7 +1449,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
 }
 /*-------------------------------------------------------------------------------*/
 
-unsigned int dstr_hash(const DSTR src)
+unsigned int dstr_hash(const DSTR_IMP* src)
 {
     const char* p;
     size_t len;
@@ -1469,7 +1470,7 @@ unsigned int dstr_hash(const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_itoa(DSTR dest, long n)
+int dstr_itoa(DSTR_IMP* dest, long n)
 {
     /*
      *   Not the fastest but definitely the simplest
@@ -1478,7 +1479,7 @@ int dstr_itoa(DSTR dest, long n)
 }
 /*-------------------------------------------------------------------------------*/
 
-long dstr_atoi(const DSTR src)
+long dstr_atoi(const DSTR_IMP* src)
 {
     const char* p;
     int base = 10;
@@ -1510,13 +1511,13 @@ long dstr_atoi(const DSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_isdigits(const DSTR src)
+DSTR_BOOL dstr_isdigits(const DSTR_IMP* src)
 {
     return dstr_isdigits_imp(src, DSTR_FALSE);
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_isxdigits(const DSTR src)
+DSTR_BOOL dstr_isxdigits(const DSTR_IMP* src)
 {
     return dstr_isdigits_imp(src, DSTR_TRUE);
 }

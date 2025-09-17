@@ -31,7 +31,7 @@ typedef struct DSTR_IMP
     uint32_t capacity;
     char*  data;
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
-} *DSTR;
+} DSTR_IMP, *DSTR;
 
 #define BASE(p)       (p)
 #define DBUF(p)       (BASE(p)->data)
@@ -56,90 +56,91 @@ extern "C" {
 #endif
 
 /* create an empty DSTR*/
-DSTR dstr_create(void);
+DSTR_IMP* dstr_create(void);
 
 /* create an empty DSTR with at least LEN reserved storage*/
-DSTR dstr_create_reserve(size_t len);
+DSTR_IMP* dstr_create_reserve(size_t len);
 
 /* from one or more chars*/
-DSTR dstr_create_cc(char c, size_t count);
+DSTR_IMP* dstr_create_cc(char c, size_t count);
 
 /* create from a c-string*/
-DSTR dstr_create_sz(const char* sz);
+DSTR_IMP* dstr_create_sz(const char* sz);
 
 /* create from another DSTR*/
-DSTR dstr_create_ds(const DSTR rhs);
+DSTR_IMP* dstr_create_ds(const DSTR_IMP* rhs);
 
 /* create from a substr of another DSTR*/
-DSTR dstr_create_substr(const DSTR p, size_t pos, size_t count);
+DSTR_IMP* dstr_create_substr(const DSTR_IMP* p, size_t pos, size_t count);
 
 /* create from a buffer and length*/
-DSTR dstr_create_bl(const char* buff, size_t len);
+DSTR_IMP* dstr_create_bl(const char* buff, size_t len);
 
 /* create by slurp a textfile*/
-DSTR dstr_create_fromfile(const char* fname);
-DSTR dstr_assign_fromfile(DSTR p, const char* fname);
+DSTR_IMP* dstr_create_fromfile(const char* fname);
+DSTR_IMP* dstr_assign_fromfile(DSTR_IMP* p, const char* fname);
 
 /* create from a [v]sprintf like call*/
-DSTR dstr_create_sprintf(const char* fmt, ...);
-DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
+DSTR_IMP* dstr_create_sprintf(const char* fmt, ...);
+DSTR_IMP* dstr_create_vsprintf(const char* fmt, va_list argptr);
 
 /* destroy a DSTR object*/
-void dstr_destroy(DSTR p);
+void dstr_destroy(DSTR_IMP* p);
+void dstr_clean_data(DSTR_IMP* p);
 
 /*
  *   Assign | Insert | Append | Replace
  *   a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
  */
-int dstr_assign_cc(DSTR dest, char c, size_t count);
-int dstr_assign_sz(DSTR dest, const char* value);
-int dstr_assign_ds(DSTR dest, const DSTR src);
-int dstr_assign_bl(DSTR dest, const char* buff, size_t len);
-int dstr_assign_substr(DSTR dest, const DSTR p, size_t pos, size_t count);
-int dstr_assign_sprintf(DSTR dest, const char* fmt, ...);
-int dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
+int dstr_assign_cc(DSTR_IMP* dest, char c, size_t count);
+int dstr_assign_sz(DSTR_IMP* dest, const char* value);
+int dstr_assign_ds(DSTR_IMP* dest, const DSTR_IMP* src);
+int dstr_assign_bl(DSTR_IMP* dest, const char* buff, size_t len);
+int dstr_assign_substr(DSTR_IMP* dest, const DSTR_IMP* p, size_t pos, size_t count);
+int dstr_assign_sprintf(DSTR_IMP* dest, const char* fmt, ...);
+int dstr_assign_vsprintf(DSTR_IMP* dest, const char* fmt, va_list argptr);
 
-int dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
-int dstr_insert_sz(DSTR dest, size_t index, const char* value);
-int dstr_insert_ds(DSTR dest, size_t index, const DSTR src);
-int dstr_insert_bl(DSTR dest, size_t index, const char* buff, size_t len);
+int dstr_insert_cc(DSTR_IMP* dest, size_t index, char c, size_t count);
+int dstr_insert_sz(DSTR_IMP* dest, size_t index, const char* value);
+int dstr_insert_ds(DSTR_IMP* dest, size_t index, const DSTR_IMP* src);
+int dstr_insert_bl(DSTR_IMP* dest, size_t index, const char* buff, size_t len);
 
-int dstr_append_c(DSTR dest, char c);
-int dstr_append_cc(DSTR dest, char c, size_t count);
-int dstr_append_sz(DSTR dest, const char* value);
-int dstr_append_ds(DSTR dest, const DSTR src);
+int dstr_append_c(DSTR_IMP* dest, char c);
+int dstr_append_cc(DSTR_IMP* dest, char c, size_t count);
+int dstr_append_sz(DSTR_IMP* dest, const char* value);
+int dstr_append_ds(DSTR_IMP* dest, const DSTR_IMP* src);
 
-int dstr_append_bl(DSTR dest, const char* buff, size_t len);
-int dstr_append_sprintf(DSTR dest, const char* fmt, ...);
-int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
+int dstr_append_bl(DSTR_IMP* dest, const char* buff, size_t len);
+int dstr_append_sprintf(DSTR_IMP* dest, const char* fmt, ...);
+int dstr_append_vsprintf(DSTR_IMP* dest, const char* fmt, va_list argptr);
 
-int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
-int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
-int dstr_replace_ds(DSTR dest, size_t pos, size_t len, const DSTR src);
-int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
+int dstr_replace_cc(DSTR_IMP* dest, size_t pos, size_t len, char c, size_t count);
+int dstr_replace_sz(DSTR_IMP* dest, size_t pos, size_t len, const char* value);
+int dstr_replace_ds(DSTR_IMP* dest, size_t pos, size_t len, const DSTR_IMP* src);
+int dstr_replace_bl(DSTR_IMP* dest, size_t pos, size_t len, const char* buff, size_t buflen);
 
 /*
  *  either truncate to LEN or enlarge capacity to at least LEN without
  *  changing content
  */
-int dstr_resize(DSTR dest, size_t len);
-int dstr_shrink_to_fit(DSTR d);
+int dstr_resize(DSTR_IMP* dest, size_t len);
+int dstr_shrink_to_fit(DSTR_IMP* d);
 
 /*
  *  Following operations manipulate data but no allocation / free
  */
-void dstr_ascii_upper(DSTR p);
-void dstr_ascii_lower(DSTR p);
-void dstr_swap(DSTR d1, DSTR d2);
-void dstr_reverse(DSTR p);
-void dstr_trim_right(DSTR p);
-void dstr_trim_left(DSTR p);
-void dstr_trim_both(DSTR p);
-void dstr_truncate(DSTR p);
-void dstr_remove(DSTR p, size_t pos, size_t count);
+void dstr_ascii_upper(DSTR_IMP* p);
+void dstr_ascii_lower(DSTR_IMP* p);
+void dstr_swap(DSTR_IMP* d1, DSTR_IMP* d2);
+void dstr_reverse(DSTR_IMP* p);
+void dstr_trim_right(DSTR_IMP* p);
+void dstr_trim_left(DSTR_IMP* p);
+void dstr_trim_both(DSTR_IMP* p);
+void dstr_truncate(DSTR_IMP* p);
+void dstr_remove(DSTR_IMP* p, size_t pos, size_t count);
 
 /* 31 bit hash value */
-unsigned int dstr_hash(const DSTR src);
+unsigned int dstr_hash(const DSTR_IMP* src);
 
 /*   atoi integer conversion
  *
@@ -149,99 +150,99 @@ unsigned int dstr_hash(const DSTR src);
  *   '123'      => decimal
  *   '0123'     => decimal !
  */
-long      dstr_atoi(const DSTR src);
-long      dstr_atoll(const DSTR src);
-int       dstr_itoa(DSTR dest, long n);
-DSTR_BOOL dstr_isdigits(const DSTR src);
-DSTR_BOOL dstr_isxdigits(const DSTR src);
+long      dstr_atoi(const DSTR_IMP* src);
+long      dstr_atoll(const DSTR_IMP* src);
+int       dstr_itoa(DSTR_IMP* dest, long n);
+DSTR_BOOL dstr_isdigits(const DSTR_IMP* src);
+DSTR_BOOL dstr_isxdigits(const DSTR_IMP* src);
 
-/* find s in p. returns index or DSTR_NPOS if not found*/
-size_t dstr_find_c(const DSTR p, size_t pos, char c);
-size_t dstr_find_sz(const DSTR p, size_t pos, const char* s);
-size_t dstr_ifind_c(const DSTR p, size_t pos, char c);
-size_t dstr_ifind_sz(const DSTR p, size_t pos, const char* s);
+/* find s in p. returns index or DSTR_IMP*_NPOS if not found*/
+size_t dstr_find_c(const DSTR_IMP* p, size_t pos, char c);
+size_t dstr_find_sz(const DSTR_IMP* p, size_t pos, const char* s);
+size_t dstr_ifind_c(const DSTR_IMP* p, size_t pos, char c);
+size_t dstr_ifind_sz(const DSTR_IMP* p, size_t pos, const char* s);
 
-DSTR_BOOL dstr_contains_sz(const DSTR p, const char* s);
-DSTR_BOOL dstr_icontains_sz(const DSTR p, const char* s);
-DSTR_BOOL dstr_isblank(const DSTR p);
+DSTR_BOOL dstr_contains_sz(const DSTR_IMP* p, const char* s);
+DSTR_BOOL dstr_icontains_sz(const DSTR_IMP* p, const char* s);
+DSTR_BOOL dstr_isblank(const DSTR_IMP* p);
 
 /* p has suffix s, 'endswith' */
-DSTR_BOOL dstr_suffix_sz(const DSTR p, const char* s);
-DSTR_BOOL dstr_isuffix_sz(const DSTR p, const char* s);
+DSTR_BOOL dstr_suffix_sz(const DSTR_IMP* p, const char* s);
+DSTR_BOOL dstr_isuffix_sz(const DSTR_IMP* p, const char* s);
 
 /* p has prefix s, 'startswith' */
-DSTR_BOOL dstr_prefix_sz(const DSTR p, const char* s);
-DSTR_BOOL dstr_iprefix_sz(const DSTR p, const char* s);
+DSTR_BOOL dstr_prefix_sz(const DSTR_IMP* p, const char* s);
+DSTR_BOOL dstr_iprefix_sz(const DSTR_IMP* p, const char* s);
 
 /* ffo = find_first of, ffno = find first not of */
-size_t dstr_ffo_sz(const DSTR p, size_t pos, const char* s);
-size_t dstr_ffo_ds(const DSTR p, size_t pos, const DSTR s);
-size_t dstr_ffno_sz(const DSTR p, size_t pos, const char* s);
-size_t dstr_ffno_ds(const DSTR p, size_t pos, const DSTR s);
+size_t dstr_ffo_sz(const DSTR_IMP* p, size_t pos, const char* s);
+size_t dstr_ffo_ds(const DSTR_IMP* p, size_t pos, const DSTR_IMP* s);
+size_t dstr_ffno_sz(const DSTR_IMP* p, size_t pos, const char* s);
+size_t dstr_ffno_ds(const DSTR_IMP* p, size_t pos, const DSTR_IMP* s);
 
 /* copy NUMBYTES from INDEX to DEST. returns copied characters*/
-size_t dstr_substr(const DSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
+size_t dstr_substr(const DSTR_IMP* p, size_t index, size_t numbytes, char dest[], size_t destsize);
 
 /* 3way strcmp-like comparison*/
-int dstr_compare_sz(const DSTR lhs, const char* sz);
-int dstr_compare_ds(const DSTR lhs, const DSTR rhs);
+int dstr_compare_sz(const DSTR_IMP* lhs, const char* sz);
+int dstr_compare_ds(const DSTR_IMP* lhs, const DSTR_IMP* rhs);
 
 /* is equal*/
-DSTR_BOOL dstr_equal_sz(const DSTR lhs, const char* sz);
-DSTR_BOOL dstr_iequal_sz(const DSTR lhs, const char* sz);
-DSTR_BOOL dstr_equal_ds(const DSTR lhs, const DSTR rhs);
+DSTR_BOOL dstr_equal_sz(const DSTR_IMP* lhs, const char* sz);
+DSTR_BOOL dstr_iequal_sz(const DSTR_IMP* lhs, const char* sz);
+DSTR_BOOL dstr_equal_ds(const DSTR_IMP* lhs, const DSTR_IMP* rhs);
 
 /* I/O functions*/
-int dstr_fgets(DSTR d, FILE* fp);
-int dstr_fgetline(DSTR d, FILE* fp);
+int dstr_fgets(DSTR_IMP* d, FILE* fp);
+int dstr_fgetline(DSTR_IMP* d, FILE* fp);
 
-inline size_t dstr_length(const DSTR p) {
+inline size_t dstr_length(const DSTR_IMP* p) {
     return DLEN(p);
 }
 
-inline size_t dstr_capacity(const DSTR p) {
+inline size_t dstr_capacity(const DSTR_IMP* p) {
     return DCAP(p);
 }
 
-inline DSTR_BOOL dstr_isempty(const DSTR p) {
+inline DSTR_BOOL dstr_isempty(const DSTR_IMP* p) {
     return (DLEN(p) == 0);
 }
 
-inline const char* dstr_cstring(const DSTR p) {
+inline const char* dstr_cstring(const DSTR_IMP* p) {
     return DBUF(p);
 }
 
-inline char dstr_getchar(const DSTR p, size_t pos) {
+inline char dstr_getchar(const DSTR_IMP* p, size_t pos) {
     return DVAL(p, pos);
 }
 
-inline void dstr_putchar(DSTR p, size_t pos, char c) {
+inline void dstr_putchar(DSTR_IMP* p, size_t pos, char c) {
     DVAL(p, pos) = c;
 }
 
-inline DSTR_BOOL dstr_valid_index(const DSTR p, size_t pos) {
+inline DSTR_BOOL dstr_valid_index(const DSTR_IMP* p, size_t pos) {
     return (pos < DLEN(p));
 }
 
-inline char dstr_getchar_safe(const DSTR p, long pos) {
+inline char dstr_getchar_safe(const DSTR_IMP* p, long pos) {
     if (pos < 0) pos += (long) DLEN(p);
     return dstr_valid_index(p, pos) ? DVAL(p, pos) : (char)'\0';
 }
 
-inline void dstr_putchar_safe(DSTR p, long pos, char c) {
+inline void dstr_putchar_safe(DSTR_IMP* p, long pos, char c) {
     if (pos < 0) pos += (long) DLEN(p);
     if (dstr_valid_index(p, pos))
         DVAL(p, pos) = c;
 }
 
-inline void dstr_chop(DSTR p) {
+inline void dstr_chop(DSTR_IMP* p) {
     if (DLEN(p) > 0) {
         DLEN(p) -= 1;
         DVAL(p, DLEN(p)) = '\0';
     }
 }
 
-static inline int dstr_append_inline(DSTR p, char c) {
+static inline int dstr_append_inline(DSTR_IMP* p, char c) {
     if (DLEN(p) + 1 < DCAP(p)) {
         if (c) {
             DVAL(p, DLEN(p)) = c;
@@ -252,6 +253,14 @@ static inline int dstr_append_inline(DSTR p, char c) {
     }
     /*else*/
     return dstr_append_c(p, c);
+}
+
+static inline void dstr_init_data(DSTR_IMP* p)
+{
+    p->length = 0;
+    p->capacity = DSTR_INITIAL_CAPACITY;
+    p->sso_buffer[0] = '\0';
+    p->data = &p->sso_buffer[0];
 }
 
 #ifdef __cplusplus
