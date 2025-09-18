@@ -43,7 +43,7 @@ public:
     DString(DString&& rhs)
     {
         init();
-        dstr_swap(&m_imp, &rhs.m_imp);
+        swap(rhs);
     }
 #endif
 
@@ -63,7 +63,8 @@ public:
     //
     ~DString()
     {
-        dstr_clean_data(pImp());
+        if (capacity() > DSTR_INITIAL_CAPACITY)
+            dstr_clean_data(pImp());
     }
 
     // slurp a testfile into DString
@@ -91,13 +92,13 @@ public:
     DString& operator=(const DString& rhs)
     {
         if (&rhs != this)
-            dstr_assign_ds(pImp(), rhs.pImp());
+            assign(rhs);
         return *this;
     }
 
     DString& operator=(const char* sz)
     {
-        dstr_assign_sz(pImp(), sz);
+        assign(sz);
         return *this;
     }
 
@@ -338,7 +339,7 @@ public:
 
     void swap(DString& rhs)
     {
-        dstr_swap(pImp(), &rhs.m_imp);
+        dstr_swap(pImp(), rhs.pImp());
     }
 
     size_t copy_substr(size_t pos, size_t numbytes, char dest[], size_t destsize)
