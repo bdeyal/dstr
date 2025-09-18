@@ -28,7 +28,7 @@ done
 
 # Test with C++ compilation (No modern C++)
 #
-CXXFLAGS="-I../include -x c++ -std=c++98 -W -Wall -Wextra"
+CXXFLAGS="-I../include -x c++ -std=c++11 -W -Wall -Wextra"
 
 for COMP in g++ clang++; do
 	echo ">>>> VALGRIND ($COMP) TEST..."
