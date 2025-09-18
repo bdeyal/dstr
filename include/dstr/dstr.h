@@ -207,7 +207,13 @@ inline DSTR_BOOL dstr_valid_index(CDSTR p, size_t pos) {
     return (pos < dstr_length(p));
 }
 
-inline char dstr_getchar_safe(CDSTR p, long pos) {
+inline void dstr_chop(DSTR p) {
+    if (dstr_length(p) > 0) {
+        p->data[--p->length] = '\0';
+    }
+}
+
+static inline char dstr_getchar_safe(CDSTR p, long pos) {
     if (pos < 0)
         pos += (long) dstr_length(p);
 
@@ -216,18 +222,12 @@ inline char dstr_getchar_safe(CDSTR p, long pos) {
         (char)'\0';
 }
 
-inline void dstr_putchar_safe(DSTR p, long pos, char c) {
+static inline void dstr_putchar_safe(DSTR p, long pos, char c) {
     if (pos < 0)
         pos += (long) dstr_length(p);
 
     if (dstr_valid_index(p, pos))
         dstr_putchar(p, pos, c);
-}
-
-inline void dstr_chop(DSTR p) {
-    if (dstr_length(p) > 0) {
-        p->data[--p->length] = '\0';
-    }
 }
 
 static inline int dstr_append_inline(DSTR p, char c) {

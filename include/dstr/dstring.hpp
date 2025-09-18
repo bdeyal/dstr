@@ -67,6 +67,11 @@ public:
             dstr_clean_data(pImp());
     }
 
+    DString substr(size_t pos, size_t count) const
+    {
+        return DString(*this, pos, count);
+    }
+
     // slurp a testfile into DString
     //
     int from_file(const char* fname)

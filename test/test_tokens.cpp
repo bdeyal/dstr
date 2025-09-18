@@ -32,7 +32,7 @@ void string_tokens(const DString& s, const DString& sep, std::vector<DString>& r
 
         // Create a substring to print
         //
-        DString token = DString(s, first, last - first);
+        DString token = s.substr(first, last - first);
         tmp.push_back(token);
 
         // Prepare for next iteration.
