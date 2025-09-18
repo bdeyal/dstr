@@ -385,7 +385,7 @@ public:
     }
 
     char& operator[](size_t pos) {
-        return DBUF(pImp())[pos];
+        return pImp()->data[pos];
     }
 
     unsigned int hash() const {
@@ -515,8 +515,9 @@ private:
         dstr_init_data(pImp());
     }
 
-    const DSTR_IMP* pImp() const { return &m_imp; }
-    DSTR_IMP* pImp()             { return &m_imp; }
+
+    CDSTR pImp() const { return &m_imp; }
+    DSTR  pImp()       { return &m_imp; }
 
     DSTR_IMP m_imp;
 };
