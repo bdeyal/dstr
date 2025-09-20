@@ -12,50 +12,42 @@ public:
     //
     DString()
     {
-        init();
     }
 
     explicit DString(size_t len)
     {
-        init();
         resize(len);
     }
 
     DString(char c, size_t count)
     {
-        init();
         assign(c, count);
     }
 
     DString(const char* sz)
     {
-        init();
         assign(sz);
     }
 
     DString(const DString& rhs)
     {
-        init();
         assign(rhs);
     }
 
 #if __cplusplus >= 201103L
     DString(DString&& rhs)
     {
-        init();
         swap(rhs);
     }
 #endif
 
     DString(const DString& rhs, size_t pos, size_t count)
     {
-        init();
         assign(rhs, pos, count);
     }
 
     DString(const char* buffer, size_t len)
     {
-        init();
         assign(buffer, len);
     }
 
@@ -517,15 +509,21 @@ public:
     }
 
 private:
-    void init() {
-        dstr_init_data(pImp());
-    }
-
 
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
-    DSTR_IMP m_imp;
+    struct DSTR_IMP_Aux : DSTR_IMP {
+        DSTR_IMP_Aux()
+        {
+            length = 0;
+            capacity = DSTR_INITIAL_CAPACITY;
+            sso_buffer[0] = '\0';
+            data = &sso_buffer[0];
+        }
+    };
+
+    DSTR_IMP_Aux m_imp;
 };
 
 
