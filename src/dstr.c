@@ -100,9 +100,11 @@ static inline size_t min_3(size_t a, size_t b, size_t c)
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline char* dstr_address(CDSTR p, size_t pos)
-{
-    return (char*)(DBUF(p) + pos);
+static inline char* dstr_address(DSTR p, size_t pos) {
+    return (DBUF(p) + pos);
+}
+static inline const char* dstr_address_c(CDSTR p, size_t pos) {
+    return (DBUF(p) + pos);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -114,11 +116,17 @@ static inline char* dstr_tail(DSTR p)
 
 static const char* my_strcasechr(const char* s, int c)
 {
-    c = toupper(c);
+    if (!s)
+        return NULL;
 
-    for ( ; *s ; ++s) {
-        if (toupper(*s) == c)
+    unsigned char uc = (unsigned char) toupper(c);
+    unsigned char lc = (unsigned char) tolower(c);
+
+    while (*s != '\0') {
+        unsigned char curr = *s;
+        if (curr == lc || curr == uc)
             return s;
+        ++s;
     }
 
     return NULL;
@@ -1000,7 +1008,7 @@ size_t dstr_substr(CDSTR p,
     count = min_3( count, destsize - 1, DLEN(p) - pos );
 
     if (count > 0)
-        memcpy(dest, dstr_address(p, pos), count);
+        memcpy(dest, dstr_address_c(p, pos), count);
 
     dest[count] = '\0';
     return count + 1;
