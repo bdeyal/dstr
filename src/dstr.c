@@ -49,6 +49,7 @@
    #else
       #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
    #endif
+   #define strcasecmp _stricmp
 #endif
 /*-------------------------------------------------------------------------------*/
 
@@ -101,45 +102,6 @@ static inline char* dstr_address(CDSTR p, size_t pos)
 static inline char* dstr_tail(DSTR p)
 {
     return dstr_address(p, DLEN(p));
-}
-/*-------------------------------------------------------------------------------*/
-
-static size_t my_strnlen(const char* s, size_t maxlen)
-{
-    const char* p;
-
-    if (maxlen == DSTR_NPOS)
-        return strlen(s);
-
-    if ((p = (const char*)memchr(s, '\0', maxlen)) == NULL)
-        return maxlen;
-
-    return (size_t)(p - s);
-}
-/*-------------------------------------------------------------------------------*/
-
-/*
- *   All 'ignore case' functions are non-portable. We see a mix of names
- *   e.g strcasecmp, stricmp, _stricmp, strcmpi etc...
- *   Simpler to implement in C instead of tons of #ifdefs
- */
-static int my_strcasecmp(const char* s1, const char* s2)
-{
-    const unsigned char* p1 = (const unsigned char*) s1;
-    const unsigned char* p2 = (const unsigned char*) s2;
-    int res;
-
-    if (p1 == p2)
-        return 0;
-
-    while ((res = (toupper(*p1) - toupper(*p2))) == 0) {
-        if (*p1 == 0)
-            break;
-
-        ++p1;
-        ++p2;
-    }
-    return res;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -364,7 +326,7 @@ static int dstr_replace_imp(DSTR p,
     bool nothing_to_replace =
         (buff == NULL) || \
         (buflen == 0)  || \
-        ((buflen = my_strnlen(buff, buflen)) == 0);
+        ((buflen = strnlen(buff, buflen)) == 0);
 
     if (nothing_to_replace) {
         dstr_remove_imp(p, pos, count);
@@ -499,7 +461,7 @@ static DSTR_BOOL dstr_suffix_sz_imp(CDSTR p,
     compare_addr = DBUF(p) + (DLEN(p) - compare_len);
 
     if (ignore_case)
-        result = (my_strcasecmp(compare_addr, s) == 0);
+        result = (strcasecmp(compare_addr, s) == 0);
     else
         result = (strcmp(compare_addr, s) == 0);
 
@@ -639,7 +601,7 @@ DSTR dstr_create_bl(const char* buff, size_t len)
     if (buff == NULL)
         len = 0;
     else
-        len = my_strnlen(buff, len);
+        len = strnlen(buff, len);
 
     return dstr_create_buff_imp(buff, len);
 }
@@ -860,7 +822,7 @@ int dstr_assign_bl(DSTR p, const char* buff, size_t len)
         return DSTR_SUCCESS;
     }
 
-    len = my_strnlen(buff, len);
+    len = strnlen(buff, len);
     return dstr_assign_imp(p, buff, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -945,7 +907,7 @@ int dstr_append_bl(DSTR p, const char* buff, size_t len)
     if (buff == NULL)
         return DSTR_SUCCESS;
 
-    if ((len = my_strnlen(buff, len)) == 0)
+    if ((len = strnlen(buff, len)) == 0)
         return DSTR_SUCCESS;
 
     return dstr_append_imp(p, buff, len);
@@ -1189,7 +1151,7 @@ int dstr_insert_bl(DSTR p, size_t index, const char* buff, size_t len)
     if (buff == NULL || len == 0)
         return DSTR_SUCCESS;
 
-    len = my_strnlen(buff, len);
+    len = strnlen(buff, len);
 
     return dstr_insert_imp(p, index, buff, len);
 }
@@ -1242,7 +1204,7 @@ DSTR_BOOL dstr_iequal_sz(CDSTR lhs, const char* sz)
     if (sz == NULL)
         return (DLEN(lhs) == 0);
 
-    return (my_strcasecmp(DBUF(lhs), sz) == 0);
+    return (strcasecmp(DBUF(lhs), sz) == 0);
 }
 /*-------------------------------------------------------------------------------*/
 
