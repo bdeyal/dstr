@@ -118,7 +118,8 @@ static const char* my_strcasechr(const char* s, int c)
 }
 /*-------------------------------------------------------------------------------*/
 
-static const char* my_strcasestr(const char* haystack, const char* needle)
+#ifdef _WIN32
+static const char* strcasestr(const char* haystack, const char* needle)
 {
     const char* cp = haystack;
 
@@ -142,6 +143,7 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
 
     return NULL;
 }
+#endif
 /*-------------------------------------------------------------------------------*/
 
 static DSTR dstr_alloc_empty(void)
@@ -430,7 +432,7 @@ static size_t dstr_find_sz_imp(CDSTR p,
     search_loc = DBUF(p) + pos;
 
     if (ignore_case)
-        found_loc = my_strcasestr(search_loc, s);
+        found_loc = strcasestr(search_loc, s);
     else
         found_loc = strstr(search_loc, s);
 
