@@ -31,53 +31,60 @@
 } while(0)
 /*--------------------------------------------------------------------------*/
 
+#if defined (__cplusplus)
+#warning Compiling dstr.c as C++ for testing only
+#else
+#if __STDC_VERSION__ < 199901L
+#error dstr requires at least a C99 compiler
+#endif
+#endif
+
+/*
+ *   Get the number of characters vsnprintf would write
+ *   vsnprintf is from C99 onwards
+ */
+#define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
+
+/*
+ *  WIN32 missing functions or functions with different names
+ */
+#ifdef _WIN32
+static const char* my_strcasestr(const char* haystack, const char* needle)
+{
+    const char* cp = haystack;
+
+    if (*needle == '\0')
+        return haystack;
+
+    while (*cp != '\0') {
+        const char* s1 = cp;
+        const char* s2 = needle;
+
+        while ( *s1 && *s2 && (*s1 == *s2 || toupper(*s1) == toupper(*s2)) ) {
+            ++s1;
+            ++s2;
+        }
+
+        if (*s2 == '\0')
+            return cp;
+
+        ++cp;
+    }
+
+    return NULL;
+}
+#define strcasecmp _stricmp
+#define strcasestr my_strcasestr
+#endif
+
 /*
  *   garbage collector / memory checker
  */
-#if !defined(_WIN32)
-   #ifdef GC_DEBUG
-      #include <gc/gc.h>
-      #define malloc  GC_MALLOC
-      #define free    GC_FREE
-      #define realloc GC_REALLOC
-   #endif
-   #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
-#else
-   #if defined (__BORLANDC__) && (__BORLANDC__  < 0x550) || \
-       defined (_MSC_VER) && (_MSC_VER <= 1200)
-      #define get_vsprintf_len(f, a) _vscprintf(f, a)
-   #else
-      #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
-   #endif
-   #define strcasecmp _stricmp
-#endif
-/*-------------------------------------------------------------------------------*/
-
-#if !defined(va_copy)
-   #ifdef __va_copy
-      #define va_copy __va_copy
-   #else
-      #define va_copy(d,s) ((d) = (s))
-   #endif
-#endif
-/*-------------------------------------------------------------------------------*/
-
-#ifdef _WIN32
-#if defined(_MSC_VER) && (_MSC_VER <= 1200) || \
-    defined(__BORLANDC__) && (__BORLANDC__  < 0x550)
-static int _vscprintf(const char* fmt, va_list argptr)
-{
-    int len;
-    FILE* fp;
-
-    if ((fp = fopen("NUL", "w")) == NULL)
-        return -1;
-
-    len = vfprintf(fp, fmt, argptr);
-    fclose(fp);
-    return len;
-}
-#endif
+#ifdef GC_DEBUG
+#include <gc/gc.h>
+#define malloc  GC_MALLOC
+#define free    GC_FREE
+#define realloc GC_REALLOC
 #endif
 /*-------------------------------------------------------------------------------*/
 
@@ -116,34 +123,6 @@ static const char* my_strcasechr(const char* s, int c)
 
     return NULL;
 }
-/*-------------------------------------------------------------------------------*/
-
-#ifdef _WIN32
-static const char* strcasestr(const char* haystack, const char* needle)
-{
-    const char* cp = haystack;
-
-    if (*needle == '\0')
-        return haystack;
-
-    while (*cp != '\0') {
-        const char* s1 = cp;
-        const char* s2 = needle;
-
-        while ( *s1 && *s2 && (*s1 == *s2 || toupper(*s1) == toupper(*s2)) ) {
-            ++s1;
-            ++s2;
-        }
-
-        if (*s2 == '\0')
-            return cp;
-
-        ++cp;
-    }
-
-    return NULL;
-}
-#endif
 /*-------------------------------------------------------------------------------*/
 
 static DSTR dstr_alloc_empty(void)
@@ -381,7 +360,7 @@ static inline int dstr_append_imp(DSTR p, const char* value, size_t len)
 
 static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
 {
-    dstr_truncate_imp(p, 0);
+    dstr_truncate(p);
     return dstr_append_imp(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -739,14 +718,6 @@ void dstr_destroy(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_truncate(DSTR p)
-{
-    dstr_assert_valid(p);
-    dstr_truncate_imp(p, 0);
-    dstr_assert_valid(p);
-}
-/*-------------------------------------------------------------------------------*/
-
 int dstr_resize(DSTR p, size_t len)
 {
     int result = DSTR_SUCCESS;
@@ -820,7 +791,7 @@ int dstr_assign_bl(DSTR p, const char* buff, size_t len)
     dstr_assert_valid(p);
 
     if (buff == NULL || len == 0) {
-        dstr_truncate_imp(p, 0);
+        dstr_truncate(p);
         return DSTR_SUCCESS;
     }
 
@@ -848,7 +819,7 @@ int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count)
 int dstr_assign_cc(DSTR p, char c, size_t count)
 {
     dstr_assert_valid(p);
-    dstr_truncate_imp(p, 0);
+    dstr_truncate(p);
     return dstr_insert_cc_imp(p, DLEN(p), c, count);
 }
 /*-------------------------------------------------------------------------------*/
@@ -1077,7 +1048,7 @@ int dstr_append_sprintf(DSTR p, const char* fmt, ...)
 int dstr_assign_vsprintf(DSTR p, const char* fmt, va_list argptr)
 {
     dstr_assert_valid(p);
-    dstr_truncate_imp(p, 0);
+    dstr_truncate(p);
     return dstr_append_vsprintf(p, fmt, argptr);
 }
 /*-------------------------------------------------------------------------------*/
@@ -1281,7 +1252,7 @@ void dstr_trim_left(DSTR p)
 
     if (pos > 0) {
         if (pos == DLEN(p))
-            dstr_truncate_imp(p, 0);
+            dstr_truncate(p);
         else
             dstr_remove_imp(p, 0, pos);
     }
@@ -1376,7 +1347,7 @@ int dstr_fgets(DSTR p, FILE* fp)
     dstr_assert_valid(p);
     assert(fp != NULL);
 
-    dstr_truncate_imp(p, 0);
+    dstr_truncate(p);
 
     /* skip blanks */
     do {
@@ -1405,7 +1376,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
     int c;
 
     dstr_assert_valid(p);
-    dstr_truncate_imp(p, 0);
+    dstr_truncate(p);
 
     /* make room for at least 120 chars */
     if (DCAP(p) < 120)
@@ -1413,7 +1384,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
 
     while ((c = fgetc(fp)) != EOF && c != '\n') {
         if (!dstr_append_c(p, c)) {
-            dstr_truncate_imp(p, 0);
+            dstr_truncate(p);
             return EOF;
         }
     }

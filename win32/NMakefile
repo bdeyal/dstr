@@ -8,8 +8,8 @@ CXXFLAGS = $(CFLAGS)
 !ELSE
 CC = cl.exe
 CXX = cl.exe
-CFLAGS = /O2 /nologo /MD /I..\include
-CXXFLAGS = /EHsc $(CFLAGS)
+CFLAGS = /std:c11 /O2 /nologo /MD /I..\include
+CXXFLAGS = /EHsc /O2 /nologo /MD /I..\include
 !ENDIF
 
 PROGRAMS = \

@@ -119,7 +119,7 @@ void dstr_reverse(DSTR p);
 void dstr_trim_right(DSTR p);
 void dstr_trim_left(DSTR p);
 void dstr_trim_both(DSTR p);
-void dstr_truncate(DSTR p);
+//void dstr_truncate(DSTR p);
 void dstr_remove(DSTR p, size_t pos, size_t count);
 
 /* 31 bit hash value */
@@ -250,6 +250,14 @@ static inline void dstr_init_data(DSTR p)
     p->sso_buffer[0] = '\0';
     p->data = &p->sso_buffer[0];
 }
+
+static inline void dstr_truncate(DSTR p)
+{
+    p->length = 0;
+    *p->data = '\0';
+}
+/*-------------------------------------------------------------------------------*/
+
 
 #ifdef __cplusplus
 }
