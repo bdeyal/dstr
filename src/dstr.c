@@ -326,24 +326,27 @@ static int dstr_replace_imp(DSTR p,
     //
     char* first = DBUF(p);
     char* last = first + DLEN(p);
-    DSTR tmp = NULL;
+    int result = DSTR_FAIL;
 
+    // in case of overlap we copy to a tmp DSTR
+    //
     if (first <= buff && buff <= last) {
-        tmp = dstr_create_bl(buff, buflen);
-        if (!tmp)
-            return DSTR_FAIL;
-        buff = DBUF(tmp);
+        DSTR_IMP tmp;
+        dstr_init_data(&tmp);
+
+        if (dstr_assign_bl(&tmp, buff, buflen))
+        {
+            dstr_remove_imp(p, pos, count);
+            buff = DBUF(&tmp);
+            result = dstr_insert_imp(p, pos, buff, buflen);
+            dstr_clean_data(&tmp);
+        }
     }
-
-    // Do the actual remove and insert
-    //
-    dstr_remove_imp(p, pos, count);
-    int result = dstr_insert_imp(p, pos, buff, buflen);
-
-    // If we used a tmp buffer due to overlap - free it
-    //
-    if (tmp)
-        dstr_destroy(tmp);
+    else
+    {
+        dstr_remove_imp(p, pos, count);
+        result = dstr_insert_imp(p, pos, buff, buflen);
+    }
 
     return result;
 }
@@ -723,6 +726,12 @@ void dstr_destroy(DSTR p)
         dstr_clean_data(p);
         free(p);
     }
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_reserve(DSTR p, size_t len)
+{
+    return dstr_grow(p, len) ? DSTR_SUCCESS : DSTR_FAIL;
 }
 /*-------------------------------------------------------------------------------*/
 

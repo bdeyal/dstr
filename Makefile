@@ -1,6 +1,9 @@
 # -*- Makefile -*-
 #
-CFLAGS=-O3 -march=x86-64-v3 -W -Wall -Wextra -Wshadow -Iinclude
+PREFIX=/usr/local
+ARCH=x86-64-v4
+
+CFLAGS=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS=-L./lib64 -Wl,-rpath,./lib64 -s
 
@@ -28,7 +31,7 @@ PROGRAMS = \
 
 DEPS = ./include/dstr/dstr.h
 DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
-LIB=./lib64/libdstr.so
+LIB=./lib64/libdstr.so.1.0.0
 
 all: $(PROGRAMS)
 
@@ -52,7 +55,7 @@ all: $(PROGRAMS)
 
 $(LIB): ./src/dstr.c $(DEPS) Makefile
 	mkdir -p ./lib64
-	gcc $(CFLAGS) -shared -fPIC ./src/dstr.c -o ./lib64/libdstr.so.1.0.0
+	$(CC) $(CFLAGS) -DNDEBUG -shared -DPIC -fPIC ./src/dstr.c -o ./lib64/libdstr.so.1.0.0
 	ln -sf libdstr.so.1.0.0 ./lib64/libdstr.so.1
 	ln -sf libdstr.so.1.0.0 ./lib64/libdstr.so
 
@@ -84,3 +87,31 @@ test_various: ./test/dstr_test.sh
 clean:
 	rm -rf ./lib64
 	rm -f ./test/test_file.txt $(PROGRAMS)
+
+
+PREFIX_INCLUDE=$(PREFIX)/include/dstr
+PREFIX_LIB=$(PREFIX)/lib64
+
+# Tested on RHEL 10.0 ONLY
+#
+install: $(LIB)
+	/usr/bin/mkdir -p $(PREFIX_INCLUDE)
+	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr.h $(PREFIX_INCLUDE)
+	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring.hpp $(PREFIX_INCLUDE)
+	/usr/bin/mkdir -p $(PREFIX_LIB)
+	/usr/bin/install -m 0755 -o root -g root --strip $(LIB) -t $(PREFIX_LIB)
+	/usr/bin/ln -sf libdstr.so.1.0.0  $(PREFIX_LIB)/libdstr.so.1
+	/usr/bin/ln -sf libdstr.so.1.0.0  $(PREFIX_LIB)/libdstr.so
+	/usr/bin/echo $(PREFIX_LIB) > /etc/ld.so.conf.d/dstr.conf
+	/usr/sbin/ldconfig
+
+uninstall:
+	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
+	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring.hpp
+	/usr/bin/rmdir $(PREFIX_INCLUDE)
+	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.so
+	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.so.1
+	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.so.1.0.0
+	/usr/bin/rmdir --ignore-fail-on-non-empty $(PREFIX_LIB)
+	/usr/bin/rm -f /etc/ld.so.conf.d/dstr.conf
+	/usr/sbin/ldconfig

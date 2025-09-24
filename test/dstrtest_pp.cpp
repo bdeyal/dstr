@@ -74,8 +74,6 @@ void test_empty_dstr()
 
     DString s1;
     DString s2(nullptr, 0);
-    DString s3((size_t)0);
-    DString s4(100);
     DString s5(nullptr);
     DString s6('\0', 100);
     DString s7('C', 0);
@@ -83,8 +81,6 @@ void test_empty_dstr()
 
     assert(s1.length() == 0);
     assert(s2.length() == 0);
-    assert(s3.length() == 0);
-    assert(s4.length() == 0);
     assert(s5.length() == 0);
     assert(s6.length() == 0);
     assert(s7.length() == 0);
@@ -92,17 +88,13 @@ void test_empty_dstr()
 
     assert(s1.empty());
     assert(s2.empty());
-    assert(s3.empty());
-    assert(s4.empty());
     assert(s5.empty());
     assert(s6.empty());
     assert(s7.empty());
     assert(s8.empty());
 
     assert( s1 == s2 );
-    assert( s2 == s3 );
-    assert( s3 == s4 );
-    assert( s4 == s5 );
+    assert( s2 == s5 );
     assert( s5 == s6 );
     assert( s6 == s7 );
     assert( s7 == s8 );
@@ -110,8 +102,6 @@ void test_empty_dstr()
 
     assert(strlen(s1.c_str()) == 0);
     assert(strlen(s2.c_str()) == 0);
-    assert(strlen(s3.c_str()) == 0);
-    assert(strlen(s4.c_str()) == 0);
     assert(strlen(s5.c_str()) == 0);
     assert(strlen(s6.c_str()) == 0);
     assert(strlen(s7.c_str()) == 0);
@@ -216,7 +206,8 @@ void test_assign()
     assert(s5 == "world");
     assert(s5.length() == strlen("world"));
 
-    DString s6(100);
+    DString s6;
+    s6.reserve(100);
     s6.assign(s5, 0, DSTR_NPOS);
     assert(s5 == s6);
 
@@ -601,7 +592,7 @@ void test_fgets()
         exit(1);
     }
 
-    DString d1(500);
+    DString d1;
     std::string s1;
 
     for (;;) {
@@ -642,7 +633,7 @@ void test_getline()
         exit(1);
     }
 
-    DString d1(500);
+    DString d1;
     std::string s1;
 
     for (;;) {
@@ -1210,6 +1201,30 @@ void test_pop_back_front()
 }
 //-------------------------------------------------
 
+void test_operator_plus()
+{
+    TRACE_FN();
+
+    DString s1("abc");
+    DString s2("def");
+    assert(s1 + s2 == "abcdef");
+
+    char c = 'X';
+    assert(s1 + c == "abcX");
+    assert(c + s1 == "Xabc");
+    assert(s1 + s2 + c == "abcdefX");
+    assert(s1 + c + s2 == "abcXdef");
+    assert(c + s1 + s2 == "Xabcdef");
+
+    const char* sz = "ghi";
+    assert(s1 + sz == "abcghi");
+    assert(sz + s1 == "ghiabc");
+    assert(s1 + s2 + sz == "abcdefghi");
+    assert(s1 + sz + s2 == "abcghidef");
+    assert(sz + s1 + s2 == "ghiabcdef");
+    assert(sz + s1 + c == "ghiabcX");
+    assert(c + s1 + sz == "Xabcghi");
+}
 
 int main()
 {
@@ -1248,5 +1263,6 @@ int main()
     test_move_ctor_assign();
     test_push_back_front();
     test_pop_back_front();
+    test_operator_plus();
     // last test
 }

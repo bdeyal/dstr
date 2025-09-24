@@ -107,6 +107,7 @@ int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t 
  *  changing content
  */
 int dstr_resize(DSTR dest, size_t len);
+int dstr_reserve(DSTR p, size_t len);
 int dstr_shrink_to_fit(DSTR d);
 
 /*

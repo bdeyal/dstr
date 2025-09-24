@@ -14,11 +14,6 @@ public:
     {
     }
 
-    explicit DString(size_t len)
-    {
-        resize(len);
-    }
-
     DString(char c, size_t count)
     {
         assign(c, count);
@@ -171,16 +166,9 @@ public:
         dstr_insert_bl(pImp(), pos, buff, len);
     }
 
-    // Append at the end
-    //
-    void append(char c)
-    {
-        dstr_append_c(pImp(), c);
-    }
-
     void push_back(char c)
     {
-        append(c);
+        dstr_append_inline(pImp(), c);
     }
 
     void push_front(char c)
@@ -193,60 +181,62 @@ public:
         erase(0);
     }
 
-    void append(char c, size_t count)
+    DString& append(char c)
+    {
+        push_back(c);
+        return *this;
+    }
+
+    DString& append(char c, size_t count)
     {
         dstr_append_cc(pImp(), c, count);
+        return *this;
     }
 
-    void append(const char* value)
+    DString& append(const char* value)
     {
         dstr_append_sz(pImp(), value);
+        return *this;
     }
 
-    void append(const DString& rhs)
+    DString& append(const DString& rhs)
     {
         dstr_append_ds(pImp(), rhs.pImp());
+        return *this;
     }
 
-    void append(const char* buff, size_t len)
+    DString& append(const char* buff, size_t len)
     {
         dstr_append_bl(pImp(), buff, len);
+        return *this;
     }
 
-    void append_sprintf(const char* fmt, ...)
+    DString& append_sprintf(const char* fmt, ...)
     {
         va_list args;
         va_start(args, fmt);
         dstr_append_vsprintf(pImp(), fmt, args);
         va_end(args);
+        return *this;
     }
 
-    void append_vsprintf(const char* fmt, va_list args)
+    DString& append_vsprintf(const char* fmt, va_list args)
     {
         dstr_append_vsprintf(pImp(), fmt, args);
+        return *this;
     }
 
     DString& operator+=(char c) {
-        append(c);
-        return *this;
+        return append(c);
     }
 
     DString& operator+=(const char* sz) {
-        append(sz);
-        return *this;
+        return append(sz);
     }
 
     DString& operator+=(const DString& ds) {
-        append(ds);
-        return *this;
+        return append(ds);
     }
-
-#if 0
-    // TODO complete operator+
-    DString  operator+(char c);
-    DString  operator+(const char* sz);
-    DString  operator+(const DString& ds);
-#endif
 
     // Replace functions
     //
@@ -268,6 +258,11 @@ public:
     void replace(size_t pos, size_t len, const char* buff, size_t bufflen)
     {
         dstr_replace_bl(pImp(), pos, len, buff, bufflen);
+    }
+
+    void reserve(size_t len)
+    {
+        dstr_reserve(pImp(), len);
     }
 
     // shrink
@@ -525,6 +520,41 @@ private:
 
     DSTR_IMP_Aux m_imp;
 };
+//----------------------------------------------------------------
 
+inline DString operator+(const DString& lhs, const DString& rhs)
+{
+    DString result(lhs);
+    result.append(rhs);
+    return result;
+}
+
+inline DString operator+(const DString& lhs, char ch)
+{
+    DString result(lhs);
+    result.append(ch);
+    return result;
+}
+
+inline DString operator+(char ch, const DString& rhs)
+{
+    DString result(ch, 1);
+    result.append(rhs);
+    return result;
+}
+
+inline DString operator+(const DString& lhs, const char* sz)
+{
+    DString result(lhs);
+    result.append(sz);
+    return result;
+}
+
+inline DString operator+(const char* sz, const DString& rhs)
+{
+    DString result(sz);
+    result.append(rhs);
+    return result;
+}
 
 #endif
