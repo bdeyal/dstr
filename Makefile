@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 #
 PREFIX=/usr/local
-ARCH=x86-64-v4
+ARCH=x86-64-v3
 
 CFLAGS=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
