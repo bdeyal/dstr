@@ -761,12 +761,18 @@ int dstr_shrink_to_fit(DSTR p)
 {
     dstr_assert_valid(p);
 
-    DSTR tmp = dstr_create_ds(p);
-    if (!tmp)
+    // Nothing to shrink
+    //
+    if (DCAP(p)/2 < DLEN(p))
+        return DSTR_SUCCESS;
+
+    DSTR_IMP tmp;
+    dstr_init_data(&tmp);
+    if (!dstr_assign_ds(&tmp, p))
         return DSTR_FAIL;
 
-    dstr_swap(p, tmp);
-    dstr_destroy(tmp);
+    dstr_swap(p, &tmp);
+    dstr_clean_data(&tmp);
 
     dstr_assert_valid(p);
     return DSTR_SUCCESS;
