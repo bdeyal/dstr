@@ -18,7 +18,8 @@ PROGRAMS = \
 	test_dgets.exe \
 	test_map.exe \
 	test_vector.exe \
-	test_tokens.exe
+	test_tokens.exe \
+	test_algs.exe
 
 DEPS = ..\include\dstr\dstr.h
 DEPS_PP = ..\include\dstr\dstring.hpp ..\include\dstr\dstr.h
@@ -43,6 +44,9 @@ test_map.exe: ..\test\test_map.cpp dstr.obj
 test_tokens.exe: ..\test\test_tokens.cpp dstr.obj
 	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_tokens.cpp dstr.obj /Fe"$@"
 
+test_algs.exe: ..\test\test_algs.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_algs.cpp dstr.obj /Fe"$@"
+
 clean:
 	del *~ *.obj
 
@@ -56,6 +60,7 @@ test: $(PROGRAMS)
 	.\test_vector.exe
 	.\test_map.exe
 	.\test_tokens.exe
+	.\test_algs.exe
 
 dstr.obj: ..\src\dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c

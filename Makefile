@@ -3,9 +3,10 @@
 PREFIX=/usr/local
 ARCH=x86-64-v3
 
+LIBDIR_FULLPATH=$(shell readlink -f ./lib64)
 CFLAGS=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
-LDFLAGS=-L./lib64 -Wl,-rpath,./lib64 -s
+LDFLAGS=-L$(LIBDIR_FULLPATH) -Wl,-rpath,$(LIBDIR_FULLPATH) -s
 
 ifeq ($(COMP),)
 	COMP=gcc
@@ -27,7 +28,8 @@ PROGRAMS = \
 	./test/test_dgets \
 	./test/test_map \
 	./test/test_vector \
-	./test/test_tokens
+	./test/test_tokens \
+	./test/test_algs
 
 DEPS = ./include/dstr/dstr.h
 DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
@@ -53,6 +55,10 @@ all: $(PROGRAMS)
 ./test/test_tokens: ./test/test_tokens.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
+./test/test_algs: ./test/test_algs.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+
+
 $(LIB): ./src/dstr.c $(DEPS) Makefile
 	mkdir -p ./lib64
 	$(CC) $(CFLAGS) -DNDEBUG -shared -DPIC -fPIC ./src/dstr.c -o ./lib64/libdstr.so.1.0.0
@@ -67,6 +73,7 @@ test: $(PROGRAMS) ./test/test_file.txt
 	./test/test_map
 	./test/test_vector
 	./test/test_tokens
+	./test/test_algs
 
 .PHONY: testvg
 testvg: $(PROGRAMS) ./test/test_file.txt
@@ -76,6 +83,7 @@ testvg: $(PROGRAMS) ./test/test_file.txt
 	valgrind ./test/test_map
 	valgrind ./test/test_vector
 	valgrind ./test/test_tokens
+	valgrind ./test/test_algs
 
 ./test/test_file.txt:
 	man gcc 2>/dev/null > ./test/test_file.txt

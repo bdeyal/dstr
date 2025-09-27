@@ -100,70 +100,91 @@ public:
         return *this;
     }
 
-    void assign(char c)
+    DString& assign(char c)
     {
         clear();
         append(c);
+        return *this;
     }
 
-    void assign(char c, size_t count)
+    DString& assign(char c, size_t count)
     {
         dstr_assign_cc(pImp(), c, count);
+        return *this;
     }
 
-    void assign(const char* sz)
+    DString& assign(const char* sz)
     {
         dstr_assign_sz(pImp(), sz);
+        return *this;
     }
 
-    void assign(const char* buff, size_t len)
+    DString& assign(const char* buff, size_t len)
     {
         dstr_assign_bl(pImp(), buff, len);
+        return *this;
     }
 
-    void assign(const DString& rhs)
+    DString& assign(const DString& rhs)
     {
         dstr_assign_ds(pImp(), rhs.pImp());
+        return *this;
     }
 
-    void assign(const DString& rhs, size_t pos, size_t count)
+#if __cplusplus >= 201103L
+    DString& assign(DString&& rhs) noexcept
+    {
+        if (&rhs != this)
+            swap(rhs);
+        return *this;
+    }
+#endif
+
+    DString& assign(const DString& rhs, size_t pos, size_t count)
     {
         dstr_assign_substr(pImp(), rhs.pImp(), pos, count);
+        return *this;
     }
 
-    void sprintf(const char* fmt, ...)
+    DString& sprintf(const char* fmt, ...)
     {
         va_list args;
         va_start(args, fmt);
         dstr_assign_vsprintf(pImp(), fmt, args);
         va_end(args);
+        return *this;
     }
 
-    void vsprintf(const char* fmt, va_list args)
+    DString& vsprintf(const char* fmt, va_list args)
     {
         dstr_assign_vsprintf(pImp(), fmt, args);
+        return *this;
     }
 
     // Insertion functions
     //
-    void insert(size_t pos, char c, size_t count)
+    DString& insert(size_t pos, char c, size_t count)
     {
         dstr_insert_cc(pImp(), pos, c, count);
+        return *this;
     }
 
-    void insert(size_t pos, const char* value)
+    DString& insert(size_t pos, const char* value)
     {
         dstr_insert_sz(pImp(), pos, value);
+        return *this;
     }
 
-    void insert(size_t pos, const DString& rhs)
+    DString& insert(size_t pos, const DString& rhs)
     {
         dstr_insert_ds(pImp(), pos, rhs.pImp());
+        return *this;
     }
 
-    void insert(size_t pos, const char* buff, size_t len)
+    DString& insert(size_t pos, const char* buff, size_t len)
     {
         dstr_insert_bl(pImp(), pos, buff, len);
+        return *this;
     }
 
     void push_back(char c)
@@ -179,6 +200,16 @@ public:
     void pop_front()
     {
         erase(0);
+    }
+
+    void chop()
+    {
+        dstr_chop(pImp());
+    }
+
+    void pop_back()
+    {
+        chop();
     }
 
     DString& append(char c)
@@ -240,24 +271,28 @@ public:
 
     // Replace functions
     //
-    void replace(size_t pos, size_t len, char c, size_t count)
+    DString& replace(size_t pos, size_t len, char c, size_t count)
     {
         dstr_replace_cc(pImp(), pos, len, c, count);
+        return *this;
     }
 
-    void replace(size_t pos, size_t len, const char* value)
+    DString& replace(size_t pos, size_t len, const char* value)
     {
         dstr_replace_sz(pImp(), pos, len, value);
+        return *this;
     }
 
-    void replace(size_t pos, size_t len, const DString& rhs)
+    DString& replace(size_t pos, size_t len, const DString& rhs)
     {
         dstr_replace_ds(pImp(), pos, len, rhs.pImp());
+        return *this;
     }
 
-    void replace(size_t pos, size_t len, const char* buff, size_t bufflen)
+    DString& replace(size_t pos, size_t len, const char* buff, size_t bufflen)
     {
         dstr_replace_bl(pImp(), pos, len, buff, bufflen);
+        return *this;
     }
 
     void reserve(size_t len)
@@ -319,16 +354,6 @@ public:
         dstr_remove(pImp(), pos, count);
     }
 
-    void chop()
-    {
-        dstr_chop(pImp());
-    }
-
-    void pop_back()
-    {
-        chop();
-    }
-
     void swap(DString& rhs)
     {
         dstr_swap(pImp(), rhs.pImp());
@@ -347,10 +372,6 @@ public:
 
     size_t length() const {
         return dstr_length(pImp());
-    }
-
-    size_t size() const {
-        return length();
     }
 
     size_t capacity() const {
@@ -502,6 +523,24 @@ public:
     int fgetline(FILE* fp) {
         return dstr_fgetline(pImp(), fp);
     }
+
+    // C++ algorithms support : typedefs
+    //
+    typedef char value_type;
+    typedef char& reference;
+    typedef const char& const_reference;
+    typedef char* iterator;
+    typedef const char* const_iterator;
+    typedef std::ptrdiff_t difference_type;
+    typedef size_t size_type;
+
+    // C++ algorithms support : functions
+    //
+    size_type      size()  const { return length(); }
+    iterator       begin()       { return m_imp.data; }
+    const_iterator begin() const { return m_imp.data; }
+    iterator       end()         { return &m_imp.data[m_imp.length]; }
+    const_iterator end()   const { return &m_imp.data[m_imp.length]; }
 
 private:
 
