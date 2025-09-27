@@ -189,6 +189,43 @@ void test_fromfile(const char* fname)
 }
 //-------------------------------------------------
 
+void test_insert_operator(const char* fname)
+{
+    FILE* fp = fopen(fname, "r");
+    if (!fp) {
+        fprintf(stderr, "couldn't open %s: %s\n", fname, strerror(errno));
+        exit(1);
+    }
+
+    ifstream in(fname);
+    if (!in) {
+        cerr << "couldn't open "<< fname << ": " << strerror(errno) << endl;
+        exit(1);
+    }
+
+    DString d1;
+    std::string s1;
+
+    for (;;) {
+        int r1 = d1.fgets(fp);
+        in >> s1;
+
+        if (r1 == EOF) {
+            break;
+        }
+
+        ostringstream out1;
+        ostringstream out2;
+        out1 << d1;
+        out2 << s1;
+        assert(out1.str() == out2.str());
+    }
+    fclose(fp);
+
+    cout << __func__ << ": Good! operator<< equal for DString and std::string" << endl;
+}
+//-------------------------------------------------
+
 
 int main(int argc, char* argv[])
 {
@@ -203,4 +240,5 @@ int main(int argc, char* argv[])
     test_getline(fname);
     test_getline_2(fname);
     test_fromfile(fname);
+    test_insert_operator(fname);
 }

@@ -37,10 +37,7 @@ DString& DString::append_vsprintf(const char* fmt, va_list args)
 
 std::ostream& operator<<(std::ostream& out, const DString& s)
 {
-    for (auto c : s) {
-        if (!out.put(c))
-            break;
-    }
+    out.write(s.c_str(), s.size());
     return out;
 }
 //-----------------------------------------------------------
