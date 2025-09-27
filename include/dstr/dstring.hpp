@@ -531,7 +531,7 @@ public:
     typedef const char& const_reference;
     typedef char* iterator;
     typedef const char* const_iterator;
-    typedef std::ptrdiff_t difference_type;
+    typedef ptrdiff_t difference_type;
     typedef size_t size_type;
 
     // C++ algorithms support : functions
