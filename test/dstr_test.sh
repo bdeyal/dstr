@@ -26,27 +26,28 @@ for COMP in gcc clang; do
 done
 
 
-# Test with C++ compilation (No modern C++)
+# Test with C++ compilation
 #
 CXXFLAGS="-I../include -x c++ -std=c++11 -W -Wall -Wextra"
+SRCFILES="dstrtest_pp.cpp ../src/dstring.cpp ../src/dstr.c"
 
 for COMP in g++ clang++; do
 	echo ">>>> VALGRIND ($COMP) TEST..."
-	$COMP $CXXFLAGS -O0 -Og dstrtest_pp.cpp ../src/dstr.c -o dstrtest
+	$COMP $CXXFLAGS -O0 -Og $SRCFILES -o dstrtest
 	valgrind --quiet ./dstrtest > /dev/null
 	rm -f dstrtest
 	echo ">>>> OK"
 	echo
 
 	echo ">>>> SANITZE ($COMP) TEST"
-	$COMP $CXXFLAGS -fsanitize=address -O0 -Og dstrtest_pp.cpp ../src/dstr.c -o dstrtest
+	$COMP $CXXFLAGS -fsanitize=address -O0 -Og $SRCFILES -o dstrtest
 	./dstrtest > /dev/null
 	rm -f dstrtest
 	echo ">>>> OK"
 	echo
 
 	echo ">>>> GC ($COMP) TEST"
-	$COMP $CXXFLAGS -DGC_DEBUG -O0 -Og dstrtest_pp.cpp ../src/dstr.c -o dstrtest -lgc
+	$COMP $CXXFLAGS -DGC_DEBUG -O0 -Og $SRCFILES -o dstrtest -lgc
 	./dstrtest > /dev/null
 	rm -f dstrtest
 	echo ">>>> GC OK"

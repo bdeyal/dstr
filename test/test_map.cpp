@@ -3,11 +3,6 @@
 
 #include <dstr/dstring.hpp>
 
-std::ostream& operator<<(std::ostream& out, const DString& ds)
-{
-    return out << ds.c_str();
-}
-
 int main()
 {
     using namespace std;

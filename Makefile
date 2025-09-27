@@ -34,29 +34,30 @@ PROGRAMS = \
 DEPS = ./include/dstr/dstr.h
 DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
 LIB=./lib64/libdstr.so.1.0.0
+LIBPP=./lib64/libdstr++.so.1.0.0
 
 all: $(PROGRAMS)
 
 ./test/dstrtest: ./test/dstrtest.c $(LIB) $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-./test/dstrtest_pp: ./test/dstrtest_pp.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+./test/dstrtest_pp: ./test/dstrtest_pp.cpp $(LIBPP) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr++ -ldstr
 
-./test/test_dgets: ./test/test_dgets.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+./test/test_dgets: ./test/test_dgets.cpp $(LIBPP) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr++ -ldstr
 
-./test/test_map: ./test/test_map.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+./test/test_map: ./test/test_map.cpp $(LIBPP) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr++ -ldstr
 
-./test/test_vector: ./test/test_vector.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+./test/test_vector: ./test/test_vector.cpp $(LIBPP) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr++ -ldstr
 
-./test/test_tokens: ./test/test_tokens.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+./test/test_tokens: ./test/test_tokens.cpp $(LIBPP) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr++ -ldstr
 
-./test/test_algs: ./test/test_algs.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+./test/test_algs: ./test/test_algs.cpp $(LIBPP) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr++ -ldstr
 
 
 $(LIB): ./src/dstr.c $(DEPS) Makefile
@@ -64,6 +65,14 @@ $(LIB): ./src/dstr.c $(DEPS) Makefile
 	$(CC) $(CFLAGS) -DNDEBUG -shared -DPIC -fPIC ./src/dstr.c -o ./lib64/libdstr.so.1.0.0
 	ln -sf libdstr.so.1.0.0 ./lib64/libdstr.so.1
 	ln -sf libdstr.so.1.0.0 ./lib64/libdstr.so
+
+$(LIBPP): ./src/dstring.cpp $(LIB)
+	$(CXX) $(CXXFLAGS) -DNDEBUG -shared \
+-DPIC -fPIC ./src/dstring.cpp \
+-L$(LIBDIR_FULLPATH) -o $(LIBPP) -ldstr
+	ln -sf libdstr++.so.1.0.0 ./lib64/libdstr++.so.1
+	ln -sf libdstr++.so.1.0.0 ./lib64/libdstr++.so
+
 
 .PHONY: test
 test: $(PROGRAMS) ./test/test_file.txt
@@ -98,7 +107,7 @@ clean:
 
 
 PREFIX_INCLUDE=$(PREFIX)/include/dstr
-PREFIX_LIB=$(PREFIX)/lib64
+PREFIX_LIB=$(PREFIX)/lib64/dstr
 
 # Tested on RHEL 10.0 ONLY
 #
@@ -111,6 +120,10 @@ install: $(LIB)
 	/usr/bin/ln -sf libdstr.so.1.0.0  $(PREFIX_LIB)/libdstr.so.1
 	/usr/bin/ln -sf libdstr.so.1.0.0  $(PREFIX_LIB)/libdstr.so
 	/usr/bin/echo $(PREFIX_LIB) > /etc/ld.so.conf.d/dstr.conf
+	/usr/bin/install -m 0755 -o root -g root --strip $(LIBPP) -t $(PREFIX_LIB)
+	/usr/bin/ln -sf libdstr++.so.1.0.0  $(PREFIX_LIB)/libdstr++.so.1
+	/usr/bin/ln -sf libdstr++.so.1.0.0  $(PREFIX_LIB)/libdstr++.so
+	/usr/bin/echo $(PREFIX_LIB) > /etc/ld.so.conf.d/dstr.conf
 	/usr/sbin/ldconfig
 
 uninstall:
@@ -120,6 +133,9 @@ uninstall:
 	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.so
 	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.so.1
 	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.so.1.0.0
+	/usr/bin/rm -f $(PREFIX_LIB)/libdstr++.so
+	/usr/bin/rm -f $(PREFIX_LIB)/libdstr++.so.1
+	/usr/bin/rm -f $(PREFIX_LIB)/libdstr++.so.1.0.0
 	/usr/bin/rmdir --ignore-fail-on-non-empty $(PREFIX_LIB)
 	/usr/bin/rm -f /etc/ld.so.conf.d/dstr.conf
 	/usr/sbin/ldconfig

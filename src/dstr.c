@@ -31,9 +31,7 @@
 } while(0)
 /*--------------------------------------------------------------------------*/
 
-#if defined (__cplusplus)
-#warning Compiling dstr.c as C++ for testing only
-#else
+#if !defined(__cplusplus)
 #if __STDC_VERSION__ < 199901L
 #error dstr requires at least a C99 compiler
 #endif

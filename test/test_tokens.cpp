@@ -5,11 +5,6 @@
 
 #include <dstr/dstring.hpp>
 
-std::ostream& operator<<(std::ostream& out, const DString& ds)
-{
-    return out << ds.c_str();
-}
-
 void string_tokens(const DString& s, const DString& sep, std::vector<DString>& result)
 {
     using namespace std;

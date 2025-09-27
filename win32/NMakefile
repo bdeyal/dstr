@@ -29,23 +29,23 @@ all: $(PROGRAMS)
 dstrtest.exe: ..\test\dstrtest.c dstr.obj
 	$(CC) $(CFLAGS) /nologo /MD ..\test\dstrtest.c dstr.obj /Fe"$@"
 
-dstrtest_pp.exe: ..\test\dstrtest_pp.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\dstrtest_pp.cpp dstr.obj /Fe"$@"
+dstrtest_pp.exe: ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
-test_dgets.exe: ..\test\test_dgets.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_dgets.cpp  dstr.obj /Fe"$@"
+test_dgets.exe: ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
-test_vector.exe: ..\test\test_vector.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_vector.cpp dstr.obj /Fe"$@"
+test_vector.exe: ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
-test_map.exe: ..\test\test_map.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_map.cpp dstr.obj /Fe"$@"
+test_map.exe: ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
-test_tokens.exe: ..\test\test_tokens.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_tokens.cpp dstr.obj /Fe"$@"
+test_tokens.exe: ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
-test_algs.exe: ..\test\test_algs.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_algs.cpp dstr.obj /Fe"$@"
+test_algs.exe: ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 clean:
 	del *~ *.obj

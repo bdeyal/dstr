@@ -9,7 +9,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <dstr/dstr.h>
+#include <dstr/dstring.hpp>
 
 using namespace std;
 
@@ -29,11 +29,11 @@ void test_dgets(const char* fname)
         exit(1);
     }
 
-    DSTR d1 = dstrnew_reserve(500);
+    DString d1;
     std::string s1;
 
     for (;;) {
-        int r1 = dstr_fgets(d1, fp);
+        int r1 = d1.fgets(fp);
         in >> s1;
 
         if (r1 == EOF) {
@@ -41,13 +41,47 @@ void test_dgets(const char* fname)
             break;
         }
 
-        assert(s1 == dstrdata(d1));
+        assert(s1 == d1.c_str());
+    }
+    fclose(fp);
+
+    cout << __func__ << ": Good! all lines were equal" << endl;
+}
+//-------------------------------------------------
+
+// Compare to 'dstr_fgets' to 'cin >> str' must be equal
+//
+void test_dgets_2(const char* fname)
+{
+    FILE* fp = fopen(fname, "r");
+    if (!fp) {
+        fprintf(stderr, "couldn't open %s: %s\n", fname, strerror(errno));
+        exit(1);
     }
 
-    cout << "test_dgets: Good! all lines were equal" << endl;
+    ifstream in(fname);
+    if (!in) {
+        cerr << "couldn't open "<< fname << ": " << strerror(errno) << endl;
+        exit(1);
+    }
 
-    dstrfree(d1);
+    DString s1;
+    DString s2;
+
+    for (;;) {
+        int r1 = s1.fgets(fp);
+        in >> s2;
+
+        if (r1 == EOF) {
+            assert(in.eof());
+            break;
+        }
+
+        assert(s1 == s2);
+    }
     fclose(fp);
+
+    cout << __func__ << ": Good! all lines were equal" << endl;
 }
 //-------------------------------------------------
 
@@ -67,11 +101,11 @@ void test_getline(const char* fname)
         exit(1);
     }
 
-    DSTR d1 = dstrnew_reserve(500);
+    DString d1;
     std::string s1;
 
     for (;;) {
-        int r1 = dstr_fgetline(d1, fp);
+        int r1 = d1.fgetline(fp);
         std::getline(in, s1);
 
         if (r1 == EOF) {
@@ -79,15 +113,52 @@ void test_getline(const char* fname)
             break;
         }
 
-        assert(s1 == dstrdata(d1));
+        assert(s1 == d1.c_str());
     }
-
-    cout << "test_getline: Good! all lines were equal" << endl;
-
-    dstrfree(d1);
     fclose(fp);
+
+    cout << __func__ << ": Good! all lines were equal" << endl;
 }
 //-------------------------------------------------
+
+void test_getline_2(const char* fname)
+{
+    FILE* fp = fopen(fname, "r");
+    if (!fp) {
+        fprintf(stderr, "couldn't open %s: %s\n", fname, strerror(errno));
+        exit(1);
+    }
+
+    ifstream in(fname);
+    if (!in) {
+        cerr << "couldn't open "<< fname << ": " << strerror(errno) << endl;
+        exit(1);
+    }
+
+    DString s1;
+    DString s2;
+
+    for (;;) {
+        int r1 = s1.fgetline(fp);
+        io_getline(in, s2);
+
+        if (r1 == EOF) {
+            assert(in.eof());
+            break;
+        }
+
+        if (s1 != s2) {
+            cout << "\"" << s1 << "\"" << endl;
+            cout << "\"" << s2 << "\"" << endl;
+        }
+        assert(s1 == s2);
+    }
+    fclose(fp);
+
+    cout << __func__ << ": Good! all lines were equal" << endl;
+}
+//-------------------------------------------------
+
 
 // Compare to 'dstr_getline' to 'std::getline(in, str)' must be equal
 //
@@ -128,6 +199,8 @@ int main(int argc, char* argv[])
 
     cout << "Testing file: " << fname << endl;
     test_dgets(fname);
+    test_dgets_2(fname);
     test_getline(fname);
+    test_getline_2(fname);
     test_fromfile(fname);
 }

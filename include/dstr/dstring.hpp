@@ -1,6 +1,7 @@
 #ifndef DSTRING_H_INCLUDED
 #define DSTRING_H_INCLUDED
 
+#include <iosfwd>
 #include <dstr/dstr.h>
 
 class DString {
@@ -146,20 +147,8 @@ public:
         return *this;
     }
 
-    DString& sprintf(const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
-        dstr_assign_vsprintf(pImp(), fmt, args);
-        va_end(args);
-        return *this;
-    }
-
-    DString& vsprintf(const char* fmt, va_list args)
-    {
-        dstr_assign_vsprintf(pImp(), fmt, args);
-        return *this;
-    }
+    DString& sprintf(const char* fmt, ...);
+    DString& vsprintf(const char* fmt, va_list args);
 
     // Insertion functions
     //
@@ -242,20 +231,8 @@ public:
         return *this;
     }
 
-    DString& append_sprintf(const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
-        dstr_append_vsprintf(pImp(), fmt, args);
-        va_end(args);
-        return *this;
-    }
-
-    DString& append_vsprintf(const char* fmt, va_list args)
-    {
-        dstr_append_vsprintf(pImp(), fmt, args);
-        return *this;
-    }
+    DString& append_sprintf(const char* fmt, ...);
+    DString& append_vsprintf(const char* fmt, va_list args);
 
     DString& operator+=(char c) {
         return append(c);
@@ -367,19 +344,19 @@ public:
     // Inline fast queries
     //
     const char* c_str() const {
-        return dstr_cstring(pImp());
+        return m_imp.data;
     }
 
     size_t length() const {
-        return dstr_length(pImp());
+        return m_imp.length;
     }
 
     size_t capacity() const {
-        return dstr_capacity(pImp());
+        return m_imp.capacity;
     }
 
     bool empty() const {
-        return dstr_isempty(pImp());
+        return length() == 0;
     }
 
     bool index_ok(size_t pos) const {
@@ -395,11 +372,11 @@ public:
     }
 
     char operator[](size_t pos) const {
-        return dstr_getchar(pImp(), pos);
+        return m_imp.data[pos];
     }
 
     char& operator[](size_t pos) {
-        return pImp()->data[pos];
+        return m_imp.data[pos];
     }
 
     unsigned int hash() const {
@@ -595,5 +572,11 @@ inline DString operator+(const char* sz, const DString& rhs)
     result.append(rhs);
     return result;
 }
+
+// DString and iostream
+//
+std::ostream& operator<<(std::ostream& out, const DString& s);
+std::istream& operator>>(std::istream& in, DString& s);
+std::istream& io_getline(std::istream& in, DString& s);
 
 #endif
