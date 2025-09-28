@@ -73,7 +73,7 @@ void test_empty_dstr()
     TRACE_FN();
 
     DString s1;
-    DString s2(nullptr, 0);
+    DString s2(nullptr, size_t(0));
     DString s5(nullptr);
     DString s6('\0', 100);
     DString s7('C', 0);
@@ -150,7 +150,7 @@ void test_buff_ctor()
     assert(s1.length() == 5);
     assert(s1 == "ABCDE");
 
-    DString s2("ABCDEFGH", 0);
+    DString s2("ABCDEFGH", size_t(0));
     assert(s2.length() == 0);
     assert(s2 == "");
 
@@ -162,13 +162,41 @@ void test_buff_ctor()
     assert(s3 == "ABCDE");
 
     DString s4;
-    s4.assign("ABCDEFGH", 0);
+    s4.assign("ABCDEFGH", size_t(0));
     assert(s4.length() == 0);
     assert(s4 == "");
 
     DString s5("", 10);
     assert(s5 == "");
     assert(s5.length() == 0);
+}
+//-------------------------------------------------
+
+void test_range_ctor()
+{
+    TRACE_FN();
+
+    const char* cstr = "ABCDEFGH";
+    DString s1(cstr, cstr + 5);
+    assert(s1.size() == 5);
+    assert(s1 == "ABCDE");
+
+    DString s2;
+    s2.assign(cstr, cstr + 5);
+    assert(s1 == s2);
+
+    DString s3("Hello");
+    s3.append(cstr, cstr + 3);
+    assert(s3.size() == 8);
+    assert(s3 == "HelloABC");
+
+    DString s4("Hello  World");
+    s4.insert(6, cstr, cstr+3);
+    assert(s4.size() == 15);
+    assert(s4 == "Hello ABC World");
+
+    s4.replace(6, 3, cstr + 3, cstr + 8);
+    assert(s4 == "Hello DEFGH World");
 }
 //-------------------------------------------------
 
@@ -278,7 +306,7 @@ void test_append()
     s5.append(nullptr, 10);
     assert(s5 == "hello_ABC");
 
-    s5.append("Hi", 0);
+    s5.append("Hi", size_t(0));
     assert(s5 == "hello_ABC");
 
     s5.append("_DEF", 3);
@@ -493,7 +521,7 @@ void test_insert()
     s1.insert(0, nullptr, DString::NPOS);
     assert( s1 == "XXXhellXXoX");
 
-    s1.insert(0, "XXX", 0);
+    s1.insert(0, "XXX", size_t(0));
     assert( s1 == "XXXhellXXoX");
 
     s1.insert(0, 'A', 3);
@@ -1234,6 +1262,7 @@ int main()
     test_char_ctor();
     test_copy_ctor();
     test_buff_ctor();
+    test_range_ctor();
     test_assign();
     test_append();
     test_format();

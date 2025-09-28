@@ -59,6 +59,9 @@ DSTR dstr_create_substr(CDSTR p, size_t pos, size_t count);
 /* create from a buffer and length*/
 DSTR dstr_create_bl(const char* buff, size_t len);
 
+/* create from first->last charecter range */
+DSTR dstr_create_range(const char* first, const char* last);
+
 /* create by slurp a textfile*/
 DSTR dstr_create_fromfile(const char* fname);
 DSTR dstr_assign_fromfile(DSTR p, const char* fname);
@@ -79,6 +82,7 @@ int dstr_assign_cc(DSTR dest, char c, size_t count);
 int dstr_assign_sz(DSTR dest, const char* value);
 int dstr_assign_ds(DSTR dest, CDSTR src);
 int dstr_assign_bl(DSTR dest, const char* buff, size_t len);
+int dstr_assign_range(DSTR dest, const char* first, const char* last);
 int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count);
 int dstr_assign_sprintf(DSTR dest, const char* fmt, ...);
 int dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
@@ -87,13 +91,14 @@ int dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
 int dstr_insert_sz(DSTR dest, size_t index, const char* value);
 int dstr_insert_ds(DSTR dest, size_t index, CDSTR src);
 int dstr_insert_bl(DSTR dest, size_t index, const char* buff, size_t len);
+int dstr_insert_range(DSTR dest, size_t index, const char* first, const char* last);
 
 int dstr_append_c(DSTR dest, char c);
 int dstr_append_cc(DSTR dest, char c, size_t count);
 int dstr_append_sz(DSTR dest, const char* value);
 int dstr_append_ds(DSTR dest, CDSTR src);
-
 int dstr_append_bl(DSTR dest, const char* buff, size_t len);
+int dstr_append_range(DSTR dest, const char* first, const char* last);
 int dstr_append_sprintf(DSTR dest, const char* fmt, ...);
 int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
@@ -101,6 +106,7 @@ int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
 int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
 int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
 int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
+int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, const char* last);
 
 /*
  *  either truncate to LEN or enlarge capacity to at least LEN without
@@ -137,6 +143,7 @@ unsigned int dstr_hash(CDSTR src);
 long      dstr_atoi(CDSTR src);
 long      dstr_atoll(CDSTR src);
 int       dstr_itoa(DSTR dest, long n);
+double    dstr_atof(CDSTR src);
 DSTR_BOOL dstr_isdigits(CDSTR src);
 DSTR_BOOL dstr_isxdigits(CDSTR src);
 
@@ -274,6 +281,7 @@ static inline void dstr_truncate(DSTR p)
 #define dstrnew_reserve     dstr_create_reserve
 #define dstrnew_sz          dstr_create_sz
 #define dstrnew_bl          dstr_create_bl
+#define dstrnew_rng         dstr_create_range
 #define dstrnew_cc          dstr_create_cc
 #define dstrnew_sprintf     dstr_create_sprintf
 #define dstrnew_vsprintf    dstr_create_vsprintf
@@ -324,6 +332,7 @@ static inline void dstr_truncate(DSTR p)
 #define dstrcpy_cc          dstr_assign_cc
 #define dstrcpy_sz          dstr_assign_sz
 #define dstrcpy_bl          dstr_assign_bl
+#define dstrcpy_rng         dstr_assign_range
 #define dstrcpy_ds          dstr_assign_ds
 #define dstrcpy_substr      dstr_assign_substr
 
@@ -332,6 +341,7 @@ static inline void dstr_truncate(DSTR p)
 #define dstrcat_c           dstr_append_inline
 #define dstrcat_ds          dstr_append_ds
 #define dstrcat_bl          dstr_append_bl
+#define dstrcat_rng         dstr_append_range
 
 #define dstrfree            dstr_destroy
 #define dstrtrunc           dstr_truncate
@@ -348,11 +358,13 @@ static inline void dstr_truncate(DSTR p)
 #define dreplace_sz         dstr_replace_sz
 #define dreplace_ds         dstr_replace_ds
 #define dreplace_bl         dstr_replace_bl
+#define dreplace_rng        dstr_replace_range
 
 #define dinsert_cc          dstr_insert_cc
 #define dinsert_sz          dstr_insert_sz
 #define dinsert_ds          dstr_insert_ds
 #define dinsert_bl          dstr_insert_bl
+#define dinsert_rng         dstr_insert_range
 
 #define dstrtrim            dstr_trim_both
 #define dstrtrim_r          dstr_trim_right

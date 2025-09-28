@@ -597,6 +597,17 @@ DSTR dstr_create_bl(const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
+DSTR dstr_create_range(const char* first, const char* last)
+{
+    size_t len = (size_t)(last - first);
+
+    // in case there is a zero byte in between
+    len = strnlen(first, len);
+
+    return dstr_create_buff_imp(first, len);
+}
+/*-------------------------------------------------------------------------------*/
+
 DSTR dstr_create_sz(const char* sz)
 {
     if (sz == NULL)
@@ -821,6 +832,22 @@ int dstr_assign_bl(DSTR p, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
+int dstr_assign_range(DSTR p, const char* first, const char* last)
+{
+    dstr_assert_valid(p);
+
+    size_t len = last - first;
+
+    if (first == NULL || len == 0) {
+        dstr_truncate(p);
+        return DSTR_SUCCESS;
+    }
+
+    len = strnlen(first, len);
+    return dstr_assign_imp(p, first, len);
+}
+/*-------------------------------------------------------------------------------*/
+
 int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count)
 {
     dstr_assert_valid(p);
@@ -905,6 +932,21 @@ int dstr_append_bl(DSTR p, const char* buff, size_t len)
         return DSTR_SUCCESS;
 
     return dstr_append_imp(p, buff, len);
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_append_range(DSTR p, const char* first, const char* last)
+{
+    dstr_assert_valid(p);
+
+    if (first == NULL)
+        return DSTR_SUCCESS;
+
+    size_t len;
+    if ((len = strnlen(first, (last - first))) == 0)
+        return DSTR_SUCCESS;
+
+    return dstr_append_imp(p, first, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1151,6 +1193,20 @@ int dstr_insert_bl(DSTR p, size_t index, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
+int dstr_insert_range(DSTR p, size_t index, const char* first, const char* last)
+{
+    dstr_assert_valid(p);
+
+    size_t len = last - first;
+    if (first == NULL || len == 0)
+        return DSTR_SUCCESS;
+
+    len = strnlen(first, len);
+
+    return dstr_insert_imp(p, index, first, len);
+}
+/*-------------------------------------------------------------------------------*/
+
 int dstr_compare_sz(CDSTR lhs, const char* sz)
 {
     int result;
@@ -1242,6 +1298,14 @@ int dstr_replace_bl(DSTR p, size_t pos, size_t count, const char* buff, size_t b
     return dstr_replace_imp(p, pos, count, buff, buflen);
 }
 /*-------------------------------------------------------------------------------*/
+
+int dstr_replace_range(DSTR p, size_t pos, size_t count, const char* first, const char* last)
+{
+    dstr_assert_valid(p);
+    return dstr_replace_imp(p, pos, count, first, last - first);
+}
+/*-------------------------------------------------------------------------------*/
+
 
 void dstr_trim_right(DSTR p)
 {
@@ -1476,6 +1540,13 @@ long dstr_atoi(CDSTR src)
     }
 
     return strtol(p, NULL, base);
+}
+/*-------------------------------------------------------------------------------*/
+
+double dstr_atof(CDSTR src)
+{
+    dstr_assert_valid(src);
+    return atof(DBUF(src));
 }
 /*-------------------------------------------------------------------------------*/
 

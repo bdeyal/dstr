@@ -223,6 +223,41 @@ void test_buff_ctor()
 }
 //-------------------------------------------------
 
+void test_range_ctor()
+{
+    TRACE_FN();
+
+    const char* cstr = "ABCDEFGH";
+    DSTR s1 = dstrnew_rng(cstr, cstr + 5);
+    assert(dstrlen(s1) == 5);
+    assert(dstreq_sz(s1, "ABCDE"));
+
+    DSTR s2 = dstrnew();
+    dstrcpy_rng(s2, cstr, cstr + 5);
+    assert(dstreq_ds(s1, s2));
+
+    // Test assign_buff too
+    //
+    DSTR s3 = dstrnew_sz("Hello");
+    dstrcat_rng(s3, cstr, cstr + 3);
+    assert(dstrlen(s3) == 8);
+    assert(dstreq_sz(s3, "HelloABC"));
+
+    DSTR s4 = dstrnew_sz("Hello  World");
+    dinsert_rng(s4, 6, cstr, cstr+3);
+    assert(dstrlen(s4) == 15);
+    assert(dstreq_sz(s4, "Hello ABC World"));
+
+    dreplace_rng(s4, 6, 3, cstr + 3, cstr + 8);
+    assert(dstreq_sz(s4, "Hello DEFGH World"));
+
+    dstrfree(s1);
+    dstrfree(s2);
+    dstrfree(s3);
+    dstrfree(s4);
+}
+//-------------------------------------------------
+
 void test_assign()
 {
     TRACE_FN();
@@ -1229,6 +1264,7 @@ int main()
     test_char_ctor();
     test_copy_ctor();
     test_buff_ctor();
+    test_range_ctor();
     test_assign();
     test_fromfile();
     test_append();

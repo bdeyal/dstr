@@ -47,6 +47,11 @@ public:
         assign(buffer, len);
     }
 
+    DString(const char* first, const char* last)
+    {
+        assign(first, last);
+    }
+
     // Destructor
     //
     ~DString()
@@ -126,6 +131,12 @@ public:
         return *this;
     }
 
+    DString& assign(const char* first, const char* last)
+    {
+        dstr_assign_range(pImp(), first, last);
+        return *this;
+    }
+
     DString& assign(const DString& rhs)
     {
         dstr_assign_ds(pImp(), rhs.pImp());
@@ -173,6 +184,12 @@ public:
     DString& insert(size_t pos, const char* buff, size_t len)
     {
         dstr_insert_bl(pImp(), pos, buff, len);
+        return *this;
+    }
+
+    DString& insert(size_t pos, const char* first, const char* last)
+    {
+        dstr_insert_range(pImp(), pos, first, last);
         return *this;
     }
 
@@ -231,6 +248,12 @@ public:
         return *this;
     }
 
+    DString& append(const char* first, const char* last)
+    {
+        dstr_append_range(pImp(), first, last);
+        return *this;
+    }
+
     DString& append_sprintf(const char* fmt, ...);
     DString& append_vsprintf(const char* fmt, va_list args);
 
@@ -269,6 +292,12 @@ public:
     DString& replace(size_t pos, size_t len, const char* buff, size_t bufflen)
     {
         dstr_replace_bl(pImp(), pos, len, buff, bufflen);
+        return *this;
+    }
+
+    DString& replace(size_t pos, size_t len, const char* first, const char* last)
+    {
+        dstr_replace_range(pImp(), pos, len, first, last);
         return *this;
     }
 
@@ -385,6 +414,10 @@ public:
 
     long atoi() const {
         return dstr_atoi(pImp());
+    }
+
+    double atof() const {
+        return dstr_atof(pImp());
     }
 
     long atoll() const {
