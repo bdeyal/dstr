@@ -187,35 +187,35 @@ DSTR_BOOL dstr_equal_ds(CDSTR lhs, CDSTR rhs);
 int dstr_fgets(DSTR d, FILE* fp);
 int dstr_fgetline(DSTR d, FILE* fp);
 
-inline size_t dstr_length(CDSTR p) {
+static inline size_t dstr_length(CDSTR p) {
     return p->length;
 }
 
-inline size_t dstr_capacity(CDSTR p) {
+static inline size_t dstr_capacity(CDSTR p) {
     return p->capacity;
 }
 
-inline DSTR_BOOL dstr_isempty(CDSTR p) {
+static inline DSTR_BOOL dstr_isempty(CDSTR p) {
     return (dstr_length(p) == 0);
 }
 
-inline const char* dstr_cstring(CDSTR p) {
+static inline const char* dstr_cstring(CDSTR p) {
     return p->data;
 }
 
-inline char dstr_getchar(CDSTR p, size_t pos) {
+static inline char dstr_getchar(CDSTR p, size_t pos) {
     return p->data[pos];
 }
 
-inline void dstr_putchar(DSTR p, size_t pos, char c) {
+static inline void dstr_putchar(DSTR p, size_t pos, char c) {
     p->data[pos] = c;
 }
 
-inline DSTR_BOOL dstr_valid_index(CDSTR p, size_t pos) {
+static inline DSTR_BOOL dstr_valid_index(CDSTR p, size_t pos) {
     return (pos < dstr_length(p));
 }
 
-inline void dstr_chop(DSTR p) {
+static inline void dstr_chop(DSTR p) {
     if (dstr_length(p) > 0) {
         p->data[--p->length] = '\0';
     }
