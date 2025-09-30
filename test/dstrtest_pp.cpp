@@ -720,6 +720,28 @@ void test_fromfile()
 }
 //-------------------------------------------------
 
+void test_left_mid_right()
+{
+    TRACE_FN();
+
+    DString src("ABCD EFGH IJKL MNOP QRST UVWX YZ");
+    assert( src.left(4) == "ABCD");
+    assert( src.left(9) == "ABCD EFGH");
+    assert( src.left(20) == "ABCD EFGH IJKL MNOP ");
+    assert( src.left(100) == src);
+
+    assert( src.right(4) == "X YZ");
+    assert( src.right(7) == "UVWX YZ");
+    assert( src.right(23) == " IJKL MNOP QRST UVWX YZ");
+    assert( src.right(100) == src);
+
+    assert( src.mid(5, 4) == "EFGH");
+    assert( src.mid(5, 20) == "EFGH IJKL MNOP QRST ");
+    assert( src.mid(0, 100) == src);
+    assert( src.mid(4, 1000) == " EFGH IJKL MNOP QRST UVWX YZ");
+}
+//-------------------------------------------------
+
 void test_substr()
 {
     TRACE_FN();
@@ -1275,6 +1297,7 @@ int main()
     test_fgets();
     test_fromfile();
     test_substr();
+    test_left_mid_right();
     test_truncate();
     test_find();
     test_put_get();

@@ -694,6 +694,54 @@ void test_replace()
 }
 //-------------------------------------------------
 
+void test_left_mid_right()
+{
+    TRACE_FN();
+
+    DSTR src = dstrnew_sz("ABCD EFGH IJKL MNOP QRST UVWX YZ");
+    DSTR dest = dstrnew();
+
+    dstr_assign_left(dest, src, 4);
+    assert(dstreq_sz(dest, "ABCD"));
+
+    dstr_assign_left(dest, src, 9);
+    assert(dstreq_sz(dest, "ABCD EFGH"));
+
+    dstr_assign_left(dest, src, 20);
+    assert(dstreq_sz(dest, "ABCD EFGH IJKL MNOP "));
+
+    dstr_assign_left(dest, src, 100);
+    assert(dstreq_ds(dest, src));
+
+    dstr_assign_right(dest, src, 4);
+    assert(dstreq_sz(dest, "X YZ"));
+
+    dstr_assign_right(dest, src, 7);
+    assert(dstreq_sz(dest, "UVWX YZ"));
+
+    dstr_assign_right(dest, src, 23);
+    assert(dstreq_sz(dest, " IJKL MNOP QRST UVWX YZ"));
+
+    dstr_assign_right(dest, src, 100);
+    assert(dstreq_ds(dest, src));
+
+    dstr_assign_mid(dest, src, 5, 4);
+    assert(dstreq_sz(dest, "EFGH"));
+
+    dstr_assign_mid(dest, src, 5, 20);
+    assert(dstreq_sz(dest, "EFGH IJKL MNOP QRST "));
+
+    dstr_assign_mid(dest, src, 4, 1000);
+    assert(dstreq_sz(dest, " EFGH IJKL MNOP QRST UVWX YZ"));
+
+    dstr_assign_mid(dest, src, 0, 100);
+    assert(dstreq_ds(dest, src));
+
+    dstrfree(dest);
+    dstrfree(src);
+}
+//-------------------------------------------------
+
 void test_substr()
 {
     TRACE_FN();
@@ -1275,6 +1323,7 @@ int main()
     test_replace1();
     test_trim();
     test_substr();
+    test_left_mid_right();
     test_truncate();
     test_shrink();
     test_find();

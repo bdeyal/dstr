@@ -65,6 +65,25 @@ public:
         return DString(*this, pos, count);
     }
 
+    // Like in basic
+    //
+    DString left(size_t count) const
+    {
+        return substr(0, count);
+    }
+
+    DString mid(size_t pos, size_t count) const
+    {
+        return substr(pos, count);
+    }
+
+    DString right(size_t count) const
+    {
+        return (size() <= count) ?
+            DString(*this) :
+            substr(size() - count, count);
+    }
+
     // slurp a testfile into DString
     //
     int from_file(const char* fname)

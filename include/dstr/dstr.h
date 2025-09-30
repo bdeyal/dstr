@@ -264,6 +264,22 @@ static inline void dstr_truncate(DSTR p)
     p->length = 0;
     *p->data = '\0';
 }
+
+/* BASIC & MFC like: left, mid, right operations */
+static inline int dstr_assign_left(DSTR dest, CDSTR src, size_t count) {
+    return dstr_assign_substr(dest, src, 0, count);
+}
+
+static inline int dstr_assign_mid(DSTR dest, CDSTR src, size_t pos, size_t count) {
+    return dstr_assign_substr(dest, src, pos, count);
+}
+
+static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count) {
+    return (count >= dstr_length(src)) ?
+        dstr_assign_ds(dest, src) :
+        dstr_assign_substr(dest, src, (dstr_length(src) - count), count);
+}
+
 /*-------------------------------------------------------------------------------*/
 
 
