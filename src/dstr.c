@@ -1360,8 +1360,7 @@ void dstr_ascii_upper(DSTR p)
     dstr_assert_valid(p);
 
     for (s = DBUF(p); *s; ++s)
-        if (islower(*s))
-            *s = (char)toupper(*s);
+        *s = (char)toupper(*s);
 
     dstr_assert_valid(p);
 }
@@ -1374,8 +1373,7 @@ void dstr_ascii_lower(DSTR p)
     dstr_assert_valid(p);
 
     for (s = DBUF(p); *s; ++s)
-        if (isupper(*s))
-            *s = (char)tolower(*s);
+        *s = (char)tolower(*s);
 
     dstr_assert_valid(p);
 }
