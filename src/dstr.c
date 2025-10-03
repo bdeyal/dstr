@@ -1559,3 +1559,203 @@ DSTR_BOOL dstr_isxdigits(CDSTR src)
     return dstr_isdigits_imp(src, DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
+
+int dstr_to_int(CDSTR p, size_t* index, int base)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    int result = strtol(str, &endp, base);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+long dstr_to_long(CDSTR p, size_t* index, int base)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    long result = strtol(str, &endp, base);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+unsigned long dstr_to_ulong(CDSTR p, size_t* index, int base)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    unsigned long result = strtoul(str, &endp, base);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+long long dstr_to_llong(CDSTR p, size_t* index, int base)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    long long result = strtoll(str, &endp, base);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    unsigned long long result = strtoull(str, &endp, base);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+float dstr_to_float(CDSTR p, size_t* index)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    float result = strtof(str, &endp);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+double dstr_to_double(CDSTR p, size_t* index)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    double result = strtod(str, &endp);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+long double dstr_to_ldouble(CDSTR p, size_t* index)
+{
+    int errsave = errno;
+    errno = 0;
+
+    dstr_assert_valid(p);
+    const char* str = dstr_cstring(p);
+
+    char* endp;
+    long double result = strtold(str, &endp);
+
+    if (endp == str)
+        errno = EINVAL;
+
+    if (index) {
+        *index = endp - str;
+    }
+
+    if (errno == 0)
+        errno = errsave;
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/

@@ -94,7 +94,6 @@ public:
         return DSTR_FAIL;
     }
 
-
 #if __cplusplus >= 201103L
     // Assignments operator and functions
     //
@@ -553,6 +552,38 @@ public:
         return dstr_fgetline(pImp(), fp);
     }
 
+    int stoi(size_t* index = nullptr, int base = 10) {
+        return dstr_to_int(pImp(), index, base);
+    }
+
+    long stol(size_t* index = nullptr, int base = 10) {
+        return dstr_to_long(pImp(), index, base);
+    }
+
+    unsigned long stoul(size_t* index = nullptr, int base = 10) {
+        return dstr_to_ulong(pImp(), index, base);
+    }
+
+    long long stoll(size_t* index = nullptr, int base = 10) {
+        return dstr_to_llong(pImp(), index, base);
+    }
+
+    unsigned long long stoull(size_t* index = nullptr, int base = 10) {
+        return dstr_to_ullong(pImp(), index, base);
+    }
+
+    float stof(size_t* index = nullptr) {
+        return dstr_to_float(pImp(), index);
+    }
+
+    double stod(size_t* index = nullptr) {
+        return dstr_to_double(pImp(), index);
+    }
+
+    long double stold(size_t* index = nullptr) {
+        return dstr_to_ldouble(pImp(), index);
+    }
+
     // C++ algorithms support : typedefs
     //
     typedef char value_type;
@@ -630,5 +661,63 @@ inline DString operator+(const char* sz, const DString& rhs)
 std::ostream& operator<<(std::ostream& out, const DString& s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
+
+// to_dstring() functions
+//
+inline DString to_dstring(int val) {
+    DString result;
+    result.sprintf("%d", val);
+    return result;
+}
+
+inline DString to_dstring(unsigned int val) {
+    DString result;
+    result.sprintf("%u", val);
+    return result;
+}
+
+inline DString to_dstring(long val) {
+    DString result;
+    result.sprintf("%ld", val);
+    return result;
+}
+
+inline DString to_dstring(unsigned long val) {
+    DString result;
+    result.sprintf("%lu", val);
+    return result;
+}
+
+inline DString to_dstring(long long val) {
+    DString result;
+    result.sprintf("%lld", val);
+    return result;
+}
+
+inline DString to_dstring(unsigned long long val) {
+    DString result;
+    result.sprintf("%llu", val);
+    return result;
+}
+
+inline DString to_dstring(float val) {
+    DString result;
+    result.sprintf("%f", val);
+    return result;
+}
+
+inline DString to_dstring(double val) {
+    DString result;
+    result.sprintf("%f", val);
+    return result;
+}
+
+inline DString to_dstring(long double val) {
+    DString result;
+    result.sprintf("%Lf", val);
+    return result;
+}
+
+
 
 #endif

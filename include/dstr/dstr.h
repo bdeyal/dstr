@@ -280,6 +280,19 @@ static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count) {
         dstr_assign_substr(dest, src, (dstr_length(src) - count), count);
 }
 
+/*
+ * conversion funcions
+ */
+int                dstr_to_int(CDSTR p, size_t* index, int base);
+long               dstr_to_long(CDSTR p, size_t* index, int base);
+unsigned long      dstr_to_ulong(CDSTR p, size_t* index, int base);
+long long          dstr_to_llong(CDSTR p, size_t* index, int base);
+unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base);
+float              dstr_to_float(CDSTR p, size_t* index);
+double             dstr_to_double(CDSTR p, size_t* index);
+long double        dstr_to_ldouble(CDSTR p, size_t* index);
+
+
 /*-------------------------------------------------------------------------------*/
 
 
@@ -392,13 +405,24 @@ static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count) {
 #define dgetline            dstr_fgetline
 #define dgets               dstr_fgets
 
+#define disdigits           dstr_isdigits
+#define disxdigits          dstr_isxdigits
+#define dstrhash            dstr_hash
+
 #define datoi               dstr_atoi
 #define datol               dstr_atoi
 #define datoll              dstr_atoll
 #define ditoa               dstr_itoa
-#define disdigits           dstr_isdigits
-#define disxdigits          dstr_isxdigits
-#define dstrhash            dstr_hash
+#define dstrtoi             dstr_to_int
+#define dstrtol             dstr_to_long
+#define dstrtoul            dstr_to_ulong
+#define dstrtoll            dstr_to_llong
+#define dstrtoull           dstr_to_ullong
+#define dstrtof             dstr_to_float
+#define dstrtod             dstr_to_double
+#define dstrtold            dstr_to_ldouble
+
+
 
 /* clean namespace */
 #endif

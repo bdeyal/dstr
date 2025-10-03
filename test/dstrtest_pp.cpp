@@ -1275,6 +1275,22 @@ void test_operator_plus()
     assert(sz + s1 + c == "ghiabcX");
     assert(c + s1 + sz == "Xabcghi");
 }
+//-------------------------------------------------
+
+// TODO: complete this
+//
+void test_conversion()
+{
+    TRACE_FN();
+
+    DString s("15");
+    size_t index;
+
+    int n = s.stoi(&index);
+    printf("%d, %zu\n", n, index);
+}
+//-------------------------------------------------
+
 
 int main()
 {
@@ -1316,5 +1332,6 @@ int main()
     test_push_back_front();
     test_pop_back_front();
     test_operator_plus();
+    test_conversion();
     // last test
 }
