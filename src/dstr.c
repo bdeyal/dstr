@@ -662,41 +662,48 @@ DSTR dstr_create_cc(char ch, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
+DSTR dstr_slurp_stream(DSTR p, FILE* fp)
+{
+    char chunk[512];
+
+    while (1) {
+        size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
+        if (len < sizeof(chunk)) {
+            if (ferror(fp))
+                return NULL;
+        }
+
+        if (len)
+            dstr_append_imp(p, chunk, len);
+
+        if (feof(fp)) {
+            break;
+        }
+    }
+
+    dstr_assert_valid(p);
+    return p;
+}
+/*-------------------------------------------------------------------------------*/
+
 DSTR dstr_assign_fromfile(DSTR p, const char* fname)
 {
     FILE* fp;
-    long fsize, sread;
     int original_errno = 0;
     bool create_new = (p == NULL);
 
     if ((fp = fopen(fname, "r")) == NULL)
         return NULL;
 
-    if (fseek(fp, 0L, SEEK_END) != 0)
-        goto err_close_fp;
-
-    if ((fsize = ftell(fp)) == -1)
-        goto err_close_fp;
-
-    rewind(fp);
-
     if (create_new) {
-        if ((p = dstr_create_len_imp(fsize)) == NULL)
-            goto err_close_fp;
-    }
-    else {
-        if ((p = dstr_grow(p, fsize)) == NULL)
+        if ((p = dstr_alloc_empty()) == NULL)
             goto err_close_fp;
     }
 
-    if ((sread = fread(DBUF(p), sizeof(char), fsize, fp)) != fsize)
+    if (dstr_slurp_stream(p, fp) == NULL)
         goto err_clean_result;
 
     fclose(fp);
-
-    DVAL(p, sread) = '\0';
-    DLEN(p) = sread;
-
     dstr_assert_valid(p);
     return p;
 

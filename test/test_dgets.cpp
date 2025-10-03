@@ -241,4 +241,6 @@ int main(int argc, char* argv[])
     test_getline_2(fname);
     test_fromfile(fname);
     test_insert_operator(fname);
+
+    cout << endl;
 }

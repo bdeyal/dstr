@@ -65,6 +65,7 @@ DSTR dstr_create_range(const char* first, const char* last);
 /* create by slurp a textfile*/
 DSTR dstr_create_fromfile(const char* fname);
 DSTR dstr_assign_fromfile(DSTR p, const char* fname);
+DSTR dstr_slurp_stream(DSTR p, FILE* fp);
 
 /* create from a [v]sprintf like call*/
 DSTR dstr_create_sprintf(const char* fmt, ...);
@@ -364,6 +365,8 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrcpy_rng         dstr_assign_range
 #define dstrcpy_ds          dstr_assign_ds
 #define dstrcpy_substr      dstr_assign_substr
+#define dstrcpy_file        dstr_assign_fromfile
+#define dstrcpy_strm        dstr_slurp_stream
 
 #define dstrcat_sz          dstr_append_sz
 #define dstrcat_cc          dstr_append_cc

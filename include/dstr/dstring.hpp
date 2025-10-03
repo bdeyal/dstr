@@ -94,6 +94,14 @@ public:
         return DSTR_FAIL;
     }
 
+    int from_cfile(FILE* fp)
+    {
+        if (dstr_slurp_stream(pImp(), fp))
+            return DSTR_SUCCESS;
+
+        return DSTR_FAIL;
+    }
+
 #if __cplusplus >= 201103L
     // Assignments operator and functions
     //
