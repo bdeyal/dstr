@@ -775,11 +775,16 @@ int dstr_shrink_to_fit(DSTR p)
 {
     dstr_assert_valid(p);
 
-    // Nothing to shrink
+    // If nothing to shrink, return immediately
     //
+    if (D_IS_SSO(p))
+        return DSTR_SUCCESS;
+
     if (DCAP(p)/2 < DLEN(p))
         return DSTR_SUCCESS;
 
+    // Otherwise create a fresh new and swap representation
+    //
     DSTR_IMP tmp;
     dstr_init_data(&tmp);
     if (!dstr_assign_ds(&tmp, p))
@@ -892,6 +897,9 @@ int dstr_append_c(DSTR p, char c)
         return DSTR_SUCCESS;
 
     if ((DLEN(p) + 1) >= DCAP(p)) {
+        // amortized constant. Internal buffer capacity doubled
+        // when needed
+        //
         if (!dstr_grow_by(p, 1)) {
             return DSTR_FAIL;
         }
@@ -1311,7 +1319,6 @@ int dstr_replace_range(DSTR p, size_t pos, size_t count, const char* first, cons
 }
 /*-------------------------------------------------------------------------------*/
 
-
 void dstr_trim_right(DSTR p)
 {
     size_t len;
@@ -1493,7 +1500,7 @@ unsigned int dstr_hash(CDSTR src)
     dstr_assert_valid(src);
 
     len = DLEN(src);
-    p    = DBUF(src);
+    p   = DBUF(src);
 
     while (len) {
         result = (result << 5) - result + (unsigned int)(*p);
