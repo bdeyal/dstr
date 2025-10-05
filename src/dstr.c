@@ -9,6 +9,17 @@
 #include <dstr/dstr.h>
 
 /*
+ *   garbage collector / memory checker
+ */
+#ifdef GC_DEBUG
+#include <gc/gc.h>
+#define malloc  GC_MALLOC
+#define free    GC_FREE
+#define realloc GC_REALLOC
+#endif
+/*-------------------------------------------------------------------------------*/
+
+/*
  *  For convenience, make code shorter
  */
 #define BASE(p)       (p)
@@ -43,10 +54,10 @@
  */
 #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
 
-/*
- *  WIN32 missing functions or functions with different names
- */
 #ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
+
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
     const char* cp = haystack;
@@ -71,19 +82,6 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
 
     return NULL;
 }
-#define strcasecmp _stricmp
-#define strcasestr my_strcasestr
-#endif
-
-/*
- *   garbage collector / memory checker
- */
-#ifdef GC_DEBUG
-#include <gc/gc.h>
-#define malloc  GC_MALLOC
-#define free    GC_FREE
-#define realloc GC_REALLOC
-#endif
 /*-------------------------------------------------------------------------------*/
 
 static inline size_t min_2(size_t a, size_t b)
@@ -420,7 +418,7 @@ static size_t dstr_find_sz_imp(CDSTR p,
     search_loc = DBUF(p) + pos;
 
     if (ignore_case)
-        found_loc = strcasestr(search_loc, s);
+        found_loc = my_strcasestr(search_loc, s);
     else
         found_loc = strstr(search_loc, s);
 
