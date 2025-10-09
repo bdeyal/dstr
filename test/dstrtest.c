@@ -1410,18 +1410,37 @@ void test_isdigit()
 }
 //-------------------------------------------------
 
-void test_shared_dstr()
+void test_center()
 {
     TRACE_FN();
 
     DSTR s1 = dstrnew_sz("Hello");
-    DSTR s2 = s1;
-    assert( dstrdata(s1) == dstrdata(s2) );
+    DSTR s2 = dstrnew_ds(s1);
 
-    dstrresize(s1, 1024);
-    assert( dstrdata(s1) == dstrdata(s2) );
+    dstrcenter(s2, 30, '@');
+    printf("%s\n", dstrdata(s2));
+
+    dstrcpy_ds(s2, s1);
+    dstrcenter(s2, dstrlen(s1), '@');
+    printf("%s\n", dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrcpy_ds(s2, s1);
+    dstrcenter(s2, dstrlen(s1) - 1, '@');
+    printf("%s\n", dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrcpy_ds(s2, s1);
+    dstrcenter(s2, 20, '+');
+    printf("%s\n", dstrdata(s2));
+
+    dstrcpy_ds(s2, s1);
+    dstrcenter(s2, 20, ' ');
+    printf("\"%s\"\n", dstrdata(s2));
+
+    dstrfree(s2);
+    dstrfree(s1);
 }
-//-------------------------------------------------
 
 int main()
 {
@@ -1462,8 +1481,6 @@ int main()
     test_fgets();
     test_atoi_itoa();
     test_isdigit();
-    //test_shared_dstr();
-
-    // last test
     test_getline();
+    test_center();
 }

@@ -1408,6 +1408,36 @@ void test_operator_plus()
 }
 //-------------------------------------------------
 
+void test_center()
+{
+    TRACE_FN();
+
+    using namespace std;
+
+    DString s1("Hello");
+
+    DString s2 = s1.center(30, '@');
+    cout << s2 << endl;
+
+    s2 = s1.center(s1.length(), '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.center(s1.length() - 1, '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.center(20, '+');
+    cout << s2 << endl;
+
+    s2 = s1.center(20, ' ');
+    cout << "\"" << s2 << "\"" << endl;
+
+    s2 = s1.center(30);
+    cout << "\"" << s2 << "\"" << endl;
+}
+//-------------------------------------------------
+
 // TODO: complete this
 //
 void test_conversion()
@@ -1467,5 +1497,6 @@ int main()
     test_pop_back_front();
     test_operator_plus();
     test_conversion();
+    test_center();
     // last test
 }

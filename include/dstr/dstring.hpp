@@ -218,6 +218,20 @@ public:
         return *this;
     }
 
+    DString& align_center(size_t width, char fill = ' ')
+    {
+        if (length() < width)
+            dstr_align_center(pImp(), width, fill);
+        return *this;
+    }
+
+    DString center(size_t width, char fill = ' ') const
+    {
+        DString result(*this);
+        result.align_center(width, fill);
+        return result;
+    }
+
     void push_back(char c)
     {
         dstr_append_inline(pImp(), c);

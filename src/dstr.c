@@ -1941,3 +1941,32 @@ long double dstr_to_ldouble(CDSTR p, size_t* index)
     return result;
 }
 /*-------------------------------------------------------------------------------*/
+
+int dstr_align_center(DSTR dest, size_t width, char fill)
+{
+    dstr_assert_valid(dest);
+
+    size_t slen = DLEN(dest);
+    if (slen >= width)
+        return DSTR_SUCCESS;
+
+    size_t left_side  = (width - slen) / 2;
+    size_t right_side = width - slen - left_side;
+    assert(right_side > 0);
+
+    if (left_side) {
+        if (!dstr_insert_cc_imp(dest, 0, fill, left_side))
+            return DSTR_FAIL;
+    }
+
+    if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side))
+        return DSTR_FAIL;
+
+    // sanity
+    //
+    assert(dstr_length(dest) == width);
+    dstr_assert_valid(dest);
+
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/

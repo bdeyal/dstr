@@ -109,6 +109,9 @@ int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
 int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
 int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, const char* last);
 
+/* expand original DEST to be at center of WIDTH characters with fill FILL */
+int dstr_align_center(DSTR dest, size_t width, char fill);
+
 /*
  *  either truncate to LEN or enlarge capacity to at least LEN without
  *  changing content
@@ -397,6 +400,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrcat_ds          dstr_append_ds
 #define dstrcat_bl          dstr_append_bl
 #define dstrcat_rng         dstr_append_range
+#define dstrcenter          dstr_align_center
 
 #define dstrfree            dstr_destroy
 #define dstrtrunc           dstr_truncate
