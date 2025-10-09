@@ -658,14 +658,14 @@ private:
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
-    struct DSTR_IMP_Aux : DSTR_IMP {
-        DSTR_IMP_Aux()
+    struct DSTR_TYPE_Wrapper : DSTR_TYPE {
+        DSTR_TYPE_Wrapper()
         {
             dstr_init_data(this);
         }
     };
 
-    DSTR_IMP_Aux m_imp;
+    DSTR_TYPE_Wrapper m_imp;
 };
 //----------------------------------------------------------------
 

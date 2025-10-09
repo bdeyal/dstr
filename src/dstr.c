@@ -133,7 +133,7 @@ static const char* my_strcasechr(const char* s, int c)
 
 static DSTR dstr_alloc_empty(void)
 {
-    DSTR p = (DSTR) malloc(sizeof(struct DSTR_IMP));
+    DSTR p = (DSTR) malloc(sizeof(struct DSTR_TYPE));
     if (p) {
         // inline at dstr.h
         dstr_init_data(p);
@@ -329,7 +329,7 @@ static int dstr_replace_imp(DSTR p,
     // in case of overlap we copy to a tmp DSTR
     //
     if (first <= buff && buff <= last) {
-        DSTR_IMP tmp;
+        struct DSTR_TYPE tmp;
         dstr_init_data(&tmp);
 
         if (dstr_assign_bl(&tmp, buff, buflen))
@@ -902,7 +902,7 @@ int dstr_shrink_to_fit(DSTR p)
 
     // Otherwise create a fresh new and swap representation
     //
-    DSTR_IMP tmp;
+    struct DSTR_TYPE tmp;
     dstr_init_data(&tmp);
     if (!dstr_assign_ds(&tmp, p))
         return DSTR_FAIL;
@@ -1586,7 +1586,7 @@ void dstr_swap(DSTR d1, DSTR d2)
     // Although this is 32 bytes copy, each copy takes one
     // AVX instruction
     //
-    struct DSTR_IMP tmp = *d1;
+    struct DSTR_TYPE tmp = *d1;
     *d1 = *d2;
     *d2 = tmp;
 

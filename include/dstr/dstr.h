@@ -13,16 +13,16 @@
 /* allocation size at creation */
 #define DSTR_INITIAL_CAPACITY (16U)
 
-typedef struct DSTR_IMP
+typedef struct DSTR_TYPE
 {
     uint32_t length;
     uint32_t capacity;
     char*  data;
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
-} DSTR_IMP;
+} DSTR_TYPE;
 
-typedef       DSTR_IMP*  DSTR;
-typedef const DSTR_IMP*  CDSTR;
+typedef       DSTR_TYPE*  DSTR;
+typedef const DSTR_TYPE*  CDSTR;
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))
@@ -344,10 +344,10 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrchr_i           dstr_ifind_c
 #define dstrstr_i           dstr_ifind_sz
 
-#define dstrrchr             dstr_rfind_c
-#define dstrrstr             dstr_rfind_sz
-#define dstrrchr_i           dstr_irfind_c
-#define dstrrstr_i           dstr_irfind_sz
+#define dstrrchr            dstr_rfind_c
+#define dstrrstr            dstr_rfind_sz
+#define dstrrchr_i          dstr_irfind_c
+#define dstrrstr_i          dstr_irfind_sz
 
 #define dstrhas             dstr_contains_sz
 #define dstrhas_i           dstr_icontains_sz
