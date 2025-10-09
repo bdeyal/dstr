@@ -859,6 +859,75 @@ void test_find()
 }
 //-------------------------------------------------
 
+
+void test_rfind()
+{
+    TRACE_FN();
+
+    const char* longstr = "Good morning today is Friday";
+    DString s1(longstr);
+
+    assert(s1.rfind("good") == DSTR_NPOS);
+    assert(s1.rfind("Good") == 0);
+    assert(s1.rfind("morning") == 5);
+    assert(s1.rfind("morning", 4) == DSTR_NPOS);
+    assert(s1.rfind("morning") == 5);
+    assert(s1.rfind("day") == 25);
+    assert(s1.rfind("date", 3) == DSTR_NPOS);
+
+    assert(s1.irfind("good") == 0);
+    assert(s1.irfind("GOOD") == 0);
+    assert(s1.irfind("MoRnInG") == 5);
+    assert(s1.irfind("MoRnInG", 2) == DSTR_NPOS);
+    assert(s1.irfind("MoRnInG", 0) == DSTR_NPOS);
+    assert(s1.irfind("DAY") == 25);
+    assert(s1.irfind("DAY", 18) == 15);
+    assert(s1.irfind("Date") == DSTR_NPOS);
+
+    assert(s1.rfind('g') == 11);
+    assert(s1.rfind('y') == 27);
+    assert(s1.rfind('g', 2) == DSTR_NPOS);
+    assert(s1.rfind('g', 11) == 11);
+    assert(s1.rfind('g', 12) == 11);
+
+    assert(s1.rfind('X') == DSTR_NPOS);
+
+    assert( s1.irfind('G') == 11);
+    assert( s1.irfind('g') == 11);
+    assert( s1.irfind('m') == 5);
+    assert( s1.irfind('M') == 5);
+    assert( s1.irfind('f') == 22);
+    assert( s1.irfind('f') == 22);
+    assert( s1.irfind('X', 0) == DSTR_NPOS);
+
+    s1 = "";
+    assert(s1.irfind('X') == DSTR_NPOS);
+    assert(s1.irfind("good") == DSTR_NPOS);
+    assert(s1.rfind('X') == DSTR_NPOS);
+    assert(s1.rfind("good") == DSTR_NPOS);
+
+    assert(DString("hello").rfind("hello") == 0);
+    assert(DString("hello").rfind("l") == 3);
+    assert(DString("he@@@XXX@@@llo").rfind("@@@") == 8);
+    assert(DString("he@@@XXX@@@llo").rfind("@@@", 9) == 8);
+    assert(DString("hello").irfind("HeLlO") == 0);
+    assert(DString('C', 1).irfind('c') == 0);
+
+    using namespace std;
+
+    assert(std::string("he@@@XXX@@@llo").rfind("@@@") == 8);
+    assert(std::string("he@@@XXX@@@llo").rfind("@@@", 9) == 8);
+    assert(std::string("").rfind("") == 0);
+    assert(std::string("").rfind("XX") == string::npos);
+    assert(std::string("XX").rfind("") == 2);
+
+    assert(DString("").rfind("") == 0);
+    assert(DString("").rfind("XX") == DString::NPOS);
+    assert(DString("XX").rfind("") == 2);
+
+}
+//-------------------------------------------------
+
 void test_put_get()
 {
     TRACE_FN();
@@ -1023,6 +1092,49 @@ void test_ffo()
 }
 //-------------------------------------------------
 
+void test_flo()
+{
+    TRACE_FN();
+
+    const char* longstr = "Good morning today is Friday";
+    DString s1(longstr);
+
+    size_t res = s1.flo(" \t");
+    assert(res == 21);
+
+    res = s1.flo(" \t", 5);
+    assert(res == 4);
+
+    res = s1.flo("");
+    assert(res == DSTR_NPOS);
+
+    DString rhs("Frdy");
+    res = s1.flo(rhs);
+    assert(res == 27);
+
+    rhs = " F";
+    res = s1.flo(rhs);
+    assert(res == 22);
+
+    DString comment("# comment");
+    res = comment.flo("#;");
+    assert(res == 0);
+
+    res = comment.flo("XYZ");
+    assert(res == DSTR_NPOS);
+
+    comment = "";
+    assert( comment.flo("X") == DSTR_NPOS );
+
+    DString path = "/path/to/a/directory/with/file.txt";
+    DString ext(path.substr(1 + path.flo(".")));
+    assert(ext == "txt");
+
+    DString fname(path.substr(1+path.flo("/")));
+    assert(fname == "file.txt");
+}
+//-------------------------------------------------
+
 void test_ffno()
 {
     TRACE_FN();
@@ -1064,6 +1176,24 @@ void test_ffno()
 }
 //-------------------------------------------------
 
+void test_flno()
+{
+    TRACE_FN();
+
+    const char* longstr = "ABCDEF_123456";
+    DString s1(longstr);
+
+    size_t res = s1.flno("0123456789");
+    assert(res == 6);
+
+    res = s1.flno("0123456789", 5);
+    assert(res == 5);
+
+    res = s1.flno("ABCDEF", 5);
+    assert(res == DSTR_NPOS);
+}
+//-------------------------------------------------
+
 void test_prefix()
 {
     TRACE_FN();
@@ -1076,11 +1206,11 @@ void test_prefix()
     assert( s1.startswith(longstr));
     assert( !s1.startswith("good"));
 
-    assert( s1.startswith("GOOD MORNING", DString::IgnoreCase));
-    assert( s1.startswith("GooD", DString::IgnoreCase));
-    assert( s1.startswith("GooD morNiNg Today is Friday", DString::IgnoreCase));
+    assert( s1.istartswith("GOOD MORNING"));
+    assert( s1.istartswith("GooD"));
+    assert( s1.istartswith("GooD morNiNg Today is Friday"));
     assert( !s1.startswith("H"));
-    assert( !s1.startswith("H", DString::IgnoreCase));
+    assert( !s1.istartswith("H"));
 
     DString s2("Good");
     const char* longer_str = "GoodXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
@@ -1100,12 +1230,12 @@ void test_suffix()
     assert( s1.endswith("day"));
     assert(!s1.endswith("D") );
     assert( s1.endswith(longstr));
-    assert( s1.endswith("GooD morNiNg Today is Friday", DString::IgnoreCase));
+    assert( s1.iendswith("GooD morNiNg Today is Friday"));
 
-    assert( s1.endswith("Y", DString::IgnoreCase));
-    assert( s1.endswith("DaY", DString::IgnoreCase));
+    assert( s1.iendswith("Y"));
+    assert( s1.iendswith("DaY"));
     assert( !s1.endswith("H"));
-    assert( !s1.endswith("H", DString::IgnoreCase));
+    assert( !s1.iendswith("H"));
 }
 //-------------------------------------------------
 
@@ -1117,6 +1247,7 @@ void test_blank()
     DString s1(longstr);
 
     assert( !s1.isblank() );
+    TRACE_LN();
 
     s1 = " \t";
     assert( s1.isblank() );
@@ -1316,6 +1447,7 @@ int main()
     test_left_mid_right();
     test_truncate();
     test_find();
+    test_rfind();
     test_put_get();
     test_put_get_safe();
     test_ascii_upper_lower();
@@ -1323,6 +1455,8 @@ int main()
     test_swap();
     test_ffo();
     test_ffno();
+    test_flo();
+    test_flno();
     test_prefix();
     test_suffix();
     test_blank();

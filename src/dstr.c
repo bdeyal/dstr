@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stddef.h>
+#include <limits.h>
 
 #include <dstr/dstr.h>
 
@@ -55,7 +56,8 @@
 #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
 
 #ifdef _WIN32
-#define strcasecmp _stricmp
+#define strcasecmp  _stricmp
+#define strncasecmp _strnicmp
 #endif
 
 static const char* my_strcasestr(const char* haystack, const char* needle)
@@ -429,6 +431,50 @@ static size_t dstr_find_sz_imp(CDSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
+static size_t dstr_rfind_sz_imp(CDSTR p,
+                                size_t pos,
+                                const char* s,
+                                int ignore_case)
+{
+    const char* found_loc = NULL;
+
+    dstr_assert_valid(p);
+
+    size_t slen = strlen(s);
+    if (slen > DLEN(p))
+        return DSTR_NPOS;
+
+    if (pos >= DLEN(p))
+        pos = DLEN(p);
+
+    if (slen == 0)
+        return pos;
+
+    for (const char* search_loc = dstr_address_c(p, pos) ;
+         search_loc >= DBUF(p) ;
+         --search_loc)
+    {
+        if (ignore_case) {
+            if (strncasecmp(search_loc, s, slen) == 0) {
+                found_loc = search_loc;
+                break;
+            }
+        }
+        else {
+            if (strncmp(search_loc, s, slen) == 0) {
+                found_loc = search_loc;
+                break;
+            }
+        }
+    }
+
+    if (found_loc == NULL)
+        return DSTR_NPOS;
+
+    return (size_t)(found_loc - DBUF(p));
+}
+/*-------------------------------------------------------------------------------*/
+
 static DSTR_BOOL dstr_suffix_sz_imp(CDSTR p,
                                     const char* s,
                                     int ignore_case)
@@ -510,6 +556,43 @@ static size_t dstr_find_c_imp(CDSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
+static size_t dstr_rfind_c_imp(CDSTR p,
+                               size_t pos,
+                               char c,
+                               int ignore_case)
+{
+    const char* found_loc = NULL;
+
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_NPOS;
+
+    if (pos >= DLEN(p))
+        pos = DLEN(p) - 1;
+
+    for (const char* search_loc = dstr_address_c(p, pos);
+          search_loc >= DBUF(p) ;
+          --search_loc)
+    {
+        if (*search_loc == c) {
+            found_loc = search_loc;
+            break;
+        }
+
+        if (ignore_case && toupper(*search_loc) == toupper(c)) {
+            found_loc = search_loc;
+            break;
+        }
+    }
+
+    if (found_loc == NULL)
+        return DSTR_NPOS;
+
+    return (size_t)(found_loc - DBUF(p));
+}
+/*-------------------------------------------------------------------------------*/
+
 static size_t dstr_ffo_imp(CDSTR p,
                            size_t pos,
                            const char* pattern,
@@ -535,6 +618,40 @@ static size_t dstr_ffo_imp(CDSTR p,
         result = DSTR_NPOS;
 
     return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+static size_t dstr_flo_imp(CDSTR p,
+                           size_t pos,
+                           const char* pattern,
+                           int not_off)
+{
+    dstr_assert_valid(p);
+
+    if (pattern == NULL || *pattern == '\0' || DLEN(p) == 0)
+        return DSTR_NPOS;
+
+    if (pos >= DLEN(p))
+        pos = DLEN(p) - 1;
+
+    for (size_t i = 0; i <= pos; ++i) {
+        size_t index = pos - i;
+        char ch = DVAL(p, index);
+        bool ch_in_pattern = (strchr(pattern, ch) != NULL);
+
+        if (not_off) {
+            if (!ch_in_pattern) {
+                return index;
+            }
+        }
+        else {
+            if (ch_in_pattern) {
+                return index;
+            }
+        }
+    }
+
+    return DSTR_NPOS;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -987,6 +1104,30 @@ size_t dstr_ifind_c(CDSTR p, size_t pos, char c)
 }
 /*-------------------------------------------------------------------------------*/
 
+size_t dstr_rfind_sz(CDSTR p, size_t pos, const char* s)
+{
+    return dstr_rfind_sz_imp(p, pos, s, DSTR_FALSE); /* don't ignore case */
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_irfind_sz(CDSTR p, size_t pos, const char* s)
+{
+    return dstr_rfind_sz_imp(p, pos, s, DSTR_TRUE);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_rfind_c(CDSTR p, size_t pos, char c)
+{
+    return dstr_rfind_c_imp(p, pos, c, DSTR_FALSE);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_irfind_c(CDSTR p, size_t pos, char c)
+{
+    return dstr_rfind_c_imp(p, pos, c, DSTR_TRUE);
+}
+/*-------------------------------------------------------------------------------*/
+
 DSTR_BOOL dstr_contains_sz(CDSTR p, const char* s)
 {
     return dstr_find_sz(p, 0, s) != DSTR_NPOS;
@@ -1046,6 +1187,30 @@ size_t dstr_ffno_sz(CDSTR p, size_t pos, const char* s)
 size_t dstr_ffno_ds(CDSTR p, size_t pos, CDSTR s)
 {
     return dstr_ffo_imp(p, pos, DBUF(s), DSTR_TRUE);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_flo_sz(CDSTR p, size_t pos, const char* pattern)
+{
+    return dstr_flo_imp(p, pos, pattern, /*not_of*/DSTR_FALSE);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_flo_ds(CDSTR p, size_t pos, CDSTR pattern)
+{
+    return dstr_flo_imp(p, pos, DBUF(pattern), DSTR_FALSE);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_flno_sz(CDSTR p, size_t pos, const char* s)
+{
+    return dstr_flo_imp(p, pos, s, DSTR_TRUE);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s)
+{
+    return dstr_flo_imp(p, pos, DBUF(s), DSTR_TRUE);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1418,10 +1583,15 @@ void dstr_swap(DSTR d1, DSTR d2)
     dstr_assert_valid(d1);
     dstr_assert_valid(d2);
 
+    // Although this is 32 bytes copy, each copy takes one
+    // AVX instruction
+    //
     struct DSTR_IMP tmp = *d1;
     *d1 = *d2;
     *d2 = tmp;
 
+    // it we were in SSO mode, make the fix
+    //
     if (d1->capacity == DSTR_INITIAL_CAPACITY) {
         d1->data = &d1->sso_buffer[0];
     }

@@ -154,6 +154,12 @@ size_t dstr_find_sz(CDSTR p, size_t pos, const char* s);
 size_t dstr_ifind_c(CDSTR p, size_t pos, char c);
 size_t dstr_ifind_sz(CDSTR p, size_t pos, const char* s);
 
+/* Reverse find s in p. returns index or DSTR_NPOS if not found */
+size_t dstr_rfind_c(CDSTR p, size_t pos, char c);
+size_t dstr_rfind_sz(CDSTR p, size_t pos, const char* s);
+size_t dstr_irfind_c(CDSTR p, size_t pos, char c);
+size_t dstr_irfind_sz(CDSTR p, size_t pos, const char* s);
+
 DSTR_BOOL dstr_contains_sz(CDSTR p, const char* s);
 DSTR_BOOL dstr_icontains_sz(CDSTR p, const char* s);
 DSTR_BOOL dstr_isblank(CDSTR p);
@@ -171,6 +177,12 @@ size_t dstr_ffo_sz(CDSTR p, size_t pos, const char* s);
 size_t dstr_ffo_ds(CDSTR p, size_t pos, CDSTR s);
 size_t dstr_ffno_sz(CDSTR p, size_t pos, const char* s);
 size_t dstr_ffno_ds(CDSTR p, size_t pos, CDSTR s);
+
+/* flo = find_last of, flno = find last not of */
+size_t dstr_flo_sz(CDSTR p, size_t pos, const char* s);
+size_t dstr_flo_ds(CDSTR p, size_t pos, CDSTR s);
+size_t dstr_flno_sz(CDSTR p, size_t pos, const char* s);
+size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s);
 
 /* copy NUMBYTES from INDEX to DEST. returns copied characters*/
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
@@ -331,6 +343,12 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrstr             dstr_find_sz
 #define dstrchr_i           dstr_ifind_c
 #define dstrstr_i           dstr_ifind_sz
+
+#define dstrrchr             dstr_rfind_c
+#define dstrrstr             dstr_rfind_sz
+#define dstrrchr_i           dstr_irfind_c
+#define dstrrstr_i           dstr_irfind_sz
+
 #define dstrhas             dstr_contains_sz
 #define dstrhas_i           dstr_icontains_sz
 #define dendswith           dstr_suffix_sz
@@ -344,6 +362,11 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrffo_ds          dstr_ffo_ds
 #define dstrffno_sz         dstr_ffno_sz
 #define dstrffno_ds         dstr_ffno_ds
+
+#define dstrflo_sz          dstr_flo_sz
+#define dstrflo_ds          dstr_flo_ds
+#define dstrflno_sz         dstr_flno_sz
+#define dstrflno_ds         dstr_flno_ds
 
 #define dstrcmp_sz          dstr_compare_sz
 #define dstrcmp_ds          dstr_compare_ds

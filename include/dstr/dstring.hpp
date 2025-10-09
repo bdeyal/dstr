@@ -7,7 +7,6 @@
 class DString {
 public:
     static const size_t NPOS = DSTR_NPOS;
-    static const bool IgnoreCase = true;
 
     // Constructors
     //
@@ -60,7 +59,7 @@ public:
             dstr_clean_data(pImp());
     }
 
-    DString substr(size_t pos, size_t count) const
+    DString substr(size_t pos, size_t count = NPOS) const
     {
         return DString(*this, pos, count);
     }
@@ -474,8 +473,24 @@ public:
         return dstr_ifind_c(pImp(), pos, c);
     }
 
-    size_t ifind(const char*sz, size_t pos=0) const {
+    size_t ifind(const char* sz, size_t pos=0) const {
         return dstr_ifind_sz(pImp(), pos, sz);
+    }
+
+    size_t rfind(char c, size_t pos = NPOS) const {
+        return dstr_rfind_c(pImp(), pos, c);
+    }
+
+    size_t rfind(const char* sz, size_t pos = NPOS) const {
+        return dstr_rfind_sz(pImp(), pos, sz);
+    }
+
+    size_t irfind(char c, size_t pos = NPOS) const {
+        return dstr_irfind_c(pImp(), pos, c);
+    }
+
+    size_t irfind(const char* sz, size_t pos = NPOS) const {
+        return dstr_irfind_sz(pImp(), pos, sz);
     }
 
     bool contains(const char* s) const {
@@ -490,18 +505,24 @@ public:
         return dstr_isblank(pImp());
     }
 
-    bool startswith(const char* s, bool ignore_case=false) const {
-        return ignore_case ?
-            dstr_iprefix_sz(pImp(), s) :
-            dstr_prefix_sz(pImp(), s);
+    bool startswith(const char* s) const {
+        return dstr_prefix_sz(pImp(), s);
     }
 
-    bool endswith(const char* s, bool ignore_case=false) const {
-        return ignore_case ?
-            dstr_isuffix_sz(pImp(), s) :
-            dstr_suffix_sz(pImp(), s);
+    bool istartswith(const char* s) const {
+        return dstr_iprefix_sz(pImp(), s);
     }
 
+    bool endswith(const char* s) const {
+        return dstr_suffix_sz(pImp(), s);
+    }
+
+    bool iendswith(const char* s) const {
+        return dstr_isuffix_sz(pImp(), s);
+    }
+
+    // ffo = find_first of
+    //
     size_t ffo(const char* s, size_t pos = 0) const {
         return dstr_ffo_sz(pImp(), pos, s);
     }
@@ -510,12 +531,34 @@ public:
         return dstr_ffo_ds(pImp(), pos, rhs.pImp());
     }
 
+    // ffno = find first not of
+    //
     size_t ffno(const char* s, size_t pos = 0) const {
         return dstr_ffno_sz(pImp(), pos, s);
     }
 
     size_t ffno(const DString& rhs, size_t pos = 0) const {
         return dstr_ffno_ds(pImp(), pos, rhs.pImp());
+    }
+
+    // flo = find_last_of
+    //
+    size_t flo(const char* s, size_t pos = DSTR_NPOS) const {
+        return dstr_flo_sz(pImp(), pos, s);
+    }
+
+    size_t flo(const DString& rhs, size_t pos = DSTR_NPOS) const {
+        return dstr_flo_ds(pImp(), pos, rhs.pImp());
+    }
+
+    // flno = find_last_not_of
+    //
+    size_t flno(const char* s, size_t pos = DSTR_NPOS) const {
+        return dstr_flno_sz(pImp(), pos, s);
+    }
+
+    size_t flno(const DString& rhs, size_t pos = DSTR_NPOS) const {
+        return dstr_flno_ds(pImp(), pos, rhs.pImp());
     }
 
     int compare(const char* sz) const {
@@ -618,10 +661,7 @@ private:
     struct DSTR_IMP_Aux : DSTR_IMP {
         DSTR_IMP_Aux()
         {
-            length = 0;
-            capacity = DSTR_INITIAL_CAPACITY;
-            sso_buffer[0] = '\0';
-            data = &sso_buffer[0];
+            dstr_init_data(this);
         }
     };
 

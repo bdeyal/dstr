@@ -832,8 +832,6 @@ void test_shrink()
 }
 //-------------------------------------------------
 
-
-
 void test_find()
 {
     TRACE_FN();
@@ -883,6 +881,61 @@ void test_find()
     assert( dstrchr_i(s1, 15, 'f') == 22);
     assert( dstrchr_i(s1, 100, 'f') == DSTR_NPOS);
     assert( dstrchr_i(s1, 0, 'X') == DSTR_NPOS);
+
+    dstrfree(s1);
+}
+//-------------------------------------------------
+
+void test_rfind()
+{
+    TRACE_FN();
+
+    const char* longstr = "Good morning today is Friday";
+    DSTR s1 = dstrnew_sz(longstr);
+
+    assert( dstrrstr(s1, 0, "good") == DSTR_NPOS);
+    printf("%zu\n", dstrrstr(s1, 1000, "Good"));
+    assert( dstrrstr(s1, 1000, "Good") == 0);
+    assert( dstrrstr(s1, 1000, "morning") == 5);
+    assert( dstrrstr(s1, 4, "morning") == DSTR_NPOS);
+    assert( dstrrstr(s1, 100, "morning") == 5);
+    assert( dstrrstr(s1, 1000, "day") == 25);
+    assert( dstrrstr(s1, 3, "date") == DSTR_NPOS);
+
+    assert( dstrrstr_i(s1, 1000, "good") == 0);
+    assert( dstrrstr_i(s1, 1000, "GOOD") == 0);
+    assert( dstrrstr_i(s1, 1000, "MoRnInG") == 5);
+    assert( dstrrstr_i(s1, 2, "MoRnInG") == DSTR_NPOS);
+    assert( dstrrstr_i(s1, 0, "MoRnInG") == DSTR_NPOS);
+    assert( dstrrstr_i(s1, 1000, "DAY") == 25);
+    assert( dstrrstr_i(s1, 18, "DAY") == 15);
+    assert( dstrrstr_i(s1, 100, "Date") == DSTR_NPOS);
+
+    assert( dstrrchr(s1, 1000, 'g') == 11);
+    assert( dstrrchr(s1, 1000, 'y') == 27);
+    assert( dstrrchr(s1, 2, 'g') == DSTR_NPOS);
+    assert( dstrrchr(s1, 11, 'g') == 11);
+    assert( dstrrchr(s1, 12, 'g') == 11);
+
+    assert( dstrrchr(s1, 0, 'X') == DSTR_NPOS);
+
+    assert( dstrrchr_i(s1, 100, 'G') == 11);
+    assert( dstrrchr_i(s1, 100, 'g') == 11);
+    assert( dstrrchr_i(s1, 100, 'm') == 5);
+    assert( dstrrchr_i(s1, 100, 'M') == 5);
+    assert( dstrrchr_i(s1, 100, 'f') == 22);
+    assert( dstrrchr_i(s1, 100, 'f') == 22);
+    assert( dstrrchr_i(s1, 0, 'X') == DSTR_NPOS);
+
+    dstrcpy_sz(s1, "");
+    assert( dstrrchr_i(s1, 100, 'X') == DSTR_NPOS);
+    assert( dstrrstr_i(s1, 1000, "good") == DSTR_NPOS);
+    assert( dstrrchr(s1, 100, 'X') == DSTR_NPOS);
+    assert( dstrrstr(s1, 1000, "good") == DSTR_NPOS);
+    assert( dstrrstr(s1, 1000, "") == 0);
+
+    dstrcpy_sz(s1, "XX");
+    assert( dstrrstr(s1, 1000, "") == dstrlen(s1));
 
     dstrfree(s1);
 }
@@ -1112,6 +1165,52 @@ void test_ffo()
 }
 //-------------------------------------------------
 
+void test_flo()
+{
+    TRACE_FN();
+
+    const char* longstr = "Good morning today is Friday";
+    DSTR s1 = dstrnew_sz(longstr);
+
+    size_t res = dstrflo_sz(s1, DSTR_NPOS, " \t");
+    assert(res == 21);
+
+    res = dstrflo_sz(s1, 5, " \t");
+    assert(res == 4);
+
+    res = dstrflo_sz(s1, 1000, "");
+    assert(res == DSTR_NPOS);
+
+    DSTR rhs = dstrnew_sz("Frdy");
+    res = dstrflo_ds(s1, DSTR_NPOS, rhs);
+    assert(res == 27);
+
+    dstrcpy_sz(rhs, " F");
+    res = dstrflo_ds(s1, DSTR_NPOS, rhs);
+    assert(res == 22);
+
+    DSTR comment = dstrnew_sz("# comment");
+    res = dstrflo_sz(comment, 1000, "#;");
+    printf("RES = %zu\n", res);
+    assert(res == 0);
+
+    TRACE_LN();
+
+    res = dstrflo_sz(comment, 1000, "XYZ");
+    printf("RES = %zu\n", res);
+    assert(res == DSTR_NPOS);
+
+    TRACE_LN();
+    dstrcpy_sz(comment, "");
+    assert( dstrflo_sz(comment, 1000, "X") == DSTR_NPOS );
+
+    TRACE_LN();
+    dstrfree(comment);
+    dstrfree(rhs);
+    dstrfree(s1);
+}
+//-------------------------------------------------
+
 void test_ffno()
 {
     TRACE_FN();
@@ -1155,6 +1254,26 @@ void test_ffno()
     dstrfree(s1);
     dstrfree(rhs);
     dstrfree(s2);
+}
+//-------------------------------------------------
+
+void test_flno()
+{
+    TRACE_FN();
+
+    const char* longstr = "ABCDEF_123456";
+    DSTR s1 = dstrnew_sz(longstr);
+
+    size_t res = dstrflno_sz(s1, 100, "0123456789");
+    assert(res == 6);
+
+    res = dstrflno_sz(s1, 5, "0123456789");
+    assert(res == 5);
+
+    res = dstrflno_sz(s1, 5, "ABCDEF");
+    assert(res == DSTR_NPOS);
+
+    dstrfree(s1);
 }
 //-------------------------------------------------
 
@@ -1327,6 +1446,7 @@ int main()
     test_truncate();
     test_shrink();
     test_find();
+    test_rfind();
     test_put_get();
     test_put_get_safe();
     test_ascii_upper_lower();
@@ -1334,6 +1454,8 @@ int main()
     test_swap();
     test_ffo();
     test_ffno();
+    test_flo();
+    test_flno();
     test_prefix();
     test_suffix();
     test_blank();
