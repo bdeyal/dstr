@@ -18,7 +18,7 @@ public:
     {
         if (c == '\0' || count == 0) return;
         if (count >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow(pImp(), count);
+            dstr_grow_ctor(pImp(), count);
         }
         m_imp.length = count;
         memset(m_imp.data, c, count);
@@ -30,7 +30,7 @@ public:
         if (!sz) return;
         size_t len = strlen(sz);
         if (len >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow(pImp(), len);
+            dstr_grow_ctor(pImp(), len);
         }
         m_imp.length = len;
         memcpy(m_imp.data, sz, len + 1);
@@ -40,7 +40,7 @@ public:
     {
         if (rhs.empty()) return;
         if (rhs.length() >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow(pImp(), rhs.length());
+            dstr_grow_ctor(pImp(), rhs.length());
         }
         m_imp.length = rhs.length();
         memcpy(m_imp.data, rhs.m_imp.data, rhs.length() + 1);
@@ -63,7 +63,7 @@ public:
         if (!buffer) return;
         if ((len = strnlen(buffer, len)) == 0) return;
         if (len >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow(pImp(), len);
+            dstr_grow_ctor(pImp(), len);
         }
         m_imp.length = len;
         memcpy(m_imp.data, buffer, len);
@@ -75,7 +75,7 @@ public:
         size_t distance = last - first;
         if (distance == 0) return;
         if (distance >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow(pImp(), distance);
+            dstr_grow_ctor(pImp(), distance);
         }
         m_imp.length = distance;
         memcpy(m_imp.data, first, distance);

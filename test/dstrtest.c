@@ -1118,8 +1118,12 @@ void test_swap()
 
     DSTR s1 = dstrnew_sz(NULL);
     DSTR s2 = dstrnew_sz("hello");
+    printf("\"%s\"\n", dstrdata(s1));
+    printf("\"%s\"\n", dstrdata(s2));
 
     dstrswap(s1, s2);
+    printf("\"%s\"\n", dstrdata(s1));
+    printf("\"%s\"\n", dstrdata(s2));
     assert( dstrempty(s2) );
     assert( dstreq_sz(s1, "hello") );
 

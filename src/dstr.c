@@ -143,7 +143,33 @@ static DSTR dstr_alloc_empty(void)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_grow(DSTR p, size_t len)
+// Not static since used in c++ side too
+//
+DSTR dstr_grow_ctor(DSTR p, size_t len)
+{
+    if (len < DSTR_INITIAL_CAPACITY)
+        return p;
+
+    size_t new_capacity = DSTR_INITIAL_CAPACITY;
+    while (new_capacity <= len)
+        new_capacity *= 2;
+
+    if (new_capacity > UINT32_MAX) {
+        errno = ERANGE;
+        return NULL;
+    }
+
+    char* newbuff = (char*) malloc(new_capacity);
+    if (!newbuff) return NULL;
+
+    newbuff[0] = '\0';
+    p->capacity = new_capacity;
+    p->data = newbuff;
+    return p;
+}
+/*-------------------------------------------------------------------------------*/
+
+static DSTR dstr_grow(DSTR p, size_t len)
 {
     size_t new_capacity;
     char* newbuff;
@@ -380,7 +406,7 @@ static inline DSTR dstr_create_len_imp(size_t len)
     if (!p)
         return NULL;
 
-    return dstr_grow(p, len);
+    return dstr_grow_ctor(p, len);
 }
 /*-------------------------------------------------------------------------------*/
 
