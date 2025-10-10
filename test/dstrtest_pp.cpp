@@ -1516,7 +1516,7 @@ void test_replace_all()
 
     const char* origstr = "I love apple apple apple apple apple";
     DString orig(origstr);
-    cout << "ORIG: " << orig << endl;
+    cout << "ORIG:\n" << orig << endl;
 
     orig.replace_all("apple", "@bannana@");
     cout << orig << endl;
@@ -1537,6 +1537,36 @@ void test_replace_all()
     orig.replace_all(DString("apple"), DString("@DString@"), 0);
     cout << orig << endl;
 
+}
+//-------------------------------------------------
+
+void test_count()
+{
+    TRACE_FN();
+
+    assert(DString("").count("") == 1);
+    assert(DString("A").count("") == 2);
+    assert(DString("ABC").count("") == 4);
+    assert(DString("ppppp").count("pp") == 2);
+    assert(DString("ppppp").count("ppp") == 1);
+
+    assert(DString("").icount("") == 1);
+    assert(DString("A").icount("") == 2);
+    assert(DString("ABC").icount("") == 4);
+    assert(DString("ppppp").icount("pp") == 2);
+    assert(DString("ppppp").icount("ppp") == 1);
+    assert(DString("ppppp").icount("PpP") == 1);
+
+    assert(DString("").count(DString("")) == 1);
+    assert(DString("ABC").count(DString("")) == 4);
+    assert(DString("ppppp").count(DString("pp")) == 2);
+    assert(DString("ppppp").count(DString("ppp")) == 1);
+
+    assert(DString("Hello World").count("hell") == 0);
+    assert(DString("Hello World").icount("hell") == 1);
+
+    assert(DString("Hello World").count("RLD") == 0);
+    assert(DString("Hello World").icount("RLD") == 1);
 }
 //-------------------------------------------------
 
@@ -1587,5 +1617,6 @@ int main()
     test_center();
     test_align();
     test_replace_all();
+    test_count();
     // last test
 }

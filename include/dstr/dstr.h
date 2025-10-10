@@ -175,6 +175,12 @@ size_t dstr_rfind_sz(CDSTR p, size_t pos, const char* s);
 size_t dstr_irfind_c(CDSTR p, size_t pos, char c);
 size_t dstr_irfind_sz(CDSTR p, size_t pos, const char* s);
 
+/* count non-overlapping occurrences of s in p */
+size_t dstr_count_sz(CDSTR p, const char* s);
+size_t dstr_count_ds(CDSTR p, CDSTR s);
+size_t dstr_icount_sz(CDSTR p, const char* s);
+size_t dstr_icount_ds(CDSTR p, CDSTR s);
+
 DSTR_BOOL dstr_contains_sz(CDSTR p, const char* s);
 DSTR_BOOL dstr_icontains_sz(CDSTR p, const char* s);
 DSTR_BOOL dstr_isblank(CDSTR p);
@@ -363,6 +369,11 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrrstr            dstr_rfind_sz
 #define dstrrchr_i          dstr_irfind_c
 #define dstrrstr_i          dstr_irfind_sz
+
+#define dstrcount           dstr_count_sz
+#define dstrcount_i         dstr_icount_sz
+#define dstrcount_ds        dstr_count_ds
+#define dsticount_di        dstr_icount_ds
 
 #define dstrhas             dstr_contains_sz
 #define dstrhas_i           dstr_icontains_sz

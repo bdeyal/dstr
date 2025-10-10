@@ -582,6 +582,22 @@ public:
         return dstr_irfind_sz(pImp(), pos, sz);
     }
 
+    size_t count(const char* sz) const {
+        return dstr_count_sz(pImp(), sz);
+    }
+
+    size_t count(const DString& ds) const {
+        return dstr_count_ds(pImp(), ds.pImp());
+    }
+
+    size_t icount(const char* sz) const {
+        return dstr_icount_sz(pImp(), sz);
+    }
+
+    size_t icount(const DString& ds) const {
+        return dstr_icount_ds(pImp(), ds.pImp());
+    }
+
     bool contains(const char* s) const {
         return dstr_contains_sz(pImp(), s);
     }

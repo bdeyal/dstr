@@ -2110,6 +2110,73 @@ int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count)
     if (oldlen == 0) return DSTR_SUCCESS;
     if (newlen == 0) return DSTR_SUCCESS;
 
-    return dstr_replace_all_imp(dest, DBUF(oldstr), oldlen, DBUF(newstr), newlen, count);
+    return dstr_replace_all_imp(dest,
+                                DBUF(oldstr), oldlen,
+                                DBUF(newstr), newlen,
+                                count);
+}
+/*-------------------------------------------------------------------------------*/
+
+// returns the number of non-overlapping occurrences of a substring within the string
+//
+static size_t dstr_count_aux(CDSTR p, const char* s, size_t slen, int ignore_case)
+{
+    size_t pos = 0;
+    size_t num_found = 0;
+
+    for (;;) {
+        pos = dstr_find_sz_imp(p, pos, s, ignore_case);
+        if (pos == DSTR_NPOS)
+            break;
+
+        pos += slen;
+        ++num_found;
+    }
+
+    return num_found;
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_count_sz(CDSTR p, const char* s)
+{
+    if (!p) return 0;
+    if (!s) return 0;
+    if (*s == '\0') return (DLEN(p) + 1);
+    if (DLEN(p) == 0) return 0;
+
+    return dstr_count_aux(p, s, strlen(s), 0);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_count_ds(CDSTR p, CDSTR s)
+{
+    if (!p) return 0;
+    if (!s) return 0;
+    if (DLEN(s) == 0) return (DLEN(p) + 1);
+    if (DLEN(p) == 0) return 0;
+
+    return dstr_count_aux(p, DBUF(s), DLEN(s), 0);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_icount_sz(CDSTR p, const char* s)
+{
+    if (!p) return 0;
+    if (!s) return 0;
+    if (*s == '\0') return (DLEN(p) + 1);
+    if (DLEN(p) == 0) return 0;
+
+    return dstr_count_aux(p, s, strlen(s), 1);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_icount_ds(CDSTR p, CDSTR s)
+{
+    if (!p) return 0;
+    if (!s) return 0;
+    if (DLEN(s) == 0) return (DLEN(p) + 1);
+    if (DLEN(p) == 0) return 0;
+
+    return dstr_count_aux(p, DBUF(s), DLEN(s), 1);
 }
 /*-------------------------------------------------------------------------------*/
