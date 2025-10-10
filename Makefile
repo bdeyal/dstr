@@ -65,6 +65,9 @@ $(LIB): ./src/dstring.cpp ./src/dstr.c $(DEPS_PP) Makefile
 	$(CXX) -c $(CXXFLAGS) -DNDEBUG ./src/dstring.cpp -o ./src/dstring.o
 	$(AR) rcs $(LIB) ./src/dstr.o ./src/dstring.o
 
+.PHONY: testall
+testall: test testvg test_various
+
 .PHONY: test
 test: $(PROGRAMS) ./test/test_file.txt
 	./test/dstrtest_pp
