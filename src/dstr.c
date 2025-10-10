@@ -1996,3 +1996,47 @@ int dstr_align_center(DSTR dest, size_t width, char fill)
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
+
+int dstr_align_right(DSTR dest, size_t width, char fill)
+{
+    dstr_assert_valid(dest);
+
+    size_t slen = DLEN(dest);
+    if (slen >= width)
+        return DSTR_SUCCESS;
+
+    size_t left_side  = width - slen;
+
+    if (!dstr_insert_cc_imp(dest, 0, fill, left_side))
+        return DSTR_FAIL;
+
+    // sanity
+    //
+    assert(dstr_length(dest) == width);
+    dstr_assert_valid(dest);
+
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_align_left(DSTR dest, size_t width, char fill)
+{
+    dstr_assert_valid(dest);
+
+    size_t slen = DLEN(dest);
+    if (slen >= width)
+        return DSTR_SUCCESS;
+
+    size_t right_side = width - slen;
+
+    if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side))
+        return DSTR_FAIL;
+
+    // sanity
+    //
+    assert(dstr_length(dest) == width);
+    dstr_assert_valid(dest);
+
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/

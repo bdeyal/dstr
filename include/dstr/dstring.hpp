@@ -256,10 +256,38 @@ public:
         return *this;
     }
 
-    DString center(size_t width, char fill = ' ') const
+    DString& align_right(size_t width, char fill = ' ')
+    {
+        if (length() < width)
+            dstr_align_right(pImp(), width, fill);
+        return *this;
+    }
+
+    DString& align_left(size_t width, char fill = ' ')
+    {
+        if (length() < width)
+            dstr_align_left(pImp(), width, fill);
+        return *this;
+    }
+
+    DString center_new(size_t width, char fill = ' ') const
     {
         DString result(*this);
         result.align_center(width, fill);
+        return result;
+    }
+
+    DString right_new(size_t width, char fill = ' ') const
+    {
+        DString result(*this);
+        result.align_right(width, fill);
+        return result;
+    }
+
+    DString left_new(size_t width, char fill = ' ') const
+    {
+        DString result(*this);
+        result.align_left(width, fill);
         return result;
     }
 

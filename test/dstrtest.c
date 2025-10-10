@@ -1421,25 +1421,25 @@ void test_center()
     DSTR s1 = dstrnew_sz("Hello");
     DSTR s2 = dstrnew_ds(s1);
 
-    dstrcenter(s2, 30, '@');
+    dstralign_c(s2, 30, '@');
     printf("%s\n", dstrdata(s2));
 
     dstrcpy_ds(s2, s1);
-    dstrcenter(s2, dstrlen(s1), '@');
-    printf("%s\n", dstrdata(s2));
-    assert(dstreq_ds(s1, s2));
-
-    dstrcpy_ds(s2, s1);
-    dstrcenter(s2, dstrlen(s1) - 1, '@');
+    dstralign_c(s2, dstrlen(s1), '@');
     printf("%s\n", dstrdata(s2));
     assert(dstreq_ds(s1, s2));
 
     dstrcpy_ds(s2, s1);
-    dstrcenter(s2, 20, '+');
+    dstralign_c(s2, dstrlen(s1) - 1, '@');
+    printf("%s\n", dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrcpy_ds(s2, s1);
+    dstralign_c(s2, 20, '+');
     printf("%s\n", dstrdata(s2));
 
     dstrcpy_ds(s2, s1);
-    dstrcenter(s2, 20, ' ');
+    dstralign_c(s2, 20, ' ');
     printf("\"%s\"\n", dstrdata(s2));
 
     dstrfree(s2);

@@ -1421,27 +1421,78 @@ void test_center()
 
     DString s1("Hello");
 
-    DString s2 = s1.center(30, '@');
+    DString s2 = s1.center_new(30, '@');
     cout << s2 << endl;
 
-    s2 = s1.center(s1.length(), '@');
-    cout << s2 << endl;
-    assert(s1 == s2);
-
-    s2 = s1.center(s1.length() - 1, '@');
+    s2 = s1.center_new(s1.length(), '@');
     cout << s2 << endl;
     assert(s1 == s2);
 
-    s2 = s1.center(20, '+');
+    s2 = s1.center_new(s1.length() - 1, '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.center_new(20, '+');
     cout << s2 << endl;
 
-    s2 = s1.center(20, ' ');
+    s2 = s1.center_new(20, ' ');
     cout << "\"" << s2 << "\"" << endl;
 
-    s2 = s1.center(30);
+    s2 = s1.center_new(30);
     cout << "\"" << s2 << "\"" << endl;
 }
 //-------------------------------------------------
+
+void test_align()
+{
+    TRACE_FN();
+
+    using namespace std;
+
+    DString s1("Hello");
+
+    DString s2 = s1.left_new(30, '@');
+    cout << s2 << endl;
+
+    s2 = s1.right_new(30, '@');
+    cout << s2 << endl;
+
+    s2 = s1.left_new(s1.length(), '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.right_new(s1.length(), '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.left_new(s1.length() - 1, '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.right_new(s1.length() - 1, '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.left_new(20, '+');
+    cout << s2 << endl;
+
+    s2 = s1.right_new(20, '+');
+    cout << s2 << endl;
+
+    s2 = s1.left_new(20, ' ');
+    cout << "\"" << s2 << "\"" << endl;
+
+    s2 = s1.right_new(20, ' ');
+    cout << "\"" << s2 << "\"" << endl;
+
+    s2 = s1.left_new(30);
+    cout << "\"" << s2 << "\"" << endl;
+
+    s2 = s1.right_new(30);
+    cout << "\"" << s2 << "\"" << endl;
+}
+//-------------------------------------------------
+
 
 // TODO: complete this
 //
@@ -1503,5 +1554,6 @@ int main()
     test_operator_plus();
     test_conversion();
     test_center();
+    test_align();
     // last test
 }

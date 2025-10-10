@@ -116,6 +116,8 @@ int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, con
 
 /* expand original DEST to be at center of WIDTH characters with fill FILL */
 int dstr_align_center(DSTR dest, size_t width, char fill);
+int dstr_align_right(DSTR dest, size_t width, char fill);
+int dstr_align_left(DSTR dest, size_t width, char fill);
 
 /*
  *  either truncate to LEN or enlarge capacity to at least LEN without
@@ -399,13 +401,21 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrcpy_file        dstr_assign_fromfile
 #define dstrcpy_strm        dstr_slurp_stream
 
+/* like BASIC functions Left$, Mid$, Right$ */
+#define dstrcpy_right       dstr_assign_right
+#define dstrcpy_left        dstr_assign_left
+#define dstrcpy_mid         dstr_assign_mid
+
 #define dstrcat_sz          dstr_append_sz
 #define dstrcat_cc          dstr_append_cc
 #define dstrcat_c           dstr_append_inline
 #define dstrcat_ds          dstr_append_ds
 #define dstrcat_bl          dstr_append_bl
 #define dstrcat_rng         dstr_append_range
-#define dstrcenter          dstr_align_center
+
+#define dstralign_r         dstr_align_right
+#define dstralign_l         dstr_align_left
+#define dstralign_c         dstr_align_center
 
 #define dstrfree            dstr_destroy
 #define dstrtrunc           dstr_truncate
