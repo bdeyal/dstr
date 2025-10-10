@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 /* allocation size at creation */
 #define DSTR_INITIAL_CAPACITY (16U)
