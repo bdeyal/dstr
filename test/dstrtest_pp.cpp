@@ -1508,6 +1508,37 @@ void test_conversion()
 }
 //-------------------------------------------------
 
+void test_replace_all()
+{
+    TRACE_FN();
+
+    using namespace std;
+
+    const char* origstr = "I love apple apple apple apple apple";
+    DString orig(origstr);
+    cout << "ORIG: " << orig << endl;
+
+    orig.replace_all("apple", "@bannana@");
+    cout << orig << endl;
+
+    orig = origstr;
+    orig.replace_all("apple", "fig");
+    cout << orig << endl;
+
+    orig = origstr;
+    orig.replace_all("apple", "@bannana@", 2);
+    cout << orig << endl;
+
+    orig = origstr;
+    orig.replace_all(DString("apple"), DString("@DString@"));
+    cout << orig << endl;
+
+    orig = origstr;
+    orig.replace_all(DString("apple"), DString("@DString@"), 0);
+    cout << orig << endl;
+
+}
+//-------------------------------------------------
 
 int main()
 {
@@ -1555,5 +1586,6 @@ int main()
     test_conversion();
     test_center();
     test_align();
+    test_replace_all();
     // last test
 }

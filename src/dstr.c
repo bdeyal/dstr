@@ -2040,3 +2040,76 @@ int dstr_align_left(DSTR dest, size_t width, char fill)
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
+
+static int dstr_replace_all_imp(DSTR dest,
+                                const char* oldstr, size_t oldlen,
+                                const char* newstr, size_t newlen,
+                                size_t count)
+{
+    size_t pos = 0;
+    size_t num_replaced = 0;
+
+    // We wil work on a copy so if a failure occurs in the middle of replace
+    // we don't leave the original argument in an undefined status
+    //
+    DSTR tmp = dstr_create_ds(dest);
+    if (!tmp) return DSTR_FAIL;
+
+    int result = DSTR_SUCCESS;
+
+    for (;;) {
+        pos = dstr_find_sz_imp(tmp, pos, oldstr, 0);
+
+        if (pos == DSTR_NPOS)
+            break;
+
+        if (!dstr_replace_imp(tmp, pos, oldlen, newstr, newlen)) {
+            result = DSTR_FAIL;
+            break;
+        }
+
+        if (++num_replaced == count)
+            break;
+
+        pos += newlen;
+    };
+
+    if (result == DSTR_SUCCESS && num_replaced > 0) {
+        dstr_swap(tmp, dest);
+    }
+
+    dstr_destroy(tmp);
+
+    return result;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_t count)
+{
+    if (!count)  return DSTR_SUCCESS;
+    if (!oldstr) return DSTR_SUCCESS;
+    if (!newstr) return DSTR_SUCCESS;
+    if (*oldstr == '\0') return DSTR_SUCCESS;
+    if (*newstr == '\0') return DSTR_SUCCESS;
+
+    size_t oldlen = strlen(oldstr);
+    size_t newlen = strlen(newstr);
+
+    return dstr_replace_all_imp(dest, oldstr, oldlen, newstr, newlen, count);
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count)
+{
+    if (!count)  return DSTR_SUCCESS;
+    if (!oldstr) return DSTR_SUCCESS;
+    if (!newstr) return DSTR_SUCCESS;
+
+    size_t oldlen = DLEN(oldstr);
+    size_t newlen = DLEN(newstr);
+    if (oldlen == 0) return DSTR_SUCCESS;
+    if (newlen == 0) return DSTR_SUCCESS;
+
+    return dstr_replace_all_imp(dest, DBUF(oldstr), oldlen, DBUF(newstr), newlen, count);
+}
+/*-------------------------------------------------------------------------------*/

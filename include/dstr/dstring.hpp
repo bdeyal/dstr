@@ -399,6 +399,22 @@ public:
         return *this;
     }
 
+    DString& replace_all(const char* oldstr,
+                         const char* newstr,
+                         size_t count = DSTR_REPLACE_ALL)
+    {
+        dstr_replace_all_sz(pImp(), oldstr, newstr, count);
+        return *this;
+    }
+
+    DString& replace_all(const DString& oldstr,
+                         const DString& newstr,
+                         size_t count = DSTR_REPLACE_ALL)
+    {
+        dstr_replace_all_ds(pImp(), oldstr.pImp(), newstr.pImp(), count);
+        return *this;
+    }
+
     void reserve(size_t len)
     {
         dstr_reserve(pImp(), len);

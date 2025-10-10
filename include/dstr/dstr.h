@@ -114,6 +114,11 @@ int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
 int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
 int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, const char* last);
 
+/* replace COUNT occurrences of old with new */
+#define DSTR_REPLACE_ALL DSTR_NPOS
+int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_t count);
+int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count);
+
 /* expand original DEST to be at center of WIDTH characters with fill FILL */
 int dstr_align_center(DSTR dest, size_t width, char fill);
 int dstr_align_right(DSTR dest, size_t width, char fill);
