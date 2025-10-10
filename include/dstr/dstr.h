@@ -89,6 +89,10 @@ int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count);
 int dstr_assign_sprintf(DSTR dest, const char* fmt, ...);
 int dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
+/* private function for use in C++ header */
+int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len);
+DSTR dstr_grow(DSTR p, size_t len);
+
 int dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
 int dstr_insert_sz(DSTR dest, size_t index, const char* value);
 int dstr_insert_ds(DSTR dest, size_t index, CDSTR src);

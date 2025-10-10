@@ -32,13 +32,12 @@ public:
         if (!sz) return;
         size_t len = strlen(sz);
 
-        if (len < DSTR_INITIAL_CAPACITY) {
-            m_imp.length = len;
-            memcpy(m_imp.data, sz, len + 1);
+        if (len >= DSTR_INITIAL_CAPACITY) {
+            dstr_grow(pImp(), len);
         }
-        else {
-            assign(sz, len);
-        }
+
+        m_imp.length = len;
+        memcpy(m_imp.data, sz, len + 1);
     }
 
     DString(const DString& rhs)

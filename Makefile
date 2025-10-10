@@ -19,6 +19,8 @@ endif
 ifeq ($(COMP),clang)
 	CC=clang
 	CXX=clang++
+#	CFLAGS+=-flto
+#	CXXFLAGS+=-flto
 endif
 
 PROGRAMS = \

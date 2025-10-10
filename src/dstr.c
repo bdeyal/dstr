@@ -143,7 +143,7 @@ static DSTR dstr_alloc_empty(void)
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR dstr_grow(DSTR p, size_t len)
+DSTR dstr_grow(DSTR p, size_t len)
 {
     size_t new_capacity;
     char* newbuff;
@@ -202,7 +202,7 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
+int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
     size_t bytes_to_move;
     char* first = DBUF(p);
