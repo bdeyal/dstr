@@ -16,26 +16,22 @@ public:
 
     DString(char c, size_t count)
     {
-        if (c == '\0') return;
-        if (count < DSTR_INITIAL_CAPACITY) {
-            m_imp.length = count;
-            memset(m_imp.data, c, count);
-            m_imp.data[count] = '\0';
+        if (c == '\0' || count == 0) return;
+        if (count >= DSTR_INITIAL_CAPACITY) {
+            dstr_grow(pImp(), count);
         }
-        else {
-            assign(c, count);
-        }
+        m_imp.length = count;
+        memset(m_imp.data, c, count);
+        m_imp.data[count] = '\0';
     }
 
     DString(const char* sz)
     {
         if (!sz) return;
         size_t len = strlen(sz);
-
         if (len >= DSTR_INITIAL_CAPACITY) {
             dstr_grow(pImp(), len);
         }
-
         m_imp.length = len;
         memcpy(m_imp.data, sz, len + 1);
     }
@@ -43,13 +39,11 @@ public:
     DString(const DString& rhs)
     {
         if (rhs.empty()) return;
-        if (rhs.length() < DSTR_INITIAL_CAPACITY) {
-            m_imp.length = rhs.length();
-            memcpy(m_imp.data, rhs.m_imp.data, rhs.length() + 1);
+        if (rhs.length() >= DSTR_INITIAL_CAPACITY) {
+            dstr_grow(pImp(), rhs.length());
         }
-        else {
-            assign(rhs);
-        }
+        m_imp.length = rhs.length();
+        memcpy(m_imp.data, rhs.m_imp.data, rhs.length() + 1);
     }
 
 #if __cplusplus >= 201103L
@@ -66,36 +60,26 @@ public:
 
     DString(const char* buffer, size_t len)
     {
-        if (!buffer)
-            return;
-
-        len = strnlen(buffer, len);
-
-        if (!len)
-            return;
-
-        if (len < DSTR_INITIAL_CAPACITY) {
-            m_imp.length = len;
-            memcpy(m_imp.data, buffer, len);
-            m_imp.data[len] = '\0';
+        if (!buffer) return;
+        if ((len = strnlen(buffer, len)) == 0) return;
+        if (len >= DSTR_INITIAL_CAPACITY) {
+            dstr_grow(pImp(), len);
         }
-        else {
-            assign(buffer, len);
-        }
+        m_imp.length = len;
+        memcpy(m_imp.data, buffer, len);
+        m_imp.data[len] = '\0';
     }
 
     DString(const char* first, const char* last)
     {
         size_t distance = last - first;
         if (distance == 0) return;
-        if (distance < DSTR_INITIAL_CAPACITY) {
-            m_imp.length = distance;
-            memcpy(m_imp.data, first, distance);
-            m_imp.data[distance] = '\0';
+        if (distance >= DSTR_INITIAL_CAPACITY) {
+            dstr_grow(pImp(), distance);
         }
-        else {
-            assign(first, last);
-        }
+        m_imp.length = distance;
+        memcpy(m_imp.data, first, distance);
+        m_imp.data[distance] = '\0';
     }
 
     // Destructor

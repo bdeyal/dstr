@@ -116,10 +116,11 @@ void test_char_ctor()
     assert(s1.length() == 5 );
     assert(s1 == "AAAAA");
 
-    DString s2('B', 1);
-    assert(s2.length() == 1 );
-    assert(s2 == "B");
-    assert(s2[0] == 'B');
+    DString s2('B', 100);
+    assert(s2.length() == 100 );
+    for (int i = 0; i < 100; ++i) {
+        assert(s2[i] == 'B');
+    }
 
     DString s3('\0', 5);
     assert(s3.length() == 0);
@@ -136,7 +137,7 @@ void test_copy_ctor()
     assert(s1 == s2);
     assert(s2 == "hello");
 
-    DString s3;
+    DString s3("Hello world this is a longer string");
     DString s4(s3);
     assert(s3 == s4);
 }
@@ -149,6 +150,10 @@ void test_buff_ctor()
     DString s1("ABCDEFGH", 5);
     assert(s1.length() == 5);
     assert(s1 == "ABCDE");
+
+    DString s1a("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 20);
+    assert(s1a.length() == 20);
+    assert(s1a == "ABCDEFGHIJKLMNOPQRST");
 
     DString s2("ABCDEFGH", size_t(0));
     assert(s2.length() == 0);

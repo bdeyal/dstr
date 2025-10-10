@@ -202,7 +202,7 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
+static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
     size_t bytes_to_move;
     char* first = DBUF(p);
