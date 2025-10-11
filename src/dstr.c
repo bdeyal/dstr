@@ -58,7 +58,7 @@
  */
 #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #define strcasecmp  _stricmp
 #define strncasecmp _strnicmp
 #endif
@@ -157,7 +157,7 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
     while (new_capacity <= len)
         new_capacity *= 2;
 
-    if (new_capacity > UINT32_MAX) {
+    if (new_capacity >= UINT32_MAX) {
         errno = ERANGE;
         DERR(p);
         return NULL;
@@ -191,7 +191,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
     while (new_capacity <= len)
         new_capacity *= 2;
 
-    if (new_capacity > UINT32_MAX) {
+    if (new_capacity >= UINT32_MAX) {
         errno = ERANGE;
         DERR(p);
         return NULL;
@@ -1699,7 +1699,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
         dstr_grow(p, 120);
 
     while ((c = fgetc(fp)) != EOF && c != '\n') {
-        if (!dstr_append_c(p, c)) {
+        if (!dstr_append_c(p, (char)c)) {
             dstr_truncate(p);
             return EOF;
         }
@@ -2258,7 +2258,7 @@ void dstr_title(DSTR p)
 
         if (curr_is_alpha && !prev_is_alpha)
         {
-            DVAL(p, pos) = toupper(ch);
+            DVAL(p, pos) = (char) toupper(ch);
         }
     }
 }

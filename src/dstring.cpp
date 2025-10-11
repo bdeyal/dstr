@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctype.h>
 #include <dstr/dstring.hpp>
 
 DString& DString::sprintf(const char* fmt, ...)

@@ -23,8 +23,8 @@ typedef struct DSTR_TYPE
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
 
-typedef       DSTR_TYPE*  DSTR;
-typedef const DSTR_TYPE*  CDSTR;
+typedef       struct DSTR_TYPE*  DSTR;
+typedef const struct DSTR_TYPE*  CDSTR;
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))

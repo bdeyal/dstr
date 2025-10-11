@@ -540,11 +540,11 @@ public:
         return dstr_valid_index(pImp(), pos);
     }
 
-    char getchar(long pos) const {
+    char get_char(long pos) const {
         return dstr_getchar_safe(pImp(), pos);
     }
 
-    void putchar(long pos, char c) {
+    void put_char(long pos, char c) {
         dstr_putchar_safe(pImp(), pos, c);
     }
 
