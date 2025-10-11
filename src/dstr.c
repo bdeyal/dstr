@@ -2075,21 +2075,21 @@ static int dstr_replace_all_imp(DSTR dest,
     // We wil work on a copy so if a failure occurs in the middle of replace
     // we don't leave the original argument in an undefined status
     //
-    DSTR tmp = dstr_create_ds(dest);
-    if (!tmp) {
-        DERR(dest);
+    DSTR_TYPE tmp;
+    dstr_init_data(&tmp);
+    if (!dstr_assign_ds(&tmp, dest)) {
         return DSTR_FAIL;
     }
 
     int result = DSTR_SUCCESS;
 
     for (;;) {
-        pos = dstr_find_sz_imp(tmp, pos, oldstr, 0);
+        pos = dstr_find_sz_imp(&tmp, pos, oldstr, 0);
 
         if (pos == DSTR_NPOS)
             break;
 
-        if (!dstr_replace_imp(tmp, pos, oldlen, newstr, newlen)) {
+        if (!dstr_replace_imp(&tmp, pos, oldlen, newstr, newlen)) {
             result = DSTR_FAIL;
             break;
         }
@@ -2101,10 +2101,10 @@ static int dstr_replace_all_imp(DSTR dest,
     };
 
     if (result == DSTR_SUCCESS && num_replaced > 0) {
-        dstr_swap(tmp, dest);
+        dstr_swap(&tmp, dest);
     }
 
-    dstr_destroy(tmp);
+    dstr_clean_data(&tmp);
 
     return result;
 }
@@ -2204,5 +2204,42 @@ size_t dstr_icount_ds(CDSTR p, CDSTR s)
     if (DLEN(p) == 0) return 0;
 
     return dstr_count_aux(p, DBUF(s), DLEN(s), 1);
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_expand_tabs(DSTR dest, size_t width)
+{
+    if (!dest || DLEN(dest) == 0)
+        return DSTR_SUCCESS;
+
+    DSTR_TYPE tmp;
+    dstr_init_data(&tmp);
+
+    for (size_t pos = 0; pos < DLEN(dest); ++pos)
+    {
+        char ch = DVAL(dest, pos);
+
+        if (ch == '\t') {
+            if (width == 0)
+                continue;
+
+            size_t to_tabstop = width - (DLEN(&tmp) % width);
+            if (!dstr_append_cc(&tmp, ' ', to_tabstop)) {
+                dstr_clean_data(&tmp);
+                return DSTR_FAIL;
+            }
+        }
+        else {
+            if (!dstr_append_c(&tmp, ch)) {
+                dstr_clean_data(&tmp);
+                return DSTR_FAIL;
+            }
+        }
+    }
+
+    dstr_swap(&tmp, dest);
+    dstr_clean_data(&tmp);
+
+    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/

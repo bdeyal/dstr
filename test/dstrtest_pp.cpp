@@ -1421,24 +1421,24 @@ void test_center()
 
     DString s1("Hello");
 
-    DString s2 = s1.center_new(30, '@');
+    DString s2 = s1.make_center(30, '@');
     cout << s2 << endl;
 
-    s2 = s1.center_new(s1.length(), '@');
-    cout << s2 << endl;
-    assert(s1 == s2);
-
-    s2 = s1.center_new(s1.length() - 1, '@');
+    s2 = s1.make_center(s1.length(), '@');
     cout << s2 << endl;
     assert(s1 == s2);
 
-    s2 = s1.center_new(20, '+');
+    s2 = s1.make_center(s1.length() - 1, '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.make_center(20, '+');
     cout << s2 << endl;
 
-    s2 = s1.center_new(20, ' ');
+    s2 = s1.make_center(20, ' ');
     cout << "\"" << s2 << "\"" << endl;
 
-    s2 = s1.center_new(30);
+    s2 = s1.make_center(30);
     cout << "\"" << s2 << "\"" << endl;
 }
 //-------------------------------------------------
@@ -1451,44 +1451,44 @@ void test_align()
 
     DString s1("Hello");
 
-    DString s2 = s1.left_new(30, '@');
+    DString s2 = s1.make_left(30, '@');
     cout << s2 << endl;
 
-    s2 = s1.right_new(30, '@');
+    s2 = s1.make_right(30, '@');
     cout << s2 << endl;
 
-    s2 = s1.left_new(s1.length(), '@');
-    cout << s2 << endl;
-    assert(s1 == s2);
-
-    s2 = s1.right_new(s1.length(), '@');
+    s2 = s1.make_left(s1.length(), '@');
     cout << s2 << endl;
     assert(s1 == s2);
 
-    s2 = s1.left_new(s1.length() - 1, '@');
+    s2 = s1.make_right(s1.length(), '@');
     cout << s2 << endl;
     assert(s1 == s2);
 
-    s2 = s1.right_new(s1.length() - 1, '@');
+    s2 = s1.make_left(s1.length() - 1, '@');
     cout << s2 << endl;
     assert(s1 == s2);
 
-    s2 = s1.left_new(20, '+');
+    s2 = s1.make_right(s1.length() - 1, '@');
+    cout << s2 << endl;
+    assert(s1 == s2);
+
+    s2 = s1.make_left(20, '+');
     cout << s2 << endl;
 
-    s2 = s1.right_new(20, '+');
+    s2 = s1.make_right(20, '+');
     cout << s2 << endl;
 
-    s2 = s1.left_new(20, ' ');
+    s2 = s1.make_left(20, ' ');
     cout << "\"" << s2 << "\"" << endl;
 
-    s2 = s1.right_new(20, ' ');
+    s2 = s1.make_right(20, ' ');
     cout << "\"" << s2 << "\"" << endl;
 
-    s2 = s1.left_new(30);
+    s2 = s1.make_left(30);
     cout << "\"" << s2 << "\"" << endl;
 
-    s2 = s1.right_new(30);
+    s2 = s1.make_right(30);
     cout << "\"" << s2 << "\"" << endl;
 }
 //-------------------------------------------------
@@ -1570,6 +1570,30 @@ void test_count()
 }
 //-------------------------------------------------
 
+void test_expandtabs()
+{
+    TRACE_FN();
+
+    DString s("\t");
+
+    assert(s.make_expandtabs() == "        ");
+    assert(s.make_expandtabs(1) == " ");
+    assert(s.make_expandtabs(2) == "  ");
+    assert(s.make_expandtabs(60) == DString(' ', 60));
+
+    s = "Hello\tWorld\tToday\tIs\tSaturday";
+    assert(s.make_expandtabs()  == "Hello   World   Today   Is      Saturday");
+    assert(s.make_expandtabs(7) == "Hello  World  Today  Is     Saturday");
+    assert(s.make_expandtabs(6) == "Hello World Today Is    Saturday");
+    assert(s.make_expandtabs(5) == "Hello     World     Today     Is   Saturday");
+    assert(s.make_expandtabs(4) == "Hello   World   Today   Is  Saturday");
+    assert(s.make_expandtabs(3) == "Hello World Today Is Saturday");
+    assert(s.make_expandtabs(2) == "Hello World Today Is  Saturday");
+    assert(s.make_expandtabs(1) == "Hello World Today Is Saturday");
+    assert(s.make_expandtabs(0) == "HelloWorldTodayIsSaturday");
+}
+//-------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -1618,5 +1642,6 @@ int main()
     test_align();
     test_replace_all();
     test_count();
+    test_expandtabs();
     // last test
 }

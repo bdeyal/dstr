@@ -119,6 +119,7 @@ int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, con
 #define DSTR_REPLACE_ALL DSTR_NPOS
 int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_t count);
 int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count);
+int dstr_expand_tabs(DSTR dest, size_t width);
 
 /* expand original DEST to be at center of WIDTH characters with fill FILL */
 int dstr_align_center(DSTR dest, size_t width, char fill);
@@ -451,6 +452,9 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dreplace_ds         dstr_replace_ds
 #define dreplace_bl         dstr_replace_bl
 #define dreplace_rng        dstr_replace_range
+#define dreplaceall_sz      dstr_replace_all_sz
+#define dreplaceall_ds      dstr_replace_all_ds
+#define dexpandtabs         dstr_expand_tabs
 
 #define dinsert_cc          dstr_insert_cc
 #define dinsert_sz          dstr_insert_sz

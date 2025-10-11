@@ -278,24 +278,37 @@ public:
         return *this;
     }
 
-    DString center_new(size_t width, char fill = ' ') const
+    DString make_center(size_t width, char fill = ' ') const
     {
         DString result(*this);
         result.align_center(width, fill);
         return result;
     }
 
-    DString right_new(size_t width, char fill = ' ') const
+    DString make_right(size_t width, char fill = ' ') const
     {
         DString result(*this);
         result.align_right(width, fill);
         return result;
     }
 
-    DString left_new(size_t width, char fill = ' ') const
+    DString make_left(size_t width, char fill = ' ') const
     {
         DString result(*this);
         result.align_left(width, fill);
+        return result;
+    }
+
+    DString& expandtabs(size_t width = 8)
+    {
+        dstr_expand_tabs(pImp(), width);
+        return *this;
+    }
+
+    DString make_expandtabs(size_t width = 8) const
+    {
+        DString result(*this);
+        result.expandtabs(width);
         return result;
     }
 
