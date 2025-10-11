@@ -28,6 +28,7 @@
 #define DLEN(p)       (BASE(p)->length)
 #define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
+#define DERR(p)       (BASE(p)->last_error = (errno))
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
 /*--------------------------------------------------------------------------*/
@@ -156,11 +157,15 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
 
     if (new_capacity > UINT32_MAX) {
         errno = ERANGE;
+        DERR(p);
         return NULL;
     }
 
     char* newbuff = (char*) malloc(new_capacity);
-    if (!newbuff) return NULL;
+    if (!newbuff) {
+        DERR(p);
+        return NULL;
+    }
 
     newbuff[0] = '\0';
     p->capacity = new_capacity;
@@ -186,12 +191,14 @@ static DSTR dstr_grow(DSTR p, size_t len)
 
     if (new_capacity > UINT32_MAX) {
         errno = ERANGE;
+        DERR(p);
         return NULL;
     }
 
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
         assert(D_IS_SSO(p));
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
+            DERR(p);
             return NULL;
         }
 
@@ -201,6 +208,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
     else {
         assert(!D_IS_SSO(p));
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
+            DERR(p);
             return NULL;
         }
     }
@@ -245,8 +253,9 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
     if (len == 0)
         return DSTR_SUCCESS;
 
-    if (!dstr_grow_by(p, len))
+    if (!dstr_grow_by(p, len)) {
         return DSTR_FAIL;
+    }
 
     // in case of overlap, check if realloc() moved the buffer
     //
@@ -289,8 +298,9 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
         return DSTR_SUCCESS;
     }
 
-    if (!dstr_grow_by(p, count))
+    if (!dstr_grow_by(p, count)) {
         return DSTR_FAIL;
+    }
 
     if (bytes_to_move > 0) {
         memmove(dstr_address(p, index + count),
@@ -810,8 +820,10 @@ DSTR dstr_slurp_stream(DSTR p, FILE* fp)
     while (1) {
         size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
         if (len < sizeof(chunk)) {
-            if (ferror(fp))
+            if (ferror(fp)) {
+                DERR(p);
                 return NULL;
+            }
         }
 
         if (len)
@@ -833,8 +845,12 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
     int original_errno = 0;
     bool create_new = (p == NULL);
 
-    if ((fp = fopen(fname, "r")) == NULL)
+    if ((fp = fopen(fname, "r")) == NULL) {
+        if (p) {
+            DERR(p);
+        }
         return NULL;
+    }
 
     if (create_new) {
         if ((p = dstr_alloc_empty()) == NULL)
@@ -852,6 +868,9 @@ err_clean_result:
     original_errno = errno;
     if (create_new) {
         dstr_destroy(p);
+    }
+    else {
+        DERR(p);
     }
 
 err_close_fp:
@@ -1283,14 +1302,18 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
     len = get_vsprintf_len(fmt, argptr2);
     va_end(argptr2);
 
-    if (len < 0)
+    if (len < 0) {
+        DERR(p);
         return DSTR_FAIL;
+    }
 
     if (!dstr_grow_by(p, len))
         return DSTR_FAIL;
 
-    if ((len = vsprintf(dstr_tail(p), fmt, argptr)) < 0)
+    if ((len = vsprintf(dstr_tail(p), fmt, argptr)) < 0) {
+        DERR(p);
         return DSTR_FAIL;
+    }
 
     DLEN(p) += len;
 
@@ -2053,7 +2076,10 @@ static int dstr_replace_all_imp(DSTR dest,
     // we don't leave the original argument in an undefined status
     //
     DSTR tmp = dstr_create_ds(dest);
-    if (!tmp) return DSTR_FAIL;
+    if (!tmp) {
+        DERR(dest);
+        return DSTR_FAIL;
+    }
 
     int result = DSTR_SUCCESS;
 

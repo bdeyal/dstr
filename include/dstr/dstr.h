@@ -12,12 +12,13 @@
 #include <string.h>
 
 /* allocation size at creation */
-#define DSTR_INITIAL_CAPACITY (16U)
+#define DSTR_INITIAL_CAPACITY (32U)
 
 typedef struct DSTR_TYPE
 {
-    uint32_t length;
-    uint32_t capacity;
+    uint64_t length;
+    uint64_t capacity;
+    int64_t  last_error;
     char*  data;
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
@@ -289,6 +290,7 @@ static inline void dstr_init_data(DSTR p)
 {
     p->length = 0;
     p->capacity = DSTR_INITIAL_CAPACITY;
+    p->last_error = 0;
     p->sso_buffer[0] = '\0';
     p->data = &p->sso_buffer[0];
 }

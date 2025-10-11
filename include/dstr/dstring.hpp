@@ -90,6 +90,14 @@ public:
             dstr_clean_data(pImp());
     }
 
+    int last_error() const {
+        return (int) pImp()->last_error;
+    }
+
+    void clear_error() {
+        pImp()->last_error = 0;
+    }
+
     DString substr(size_t pos, size_t count = NPOS) const
     {
         return DString(*this, pos, count);
