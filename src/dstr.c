@@ -29,6 +29,7 @@
 #define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
 #define DERR(p)       (BASE(p)->last_error = (errno))
+#define SERR(p)       (BASE(p)->last_error)
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
 /*--------------------------------------------------------------------------*/
@@ -40,6 +41,7 @@
     assert(DLEN(p) < DCAP(p));                                  \
     assert(DVAL(p, DLEN(p)) == '\0');                           \
     assert(DLEN(p) == strlen(DBUF(p)));                         \
+    assert(SERR(p) == 0);                                       \
     assert((DCAP(p) % DSTR_INITIAL_CAPACITY) == 0);             \
 } while(0)
 /*--------------------------------------------------------------------------*/
@@ -2241,5 +2243,23 @@ int dstr_expand_tabs(DSTR dest, size_t width)
     dstr_clean_data(&tmp);
 
     return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_title(DSTR p)
+{
+    bool curr_is_alpha = false;
+
+    for (size_t pos = 0; pos < DLEN(p); ++pos)
+    {
+        char ch = DVAL(p, pos);
+        bool prev_is_alpha = curr_is_alpha;
+        curr_is_alpha = isalpha(ch);
+
+        if (curr_is_alpha && !prev_is_alpha)
+        {
+            DVAL(p, pos) = toupper(ch);
+        }
+    }
 }
 /*-------------------------------------------------------------------------------*/

@@ -11,14 +11,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-/* allocation size at creation */
-#define DSTR_INITIAL_CAPACITY (32U)
+/* SSO buffer length (32/64 bytes on 32/64 bit systems respectively) */
+#define DSTR_INITIAL_CAPACITY (4 * sizeof(size_t))
 
 typedef struct DSTR_TYPE
 {
-    uint64_t length;
-    uint64_t capacity;
-    int64_t  last_error;
+    size_t length;
+    size_t capacity;
+    long   last_error;
     char*  data;
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
@@ -139,6 +139,7 @@ int dstr_shrink_to_fit(DSTR d);
  */
 void dstr_ascii_upper(DSTR p);
 void dstr_ascii_lower(DSTR p);
+void dstr_title(DSTR p);
 void dstr_swap(DSTR d1, DSTR d2);
 void dstr_reverse(DSTR p);
 void dstr_trim_right(DSTR p);
@@ -471,6 +472,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrswap            dstr_swap
 #define dgetline            dstr_fgetline
 #define dgets               dstr_fgets
+#define dstrtitle           dstr_title
 
 #define disdigits           dstr_isdigits
 #define disxdigits          dstr_isxdigits
@@ -489,10 +491,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrtod             dstr_to_double
 #define dstrtold            dstr_to_ldouble
 
-
-
 /* clean namespace */
 #endif
-
 
 #endif /* DSTR_H_ */

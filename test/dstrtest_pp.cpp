@@ -1594,6 +1594,35 @@ void test_expandtabs()
 }
 //-------------------------------------------------
 
+void test_title()
+{
+    TRACE_FN();
+    using namespace std;
+
+    const char* s = "hello world today 33 is SAT";
+    DString d1(s);
+
+    cout << d1.make_title() << endl;
+    assert(d1.make_title() == "Hello World Today 33 Is SAT");
+
+    d1 = "Welcome to my 2nd world";
+    cout << d1.make_title() << endl;
+    assert(d1.make_title() == "Welcome To My 2Nd World");
+
+    d1 = "hello b2b2b2 and 3g3g3g";
+    cout << d1.make_title() << endl;
+    assert(d1.make_title() == "Hello B2B2B2 And 3G3G3G");
+
+    d1 = "hello b2bb2b2 a.n.d 3g3g3g";
+    cout << d1.make_title() << endl;
+    assert(d1.make_title() == "Hello B2Bb2B2 A.N.D 3G3G3G");
+
+    d1 = "hello b2b2b2 a_n_d 3g3g3g";
+    cout << d1.make_title() << endl;
+    assert(d1.make_title() == "Hello B2B2B2 A_N_D 3G3G3G");
+}
+//-------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -1643,5 +1672,6 @@ int main()
     test_replace_all();
     test_count();
     test_expandtabs();
+    test_title();
     // last test
 }

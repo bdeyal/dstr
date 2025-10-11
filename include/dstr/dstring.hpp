@@ -312,6 +312,19 @@ public:
         return result;
     }
 
+    DString& title()
+    {
+        dstr_title(pImp());
+        return *this;
+    }
+
+    DString make_title() const
+    {
+        DString result(*this);
+        result.title();
+        return result;
+    }
+
     void push_back(char c)
     {
         dstr_append_inline(pImp(), c);
