@@ -11,14 +11,12 @@
 #include <stdbool.h>
 #include <string.h>
 
-/* SSO buffer length (32/64 bytes on 32/64 bit systems respectively) */
-#define DSTR_INITIAL_CAPACITY (4 * sizeof(size_t))
+#define DSTR_INITIAL_CAPACITY (16U)
 
 typedef struct DSTR_TYPE
 {
-    size_t length;
-    size_t capacity;
-    long   last_error;
+    uint32_t length;
+    uint32_t capacity;
     char*  data;
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
@@ -292,7 +290,6 @@ static inline void dstr_init_data(DSTR p)
 {
     p->length = 0;
     p->capacity = DSTR_INITIAL_CAPACITY;
-    p->last_error = 0;
     p->sso_buffer[0] = '\0';
     p->data = &p->sso_buffer[0];
 }
@@ -329,10 +326,7 @@ unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base);
 float              dstr_to_float(CDSTR p, size_t* index);
 double             dstr_to_double(CDSTR p, size_t* index);
 long double        dstr_to_ldouble(CDSTR p, size_t* index);
-
-
 /*-------------------------------------------------------------------------------*/
-
 
 #ifdef __cplusplus
 }

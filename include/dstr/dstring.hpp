@@ -2,6 +2,7 @@
 #define DSTRING_H_INCLUDED
 
 #include <iosfwd>
+#include <vector>
 #include <dstr/dstr.h>
 
 class DString {
@@ -88,14 +89,6 @@ public:
     {
         if (capacity() > DSTR_INITIAL_CAPACITY)
             dstr_clean_data(pImp());
-    }
-
-    int last_error() const {
-        return (int) pImp()->last_error;
-    }
-
-    void clear_error() {
-        pImp()->last_error = 0;
     }
 
     DString substr(size_t pos, size_t count = NPOS) const
@@ -447,6 +440,12 @@ public:
     {
         dstr_replace_all_ds(pImp(), oldstr.pImp(), newstr.pImp(), count);
         return *this;
+    }
+
+    void split(char c, std::vector<DString>& dest) const;
+    void split(const char* separators, std::vector<DString>& dest) const;
+    void split(const DString& separators, std::vector<DString>& dest)  const {
+        split(separators.c_str(), dest);
     }
 
     void reserve(size_t len)

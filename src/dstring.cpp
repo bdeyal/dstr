@@ -78,3 +78,56 @@ std::istream& io_getline(std::istream& in, DString& s)
     return in;
 }
 //-----------------------------------------------------------
+
+void DString::split(char sep, std::vector<DString>& dest) const
+{
+    std::vector<DString> tmp;
+    DString str;
+
+    for (char c : *this) {
+        if (c == sep)
+            tmp.push_back(std::move(str));
+        else
+            str.append(c);
+    }
+
+    if (!str.empty())
+        tmp.push_back(std::move(str));
+
+    dest.swap(tmp);
+}
+//-----------------------------------------------------------
+
+void DString::split(const char* pattern, std::vector<DString>& dest) const
+{
+    std::vector<DString> tmp;
+
+    // Find the first location which does not belong to
+    // the separator characters
+    //
+    size_t first = this->ffno(pattern, 0);
+
+    // Check if we are at the end
+    //
+    while (first != DString::NPOS)
+    {
+        // Find the first location (> first) with a character
+        // that belongs to the separator group
+        //
+        size_t last = this->ffo(pattern, first);
+
+        // Create a substring to print
+        //
+        DString token = this->substr(first, last - first);
+        tmp.push_back(token);
+
+        // Prepare for next iteration.
+        // Again find the first char not in separator but now
+        // not from the start
+        //
+        first = this->ffno(pattern, last);
+    }
+
+    dest.swap(tmp);
+}
+//-----------------------------------------------------------

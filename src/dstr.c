@@ -28,8 +28,6 @@
 #define DLEN(p)       (BASE(p)->length)
 #define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
-#define DERR(p)       (BASE(p)->last_error = (errno))
-#define SERR(p)       (BASE(p)->last_error)
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
 /*--------------------------------------------------------------------------*/
@@ -41,10 +39,17 @@
     assert(DLEN(p) < DCAP(p));                                  \
     assert(DVAL(p, DLEN(p)) == '\0');                           \
     assert(DLEN(p) == strlen(DBUF(p)));                         \
-    assert(SERR(p) == 0);                                       \
     assert((DCAP(p) % DSTR_INITIAL_CAPACITY) == 0);             \
 } while(0)
 /*--------------------------------------------------------------------------*/
+
+// Stack base init. For use in this file
+//
+#define INIT_DSTR(identifier)    \
+    struct DSTR_TYPE identifier; \
+    dstr_init_data(&identifier)
+
+
 
 #if !defined(__cplusplus)
 #if __STDC_VERSION__ < 199901L
@@ -123,11 +128,10 @@ static const char* my_strcasechr(const char* s, int c)
     unsigned char uc = (unsigned char) toupper(c);
     unsigned char lc = (unsigned char) tolower(c);
 
-    while (*s != '\0') {
+    for (; *s != '\0'; ++s) {
         unsigned char curr = *s;
         if (curr == lc || curr == uc)
             return s;
-        ++s;
     }
 
     return NULL;
@@ -159,13 +163,11 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
 
     if (new_capacity >= UINT32_MAX) {
         errno = ERANGE;
-        DERR(p);
         return NULL;
     }
 
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
-        DERR(p);
         return NULL;
     }
 
@@ -193,14 +195,12 @@ static DSTR dstr_grow(DSTR p, size_t len)
 
     if (new_capacity >= UINT32_MAX) {
         errno = ERANGE;
-        DERR(p);
         return NULL;
     }
 
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
         assert(D_IS_SSO(p));
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
-            DERR(p);
             return NULL;
         }
 
@@ -210,7 +210,6 @@ static DSTR dstr_grow(DSTR p, size_t len)
     else {
         assert(!D_IS_SSO(p));
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
-            DERR(p);
             return NULL;
         }
     }
@@ -367,9 +366,7 @@ static int dstr_replace_imp(DSTR p,
     // in case of overlap we copy to a tmp DSTR
     //
     if (first <= buff && buff <= last) {
-        struct DSTR_TYPE tmp;
-        dstr_init_data(&tmp);
-
+        INIT_DSTR(tmp);
         if (dstr_assign_bl(&tmp, buff, buflen))
         {
             dstr_remove_imp(p, pos, count);
@@ -823,7 +820,6 @@ DSTR dstr_slurp_stream(DSTR p, FILE* fp)
         size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
         if (len < sizeof(chunk)) {
             if (ferror(fp)) {
-                DERR(p);
                 return NULL;
             }
         }
@@ -848,9 +844,6 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
     bool create_new = (p == NULL);
 
     if ((fp = fopen(fname, "r")) == NULL) {
-        if (p) {
-            DERR(p);
-        }
         return NULL;
     }
 
@@ -870,9 +863,6 @@ err_clean_result:
     original_errno = errno;
     if (create_new) {
         dstr_destroy(p);
-    }
-    else {
-        DERR(p);
     }
 
 err_close_fp:
@@ -949,8 +939,7 @@ int dstr_shrink_to_fit(DSTR p)
 
     // Otherwise create a fresh new and swap representation
     //
-    struct DSTR_TYPE tmp;
-    dstr_init_data(&tmp);
+    INIT_DSTR(tmp);
     if (!dstr_assign_ds(&tmp, p))
         return DSTR_FAIL;
 
@@ -1305,7 +1294,6 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
     va_end(argptr2);
 
     if (len < 0) {
-        DERR(p);
         return DSTR_FAIL;
     }
 
@@ -1313,7 +1301,6 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
         return DSTR_FAIL;
 
     if ((len = vsprintf(dstr_tail(p), fmt, argptr)) < 0) {
-        DERR(p);
         return DSTR_FAIL;
     }
 
@@ -2077,8 +2064,7 @@ static int dstr_replace_all_imp(DSTR dest,
     // We wil work on a copy so if a failure occurs in the middle of replace
     // we don't leave the original argument in an undefined status
     //
-    DSTR_TYPE tmp;
-    dstr_init_data(&tmp);
+    INIT_DSTR(tmp);
     if (!dstr_assign_ds(&tmp, dest)) {
         return DSTR_FAIL;
     }
@@ -2214,9 +2200,7 @@ int dstr_expand_tabs(DSTR dest, size_t width)
     if (!dest || DLEN(dest) == 0)
         return DSTR_SUCCESS;
 
-    DSTR_TYPE tmp;
-    dstr_init_data(&tmp);
-
+    INIT_DSTR(tmp);
     for (size_t pos = 0; pos < DLEN(dest); ++pos)
     {
         char ch = DVAL(dest, pos);
