@@ -1649,7 +1649,15 @@ void test_join()
     DString sep("+++");
     assert(sep.join(argv, argc) == "hello+++world+++good+++morning");
 
+#if __cplusplus >= 201103L
     std::vector<DString> v{"hello", "world", "good", "morning"};
+#else
+    std::vector<DString> v;
+    v.push_back("hello");
+    v.push_back("world");
+    v.push_back("good");
+    v.push_back("morning");
+#endif
     s1.clear();
     s1.join_inplace("...", v);
     cout << s1 << endl;
