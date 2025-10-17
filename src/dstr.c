@@ -2247,3 +2247,30 @@ void dstr_title(DSTR p)
     }
 }
 /*-------------------------------------------------------------------------------*/
+
+int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
+{
+    // Nothing to join
+    //
+    if (!argv || !argv[0] || n == 0)
+        return DSTR_SUCCESS;;
+
+    // NULL is like empty separator. i.e. concatenation
+    //
+    if (!sep)
+        sep = "";
+
+    size_t index = 0;
+    while (1) {
+        if (!dstr_append_sz(dest, argv[index]))
+            return DSTR_FAIL;
+
+        if ((++index == n) || (argv[index] == NULL))
+            break;
+
+        if (!dstr_append_sz(dest, sep))
+            return DSTR_FAIL;
+    }
+
+    return DSTR_SUCCESS;
+}

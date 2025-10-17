@@ -1446,6 +1446,39 @@ void test_center()
     dstrfree(s1);
 }
 
+void test_join()
+{
+    TRACE_FN();
+    const char* argv[] = {"hello", "world", "good", "morning", NULL};
+    size_t argc = 4;
+
+    struct DSTR_TYPE dest;
+    dstr_init_data(&dest);
+    dstr_join_sz(&dest, "...", argv, argc);
+    printf("LEN=%zu, %s\n", dstrlen(&dest), dstrdata(&dest));
+    assert( dstreq_sz(&dest, "hello...world...good...morning"));
+    dstr_clean_data(&dest);
+
+    DSTR ds = dstrnew();
+
+    dstr_join_sz(ds, "\t", argv, argc);
+    printf("LEN=%zu, %s\n", dstrlen(ds), dstrdata(ds));
+    assert( dstreq_sz(ds, "hello\tworld\tgood\tmorning"));
+    dstrtrunc(ds);
+
+    dstr_join_sz(ds, NULL, argv, argc);
+    printf("1. LEN=%zu, %s\n", dstrlen(ds), dstrdata(ds));
+    assert(dstreq_sz(ds, "helloworldgoodmorning"));
+    dstrtrunc(ds);
+
+    dstr_join_sz(ds, "", argv, argc);
+    printf("2. LEN=%zu, %s\n", dstrlen(ds), dstrdata(ds));
+    assert(dstreq_sz(ds, "helloworldgoodmorning"));
+
+    dstrfree(ds);
+}
+
+
 int main()
 {
     test_ctor();
@@ -1487,4 +1520,5 @@ int main()
     test_isdigit();
     test_getline();
     test_center();
+    test_join();
 }

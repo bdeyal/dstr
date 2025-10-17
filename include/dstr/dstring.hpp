@@ -394,6 +394,37 @@ public:
         return append(ds);
     }
 
+    // Join inplace
+    //
+    DString& join_inplace(const char* sep, const std::vector<DString>& v);
+
+    DString& join_inplace(const DString& sep, const std::vector<DString>& v) {
+        return join_inplace(sep.c_str(), v);
+    }
+
+    DString& join_inplace(const char* sep, const char* argv[], size_t argc) {
+        dstr_join_sz(pImp(), sep, argv, argc);
+        return *this;
+    }
+
+    DString& join_inplace(const DString& sep, const char* argv[], size_t argc) {
+        return join_inplace(sep.c_str(), argv, argc);
+    }
+
+    // join
+    //
+    DString join(const std::vector<DString>& v) const {
+        DString result;
+        result.join_inplace(this->c_str(), v);
+        return result;
+    }
+
+    DString join(const char* argv[], size_t argc) const {
+        DString result;
+        result.join_inplace(this->c_str(), argv, argc);
+        return result;
+    }
+
     // Replace functions
     //
     DString& replace(size_t pos, size_t len, char c, size_t count)

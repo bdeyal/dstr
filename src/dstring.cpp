@@ -140,3 +140,23 @@ void DString::split(const char* pattern, std::vector<DString>& dest) const
     dest.swap(tmp);
 }
 //-----------------------------------------------------------
+
+DString& DString::join_inplace(const char* sep, const std::vector<DString>& v)
+{
+    if (v.empty())
+        return *this;
+
+    if (!sep)
+        sep = "";
+
+    std::vector<DString>::const_iterator p = v.begin();
+
+    while (true) {
+        this->append(*p);
+        if (++p == v.end()) break;
+        this->append(sep);
+    }
+
+    return *this;
+}
+//-----------------------------------------------------------

@@ -1623,6 +1623,42 @@ void test_title()
 }
 //-------------------------------------------------
 
+void test_join()
+{
+    TRACE_FN();
+    using namespace std;
+
+    const char* argv[] = {"hello", "world", "good", "morning", NULL};
+    size_t argc = 4;
+
+    DString s1;
+    s1.join_inplace("...", argv, argc);
+    cout << s1 << endl;
+    assert(s1 == "hello...world...good...morning");
+
+    s1.clear();
+    s1.join_inplace("...", argv, 100);
+    cout << s1 << endl;
+    assert(s1 == "hello...world...good...morning");
+
+    s1.clear();
+    s1.join_inplace("...", argv, 2);
+    cout << s1 << endl;
+    assert(s1 == "hello...world");
+
+    DString sep("+++");
+    assert(sep.join(argv, argc) == "hello+++world+++good+++morning");
+
+    std::vector<DString> v{"hello", "world", "good", "morning"};
+    s1.clear();
+    s1.join_inplace("...", v);
+    cout << s1 << endl;
+    assert(s1 == "hello...world...good...morning");
+
+    assert(sep.join(v) == "hello+++world+++good+++morning");
+}
+//-------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -1673,5 +1709,6 @@ int main()
     test_count();
     test_expandtabs();
     test_title();
+    test_join();
     // last test
 }
