@@ -479,6 +479,10 @@ public:
         split(separators.c_str(), dest);
     }
 
+    void splitlines(std::vector<DString>& dest) const {
+        split("\n", dest);
+    }
+
     void reserve(size_t len)
     {
         dstr_reserve(pImp(), len);

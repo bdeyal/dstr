@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iterator>
 
 #include <assert.h>
 #include <string.h>
@@ -1667,6 +1668,35 @@ void test_join()
 }
 //-------------------------------------------------
 
+void test_split()
+{
+    TRACE_FN();
+    using namespace std;
+
+    std::vector<DString> dest;
+
+    DString s2 = "  Hello,World,,,\t\tToday is Tuesday 1.1.1.1, 2.2.2.2,33.33.33";
+
+    s2.split(", \t", dest);
+    assert(dest.size() == 8);
+    assert(dest[0] == "Hello");
+    assert(dest[1] == "World");
+    assert(dest[6] == "2.2.2.2");
+    assert(dest[7] == "33.33.33");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    DString s3("Hello\nWorld\nGood\nMorning");
+    s3.splitlines(dest);
+    assert(dest.size() == 4);
+    assert(dest[0] == "Hello");
+    assert(dest[1] == "World");
+    assert(dest[2] == "Good");
+    assert(dest[3] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+}
+//-------------------------------------------------
+
+
 int main()
 {
     test_ctor();
@@ -1718,5 +1748,6 @@ int main()
     test_expandtabs();
     test_title();
     test_join();
+    test_split();
     // last test
 }
