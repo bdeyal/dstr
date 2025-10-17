@@ -332,7 +332,7 @@ void test_append()
         s5.append('X');
     }
 
-    s5.truncate();
+    s5.clear();
 
     for (int i = 0; i < limit; ++i) {
         if ((i % step) == 0) {
@@ -805,7 +805,7 @@ void test_truncate()
     s1.resize(10);
     assert(strncmp(s1.c_str(), longstr, 10) == 0);
 
-    s1.truncate();
+    s1.clear();
     assert(s1.length() == 0);
     assert(s1 == "");
 }

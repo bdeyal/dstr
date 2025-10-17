@@ -52,7 +52,7 @@ std::istream& operator>>(std::istream& in, DString& s)
     }
 
     if (in) {
-        s.truncate();
+        s.clear();
         do {
             s.append(c);
         } while (in.get(c) && !isspace(c));
@@ -69,32 +69,41 @@ std::istream& io_getline(std::istream& in, DString& s)
 {
     char c;
 
-    s.truncate();
+    s.clear();
 
     while (in.get(c) && c != '\n') {
-        s += c;
+        s.append(c);
     }
 
     return in;
 }
 //-----------------------------------------------------------
 
+#if __cplusplus >= 201103L
+#define PUSHBACK(v, s) v.push_back(std::move(s))
+#else
+#define PUSHBACK(v, s) do { v.push_back(s); s.clear(); } while(0)
+#endif
+
 void DString::split(char sep, std::vector<DString>& dest) const
 {
-    std::vector<DString> tmp;
+    std::vector<DString> v;
     DString str;
 
-    for (char c : *this) {
-        if (c == sep)
-            tmp.push_back(std::move(str));
+    for (const_iterator i = begin(); i != end(); ++i) {
+        char c= *i;
+        if (c == sep) {
+            PUSHBACK(v, str);
+        }
         else
             str.append(c);
     }
 
-    if (!str.empty())
-        tmp.push_back(std::move(str));
+    if (!str.empty()) {
+        PUSHBACK(v, str);
+    }
 
-    dest.swap(tmp);
+    dest.swap(v);
 }
 //-----------------------------------------------------------
 
@@ -119,7 +128,7 @@ void DString::split(const char* pattern, std::vector<DString>& dest) const
         // Create a substring to print
         //
         DString token = this->substr(first, last - first);
-        tmp.push_back(token);
+        PUSHBACK(tmp, token);
 
         // Prepare for next iteration.
         // Again find the first char not in separator but now

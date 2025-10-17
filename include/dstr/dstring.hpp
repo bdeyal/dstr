@@ -492,14 +492,9 @@ public:
         dstr_trim_both(pImp());
     }
 
-    void truncate()
-    {
-        dstr_truncate(pImp());
-    }
-
     void clear()
     {
-        truncate();
+        dstr_truncate(pImp());
     }
 
     void erase(size_t pos, size_t count = 1)
