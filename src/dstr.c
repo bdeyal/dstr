@@ -1300,7 +1300,7 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
     if (!dstr_grow_by(p, len))
         return DSTR_FAIL;
 
-    if ((len = vsprintf(dstr_tail(p), fmt, argptr)) < 0) {
+    if ((len = vsnprintf(dstr_tail(p), len + 1, fmt, argptr)) < 0) {
         return DSTR_FAIL;
     }
 

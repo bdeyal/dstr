@@ -440,6 +440,7 @@ void test_format()
     //
     res1 = dstrnew_sprintf("%d", 100);
     sprintf(res2, "%d", 100);
+    printf("res1=\"%s\", res2=\"%s\"\n", dstrdata(res1), res2);
     assert( dstreq_sz(res1, res2) );
     TRACE_LN();
 
