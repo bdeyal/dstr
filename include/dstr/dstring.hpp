@@ -475,12 +475,13 @@ public:
 
     void split(char c, std::vector<DString>& dest) const;
     void split(const char* separators, std::vector<DString>& dest) const;
+
     void split(const DString& separators, std::vector<DString>& dest)  const {
         split(separators.c_str(), dest);
     }
 
     void splitlines(std::vector<DString>& dest) const {
-        split("\n", dest);
+        split("\r\n", dest);
     }
 
     void reserve(size_t len)
