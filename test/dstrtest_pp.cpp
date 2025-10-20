@@ -1665,6 +1665,10 @@ void test_join()
     assert(s1 == "hello...world...good...morning");
 
     assert(sep.join(v) == "hello+++world+++good+++morning");
+
+#if __cplusplus >= 201103L
+    assert(sep.join({"Hi", "Eyal"}) == "Hi+++Eyal");
+#endif
 }
 //-------------------------------------------------
 
