@@ -970,8 +970,8 @@ void test_put_get_safe()
     //
     for (size_t n = 0; n < s1.length(); ++n) {
         assert(s1.index_ok(n));
-        char c = s1.get_char(n);
-        s1.put_char(n, toupper(c));
+        char c = s1.get(n);
+        s1.put(n, toupper(c));
     }
     assert(s1 == str_upper);
 
@@ -982,20 +982,20 @@ void test_put_get_safe()
     // Now test the 'safe' part
     //
     size_t index = s1.length() + 5;
-    assert(s1.get_char(index) == '\0');
-    assert(s1.get_char(-(long)index) == '\0');
+    assert(s1.get(index) == '\0');
+    assert(s1.get(-(long)index) == '\0');
 
     DString s2(s1);
-    s2.put_char(index, 'A');
+    s2.put(index, 'A');
     assert(s1 == s2);
-    s2.put_char(-(long)index, 'A');
+    s2.put(-(long)index, 'A');
     assert(s1 == s2);
 
     for (size_t n = 1; n <= s2.length(); ++n) {
         long i = -(long)n;
-        char c = s2.get_char(i);
+        char c = s2.get(i);
         assert(c == s2[s2.length() - n]);
-        s2.put_char(i, toupper(c));
+        s2.put(i, toupper(c));
     }
     assert(s2 == str_upper);
 }
