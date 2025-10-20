@@ -3,7 +3,8 @@
 PREFIX=/usr/local
 ARCH=x86-64-v3
 
-CFLAGS=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude
+CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude
+#CFLAGS += -Iinclude $(shell rpm --eval '%{optflags}')
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS=-L./lib64 -s
 
