@@ -115,7 +115,7 @@ public:
             substr(size() - count, count);
     }
 
-    // slurp a testfile into DString
+    // slurp a text file into a DString
     //
     int from_file(const char* fname)
     {
@@ -153,21 +153,18 @@ public:
 
     DString& operator=(const char* sz)
     {
-        assign(sz);
-        return *this;
+        return assign(sz);
     }
 
     DString& operator=(char c)
     {
-        assign(c);
-        return *this;
+        return assign(c);
     }
 
     DString& assign(char c)
     {
         clear();
-        append(c);
-        return *this;
+        return append(c);
     }
 
     DString& assign(char c, size_t count)
@@ -548,7 +545,7 @@ public:
         return dstr_substr(pImp(), pos, numbytes, dest, destsize);
     }
 
-    // Inline fast queries
+    // Inline queries
     //
     const char* c_str() const {
         return m_imp.data;
@@ -570,11 +567,11 @@ public:
         return dstr_valid_index(pImp(), pos);
     }
 
-    char get_char(long pos) const {
+    char get(long pos) const {
         return dstr_getchar_safe(pImp(), pos);
     }
 
-    void put_char(long pos, char c) {
+    void put(long pos, char c) {
         dstr_putchar_safe(pImp(), pos, c);
     }
 
