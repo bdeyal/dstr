@@ -666,13 +666,19 @@ static size_t dstr_flo_imp(CDSTR p,
     if (pattern == NULL || *pattern == '\0' || DLEN(p) == 0)
         return DSTR_NPOS;
 
+    // lookup table for char in pattern
+    //
+    unsigned char tbl[256] = { 0 };
+    for (; *pattern; ++pattern)
+        tbl[(unsigned char) *pattern] = 1;
+
     if (pos >= DLEN(p))
         pos = DLEN(p) - 1;
 
     for (size_t i = 0; i <= pos; ++i) {
         size_t index = pos - i;
-        char ch = DVAL(p, index);
-        bool ch_in_pattern = (strchr(pattern, ch) != NULL);
+        int ch = DVAL(p, index);
+        bool ch_in_pattern = (tbl[ch] == 1);
 
         if (not_off) {
             if (!ch_in_pattern) {
@@ -2276,7 +2282,7 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
 }
 /*--------------------------------------------------------------------------*/
 
-static bool is_tr_range(const char* s)
+static inline bool is_tr_range(const char* s)
 {
     return
         (strnlen(s, 3) == 3) &&
@@ -2317,8 +2323,8 @@ static void dstr_translate_range_aux(DSTR dest, const char* arr1, const char* ar
 
 static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
 {
-    if (!arr1) return;
-    if (*arr1 == '\0') return;
+    if (!arr1)
+        return;
 
     unsigned char to_delete[256] = { 0 };
     while (*arr1) {
@@ -2351,11 +2357,11 @@ static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
 
 void dstr_translate_generic_aux(DSTR dest, const char* from, const char* to, bool negate)
 {
-    unsigned char tbl[256] = { 0 };
+    unsigned char tbl[256];
 
     if (strnlen(from, sizeof(tbl)) == sizeof(tbl)) {
-        fprintf(stderr, "%s: arr1 is propably not zero terminated\n", __func__);
-        abort();
+        fprintf(stderr, "translate: arr1 is propably not zero terminated\n");
+        return;
     }
 
     if (negate) {
@@ -2369,6 +2375,7 @@ void dstr_translate_generic_aux(DSTR dest, const char* from, const char* to, boo
         }
     }
     else {
+        memset(tbl, 0, sizeof(tbl));
         unsigned char last_to = 0;
         while (*from) {
             unsigned char c_from = (unsigned char)*from;
