@@ -138,13 +138,22 @@ static const char* my_strcasechr(const char* s, int c)
 }
 /*-------------------------------------------------------------------------------*/
 
+static void dstr_out_of_memory()
+{
+    fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
+    abort();
+}
+/*-------------------------------------------------------------------------------*/
+
 static DSTR dstr_alloc_empty(void)
 {
     DSTR p = (DSTR) malloc(sizeof(struct DSTR_TYPE));
-    if (p) {
-        // inline at dstr.h
-        dstr_init_data(p);
+    if (!p) {
+        dstr_out_of_memory();
+        return NULL;
     }
+
+    dstr_init_data(p);
     dstr_assert_valid(p);
     return p;
 }
@@ -168,6 +177,7 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
 
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
+        dstr_out_of_memory();
         return NULL;
     }
 
@@ -201,6 +211,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
         assert(D_IS_SSO(p));
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
+            dstr_out_of_memory();
             return NULL;
         }
 
@@ -210,6 +221,7 @@ static DSTR dstr_grow(DSTR p, size_t len)
     else {
         assert(!D_IS_SSO(p));
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
+            dstr_out_of_memory();
             return NULL;
         }
     }
