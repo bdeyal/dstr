@@ -226,6 +226,11 @@ DSTR_BOOL dstr_equal_ds(CDSTR lhs, CDSTR rhs);
 int dstr_fgets(DSTR d, FILE* fp);
 int dstr_fgetline(DSTR d, FILE* fp);
 
+/* translate and squeeze */
+void dstr_translate(DSTR dest, const char* arr1, const char* arr2);
+void dstr_squeeze(DSTR dest, const char* squeeze);
+void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2);
+
 static inline size_t dstr_length(CDSTR p) {
     return p->length;
 }
@@ -488,6 +493,10 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrtof             dstr_to_float
 #define dstrtod             dstr_to_double
 #define dstrtold            dstr_to_ldouble
+
+#define dstrtrans           dstr_translate
+#define dstrsqz             dstr_squeeze
+#define dstrtrsqz           dstr_translate_squeeze
 
 /* clean namespace */
 #endif

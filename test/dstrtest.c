@@ -1478,7 +1478,41 @@ void test_join()
 
     dstrfree(ds);
 }
+/*--------------------------------------------------------------------------*/
 
+#define DSTRTRANS(s1, a1, a2, r) do { \
+    DSTR dd = dstrnew_sz(s1); \
+    dstrtrans(dd, (a1), (a2)); \
+    puts(dstrdata(dd)); \
+    assert(dstreq_sz(dd, (r))); \
+    dstrfree(dd); } while (0)
+
+#define DSTRTRSQZ(s1, a1, a2, r) do { \
+    DSTR dd = dstrnew_sz(s1); \
+    dstrtrsqz(dd, (a1), (a2)); \
+    puts(dstrdata(dd)); \
+    assert(dstreq_sz(dd, (r))); \
+    dstrfree(dd); } while (0)
+
+void test_translate()
+{
+    DSTRTRANS("Hello Sam!", "S", "P", "Hello Pam!");
+    DSTRTRANS("Hi Sam!", "mSa", "eJo", "Hi Joe!");
+
+    DSTRTRANS("hello", "aeiou", "-", "h-ll-");
+    DSTRTRANS("hello", "aeiou", "AA-", "hAll-");
+    DSTRTRANS("hello world today is sunday", "aeiou", NULL, "hll wrld tdy s sndy");
+    DSTRTRANS("hello world today is sunday", "^aeiou", NULL, "eoooaiua");
+
+    DSTRTRANS("hello", "^aeiou", "-", "-e--o");
+    DSTRTRANS("hello world today is sunday", "a-z", "A-Z", "HELLO WORLD TODAY IS SUNDAY");
+
+    DSTRTRSQZ("aabbccddeeffgg", "", "abcd", "abcdeeffgg");
+    DSTRTRSQZ("hello", "l", "r", "hero");
+    DSTRTRSQZ("hello", "el", "-", "h-o");
+    DSTRTRSQZ("hello", "el", "hx", "hxo");
+}
+/*--------------------------------------------------------------------------*/
 
 int main()
 {
@@ -1522,4 +1556,5 @@ int main()
     test_getline();
     test_center();
     test_join();
+    test_translate();
 }

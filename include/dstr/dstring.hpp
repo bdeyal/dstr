@@ -470,6 +470,34 @@ public:
         return *this;
     }
 
+    DString& translate(const char* from, const char* to)
+    {
+        dstr_translate(pImp(), from, to);
+        return *this;
+    }
+
+    DString& tr(const char* from, const char* to)
+    {
+        return translate(from, to);
+    }
+
+    DString& squeeze(const char* sqz_set)
+    {
+        dstr_squeeze(pImp(), sqz_set);
+        return *this;
+    }
+
+    DString& translate_squeeze(const char* from, const char* to)
+    {
+        dstr_translate_squeeze(pImp(), from, to);
+        return *this;
+    }
+
+    DString& tr_s(const char* from, const char* to)
+    {
+        return translate_squeeze(from, to);
+    }
+
     void split(char c, std::vector<DString>& dest) const;
     void split(const char* separators, std::vector<DString>& dest) const;
 

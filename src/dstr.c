@@ -2274,3 +2274,187 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
 
     return DSTR_SUCCESS;
 }
+/*--------------------------------------------------------------------------*/
+
+static bool is_tr_range(const char* s)
+{
+    return
+        (strnlen(s, 3) == 3) &&
+        s[0] <= s[2] &&
+        s[1] == '-';
+}
+/*--------------------------------------------------------------------------*/
+
+static void dstr_translate_range_aux(DSTR dest, const char* arr1, const char* arr2)
+{
+    char in_first  = arr1[0];
+    char in_last   = arr1[2];
+    char out_first = arr2[0];
+    char out_last  = arr2[2];
+
+    for (size_t index = 0; index < dstr_length(dest); ++index)
+    {
+        char ch = dstr_getchar(dest, index);
+
+        // check if in the input range
+        //
+        if (in_first <= ch && ch <= in_last) {
+            // translate
+            //
+            ch = out_first + (ch - in_first);
+
+            // check if in output range
+            //
+            if (ch <= out_last) {
+                // only then do the translation
+                //
+                dstr_putchar(dest, index, ch);
+            }
+        }
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
+{
+    if (!arr1) return;
+    if (*arr1 == '\0') return;
+
+    unsigned char to_delete[256] = { 0 };
+    while (*arr1) {
+        to_delete[(unsigned char)(*arr1)] = 1;
+        ++arr1;
+    }
+
+    INIT_DSTR(tmp);
+
+    // Do translation from table
+    //
+    for (size_t index = 0; index < dstr_length(dest); ++index)
+    {
+        char ch = dstr_getchar(dest, index);
+        int deleted = to_delete[(unsigned char) ch];
+        if (negate) {
+            if (deleted)
+                dstr_append_inline(&tmp, ch);
+        }
+        else {
+            if (!deleted)
+                dstr_append_inline(&tmp, ch);
+        }
+    }
+
+    dstr_swap(dest, &tmp);
+    dstr_clean_data(&tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_translate_generic_aux(DSTR dest, const char* from, const char* to, bool negate)
+{
+    unsigned char tbl[256] = { 0 };
+
+    if (strnlen(from, sizeof(tbl)) == sizeof(tbl)) {
+        fprintf(stderr, "%s: arr1 is propably not zero terminated\n", __func__);
+        abort();
+    }
+
+    if (negate) {
+        size_t len = strnlen(to, sizeof(tbl));
+        to += len - 1;
+        memset(tbl, *to, sizeof(tbl));
+        while (*from) {
+            unsigned char ch = *from;
+            tbl[ch] = ch;
+            ++from;
+        }
+    }
+    else {
+        unsigned char last_to = 0;
+        while (*from) {
+            unsigned char c_from = (unsigned char)*from;
+            if (*to) {
+                last_to = *to;
+                ++to;
+            }
+            tbl[c_from] = last_to;
+            ++from;
+        }
+    }
+
+    // Do translation from table
+    //
+    for (size_t index = 0; index < dstr_length(dest); ++index)
+    {
+        char c_old = dstr_getchar(dest, index);
+        char c_new = tbl[(unsigned char) c_old];
+        if (c_new)
+            dstr_putchar(dest, index, c_new);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_translate(DSTR dest, const char* arr1, const char* arr2)
+{
+    if (!dest)
+        return;
+
+    if (!arr1 || *arr1 == '\0')
+        return;
+
+    bool negate = false;
+    if (*arr1 == '^') {
+        negate = true;
+        ++arr1;
+    }
+
+    if (!arr2) {
+        dstr_translate_delete_aux(dest, arr1, negate);
+        return;
+    }
+
+    if (!negate && is_tr_range(arr1) && is_tr_range(arr2)) {
+        dstr_translate_range_aux(dest, arr1, arr2);
+        return;
+    }
+
+    dstr_translate_generic_aux(dest, arr1, arr2, negate);
+ }
+/*--------------------------------------------------------------------------*/
+
+void dstr_squeeze(DSTR dest, const char* squeeze)
+{
+    if (!dest)
+        return;
+
+    if (!squeeze || *squeeze == '\0')
+        return;
+
+    unsigned char to_squeeze[256] = { 0 };
+    for (; *squeeze ; ++squeeze)
+        to_squeeze[(unsigned char)(*squeeze)] = 1;
+
+    INIT_DSTR(tmp);
+
+    // Do translation from table
+    //
+    char prev_ch = '\0';
+    for (size_t index = 0; index < dstr_length(dest); ++index)
+    {
+        char ch = dstr_getchar(dest, index);
+        if (ch != prev_ch || !to_squeeze[(unsigned char)ch])
+            dstr_append_inline(&tmp, ch);
+
+        prev_ch = ch;
+    }
+
+    dstr_swap(dest, &tmp);
+    dstr_clean_data(&tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2)
+{
+    dstr_translate(dest, arr1, arr2);
+    dstr_squeeze(dest, arr2);
+}
+/*--------------------------------------------------------------------------*/
