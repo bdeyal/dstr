@@ -67,13 +67,23 @@ std::istream& operator>>(std::istream& in, DString& s)
 
 std::istream& io_getline(std::istream& in, DString& s)
 {
-    char c;
+    char buf[128];
+    size_t bindex = 0;
 
     s.clear();
 
-    while (in.get(c) && c != '\n') {
-        s.append(c);
+    char c;
+    while (in.get(c) && c != '\n')
+    {
+        buf[bindex++] = c;
+        if (bindex == sizeof(buf)) {
+            s.append(buf, bindex);
+            bindex = 0;
+        }
     }
+
+    if (bindex)
+        s.append(buf, bindex);
 
     return in;
 }

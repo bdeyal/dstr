@@ -137,6 +137,7 @@ void test_getline_2(const char* fname)
 
     DString s1;
     DString s2;
+    size_t maxline = 0;
 
     for (;;) {
         int r1 = s1.fgetline(fp);
@@ -152,10 +153,13 @@ void test_getline_2(const char* fname)
             cout << "\"" << s2 << "\"" << endl;
         }
         assert(s1 == s2);
+
+        if (s2.size() > maxline)
+            maxline = s2.size();
     }
     fclose(fp);
 
-    cout << __func__ << ": Good! all lines were equal" << endl;
+    cout << __func__ << ": Good! all lines were equal. Max len = " << maxline << endl;
 }
 //-------------------------------------------------
 
