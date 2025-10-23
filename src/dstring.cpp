@@ -52,10 +52,20 @@ std::istream& operator>>(std::istream& in, DString& s)
     }
 
     if (in) {
+        char buf[32];
+        size_t bindex = 0;
+
         s.clear();
         do {
-            s.append(c);
+            buf[bindex] = c;
+            if (++bindex == sizeof(buf)) {
+                s.append(buf, bindex);
+                bindex = 0;
+            }
         } while (in.get(c) && !isspace(c));
+
+        if (bindex)
+            s.append(buf, bindex);
     }
 
     if (in)
