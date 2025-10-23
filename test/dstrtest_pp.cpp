@@ -3,6 +3,9 @@
 #include <sstream>
 #include <string>
 #include <iterator>
+#include <vector>
+#include <list>
+#include <deque>
 
 #include <assert.h>
 #include <string.h>
@@ -1667,7 +1670,9 @@ void test_join()
     assert(sep.join(v) == "hello+++world+++good+++morning");
 
 #if __cplusplus >= 201103L
-    assert(sep.join({"Hi", "Eyal"}) == "Hi+++Eyal");
+    assert(sep.join(std::list<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
+    assert(sep.join(std::vector<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
+    assert(sep.join(std::deque<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
 #endif
 }
 //-------------------------------------------------

@@ -75,8 +75,8 @@ std::istream& io_getline(std::istream& in, DString& s)
     char c;
     while (in.get(c) && c != '\n')
     {
-        buf[bindex++] = c;
-        if (bindex == sizeof(buf)) {
+        buf[bindex] = c;
+        if (++bindex == sizeof(buf)) {
             s.append(buf, bindex);
             bindex = 0;
         }
@@ -86,83 +86,5 @@ std::istream& io_getline(std::istream& in, DString& s)
         s.append(buf, bindex);
 
     return in;
-}
-//-----------------------------------------------------------
-
-void DString::split(char sep, std::vector<DString>& dest) const
-{
-    std::vector<DString> v;
-    DString str;
-
-    for (const_iterator i = begin(); i != end(); ++i) {
-        char c= *i;
-        if (c == sep) {
-            v.push_back(str);
-            str.clear();
-        }
-        else {
-            str.append(c);
-        }
-    }
-
-    if (!str.empty()) {
-        v.push_back(str);
-    }
-
-    dest.swap(v);
-}
-//-----------------------------------------------------------
-
-void DString::split(const char* pattern, std::vector<DString>& dest) const
-{
-    std::vector<DString> tmp;
-
-    // Find the first location which does not belong to
-    // the separator characters
-    //
-    size_t first = this->ffno(pattern, 0);
-
-    // Check if we are at the end
-    //
-    while (first != DString::NPOS)
-    {
-        // Find the first location (> first) with a character
-        // that belongs to the separator group
-        //
-        size_t last = this->ffo(pattern, first);
-
-        // Create a substring to print
-        //
-        DString token = this->substr(first, last - first);
-        tmp.push_back(token);
-
-        // Prepare for next iteration.
-        // Again find the first char not in separator but now
-        // not from the start
-        //
-        first = this->ffno(pattern, last);
-    }
-
-    dest.swap(tmp);
-}
-//-----------------------------------------------------------
-
-DString& DString::join_inplace(const char* sep, const std::vector<DString>& v)
-{
-    if (v.empty())
-        return *this;
-
-    if (!sep)
-        sep = "";
-
-    std::vector<DString>::const_iterator p = v.begin();
-
-    while (true) {
-        this->append(*p);
-        if (++p == v.end()) break;
-        this->append(sep);
-    }
-
-    return *this;
 }
 //-----------------------------------------------------------

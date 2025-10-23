@@ -2,9 +2,10 @@
 #define DSTRING_H_INCLUDED
 
 #include <iosfwd>
-#include <vector>
 #include <dstr/dstr.h>
 
+// A thin wrapper around C DSTR_TYPE
+//
 class DString {
 public:
     static const size_t NPOS = DSTR_NPOS;
@@ -87,8 +88,6 @@ public:
     //
     ~DString()
     {
-        if (capacity() > DSTR_INITIAL_CAPACITY)
-            dstr_clean_data(pImp());
     }
 
     DString substr(size_t pos, size_t count = NPOS) const
@@ -393,9 +392,11 @@ public:
 
     // Join inplace
     //
-    DString& join_inplace(const char* sep, const std::vector<DString>& v);
+    template <class Container>
+    DString& join_inplace(const char* sep, const Container& v);
 
-    DString& join_inplace(const DString& sep, const std::vector<DString>& v) {
+    template <class Container>
+    DString& join_inplace(const DString& sep, const Container& v) {
         return join_inplace(sep.c_str(), v);
     }
 
@@ -410,7 +411,8 @@ public:
 
     // join
     //
-    DString join(const std::vector<DString>& v) const {
+    template <class Container>
+    DString join(const Container& v) const {
         DString result;
         result.join_inplace(this->c_str(), v);
         return result;
@@ -498,14 +500,19 @@ public:
         return translate_squeeze(from, to);
     }
 
-    void split(char c, std::vector<DString>& dest) const;
-    void split(const char* separators, std::vector<DString>& dest) const;
+    template <class Container>
+    void split(char c, Container& dest) const;
 
-    void split(const DString& separators, std::vector<DString>& dest)  const {
+    template <class Container>
+    void split(const char* separators, Container& dest) const;
+
+    template <class Container>
+    void split(const DString& separators, Container& dest)  const {
         split(separators.c_str(), dest);
     }
 
-    void splitlines(std::vector<DString>& dest) const {
+    template <class Container>
+    void splitlines(Container& dest) const {
         split("\r\n", dest);
     }
 
@@ -852,14 +859,23 @@ private:
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
-    struct DSTR_TYPE_Wrapper : DSTR_TYPE {
-        DSTR_TYPE_Wrapper()
-        {
+    // Single member. Thin wrapper around C type DSTR_TYPE
+    //
+    struct DSTR_TYPE_Wrapper : public DSTR_TYPE
+    {
+        DSTR_TYPE_Wrapper() {
             dstr_init_data(this);
         }
-    };
+        ~DSTR_TYPE_Wrapper() {
+            if (capacity > DSTR_INITIAL_CAPACITY)
+                dstr_clean_data(this);
+        }
+    } m_imp;
 
-    DSTR_TYPE_Wrapper m_imp;
+    // C++98-like compile time assert for container value type
+    //
+    template <typename T>
+    const DString* chk_vtype(const T* t) const { return t; }
 };
 //----------------------------------------------------------------
 
@@ -897,12 +913,14 @@ inline DString operator+(const char* sz, const DString& rhs)
     result.append(rhs);
     return result;
 }
+//----------------------------------------------------------------
 
 // DString and iostream
 //
 std::ostream& operator<<(std::ostream& out, const DString& s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
+//----------------------------------------------------------------
 
 // to_dstring() functions
 //
@@ -959,7 +977,98 @@ inline DString to_dstring(long double val) {
     result.sprintf("%Lf", val);
     return result;
 }
+//----------------------------------------------------------------
 
+// C++98-like compile time assert for container value type
+//
+#define CHECK_VALUE_TYPE(Cnt) ((void)chk_vtype((typename Cnt::value_type*) 0))
+
+template <class Container>
+void DString::split(char sep, Container& dest) const
+{
+    CHECK_VALUE_TYPE(Container);
+
+    Container v;
+    DString str;
+
+    for (const_iterator i = begin(); i != end(); ++i) {
+        char c= *i;
+        if (c == sep) {
+            v.push_back(str);
+            str.clear();
+        }
+        else {
+            str.append(c);
+        }
+    }
+
+    if (!str.empty()) {
+        v.push_back(str);
+    }
+
+    dest.swap(v);
+}
+//-----------------------------------------------------------
+
+template <class Container>
+void DString::split(const char* pattern, Container& dest) const
+{
+    CHECK_VALUE_TYPE(Container);
+
+    Container tmp;
+
+    // Find the first location which does not belong to
+    // the separator characters
+    //
+    size_t first = this->ffno(pattern, 0);
+
+    // Check if we are at the end
+    //
+    while (first != DString::NPOS)
+    {
+        // Find the first location (> first) with a character
+        // that belongs to the separator group
+        //
+        size_t last = this->ffo(pattern, first);
+
+        // Create a substring to print
+        //
+        DString token = this->substr(first, last - first);
+        tmp.push_back(token);
+
+        // Prepare for next iteration.
+        // Again find the first char not in separator but now
+        // not from the start
+        //
+        first = this->ffno(pattern, last);
+    }
+
+    dest.swap(tmp);
+}
+//-----------------------------------------------------------
+
+template <class Container>
+DString& DString::join_inplace(const char* sep, const Container& v)
+{
+    CHECK_VALUE_TYPE(Container);
+
+    if (v.empty())
+        return *this;
+
+    if (!sep)
+        sep = "";
+
+    typename Container::const_iterator p = v.begin();
+
+    while (true) {
+        this->append(*p);
+        if (++p == v.end()) break;
+        this->append(sep);
+    }
+
+    return *this;
+}
+//-----------------------------------------------------------
 
 
 #endif
