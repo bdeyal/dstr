@@ -12,26 +12,12 @@ DString& DString::sprintf(const char* fmt, ...)
 }
 //-----------------------------------------------------------
 
-DString& DString::vsprintf(const char* fmt, va_list args)
-{
-    dstr_assign_vsprintf(pImp(), fmt, args);
-    return *this;
-}
-//-----------------------------------------------------------
-
 DString& DString::append_sprintf(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
     dstr_append_vsprintf(pImp(), fmt, args);
     va_end(args);
-    return *this;
-}
-//-----------------------------------------------------------
-
-DString& DString::append_vsprintf(const char* fmt, va_list args)
-{
-    dstr_append_vsprintf(pImp(), fmt, args);
     return *this;
 }
 //-----------------------------------------------------------
@@ -48,8 +34,8 @@ std::istream& operator>>(std::istream& in, DString& s)
     char c;
 
     /* skip blanks */
-    while (in.get(c) && isspace(c)) {
-    }
+    while (in.get(c) && isspace(c))
+        ;
 
     if (in) {
         char buf[32];

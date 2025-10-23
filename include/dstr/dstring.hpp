@@ -212,7 +212,11 @@ public:
     }
 
     DString& sprintf(const char* fmt, ...);
-    DString& vsprintf(const char* fmt, va_list args);
+
+    DString& vsprintf(const char* fmt, va_list args) {
+        dstr_assign_vsprintf(pImp(), fmt, args);
+        return *this;
+    }
 
     // Insertion functions
     //
@@ -376,7 +380,11 @@ public:
     }
 
     DString& append_sprintf(const char* fmt, ...);
-    DString& append_vsprintf(const char* fmt, va_list args);
+
+    DString& append_vsprintf(const char* fmt, va_list args) {
+        dstr_append_vsprintf(pImp(), fmt, args);
+        return *this;
+    }
 
     DString& operator+=(char c) {
         return append(c);
