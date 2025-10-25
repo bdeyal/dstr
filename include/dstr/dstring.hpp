@@ -599,7 +599,7 @@ public:
 
     void clear()
     {
-        dstr_truncate(pImp());
+        dstr_clear(pImp());
     }
 
     void erase(size_t pos, size_t count = 1)

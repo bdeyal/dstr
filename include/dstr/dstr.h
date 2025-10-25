@@ -328,7 +328,7 @@ static inline void dstr_init_data(DSTR p)
     p->data = &p->sso_buffer[0];
 }
 
-static inline void dstr_truncate(DSTR p)
+static inline void dstr_clear(DSTR p)
 {
     p->length = 0;
     *p->data = '\0';
@@ -465,7 +465,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstralign_c         dstr_align_center
 
 #define dstrfree            dstr_destroy
-#define dstrtrunc           dstr_truncate
+#define dstrclear           dstr_clear
 #define dstrresize          dstr_resize
 #define dstrerase           dstr_remove
 #define dstrshrink          dstr_shrink_to_fit

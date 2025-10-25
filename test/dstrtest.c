@@ -399,7 +399,7 @@ void test_append()
         dstrcat_c(s5, 'X');
     }
 
-    dstrtrunc(s5);
+    dstrclear(s5);
 
     for (int i = 0; i < limit; ++i) {
         if ((i % step) == 0) {
@@ -408,7 +408,7 @@ void test_append()
         dstrcat_sz(s5, "hello");
     }
 
-    dstrtrunc(s5);
+    dstrclear(s5);
     dstrcat_sz(s5, "hello");
 
     for (int i = 0; i < 20; ++i) {
@@ -446,7 +446,7 @@ void test_format()
 
     // simple double
     //
-    dstrtrunc(res1);
+    dstrclear(res1);
     dsprintf(res1, "%g", 100.0);
     sprintf(res2, "%g", 100.0);
     assert( dstreq_sz(res1, res2) );
@@ -806,7 +806,7 @@ void test_truncate()
     dstrresize(s1, 10);
     assert( strncmp(dstrdata(s1), longstr, 10) == 0);
 
-    dstrtrunc(s1);
+    dstrclear(s1);
     assert( dstrlen(s1) == 0);
     assert( dstreq_sz(s1,""));
 
@@ -1465,12 +1465,12 @@ void test_join()
     dstr_join_sz(ds, "\t", argv, argc);
     printf("LEN=%zu, %s\n", dstrlen(ds), dstrdata(ds));
     assert( dstreq_sz(ds, "hello\tworld\tgood\tmorning"));
-    dstrtrunc(ds);
+    dstrclear(ds);
 
     dstr_join_sz(ds, NULL, argv, argc);
     printf("1. LEN=%zu, %s\n", dstrlen(ds), dstrdata(ds));
     assert(dstreq_sz(ds, "helloworldgoodmorning"));
-    dstrtrunc(ds);
+    dstrclear(ds);
 
     dstr_join_sz(ds, "", argv, argc);
     printf("2. LEN=%zu, %s\n", dstrlen(ds), dstrdata(ds));

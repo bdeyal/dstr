@@ -50,7 +50,6 @@
     dstr_init_data(&identifier)
 
 
-
 #if !defined(__cplusplus)
 #if __STDC_VERSION__ < 199901L
 #error dstr requires at least a C99 compiler
@@ -416,7 +415,7 @@ static inline int dstr_append_imp(DSTR p, const char* value, size_t len)
 
 static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
 {
-    dstr_truncate(p);
+    dstr_clear(p);
     return dstr_append_imp(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -991,7 +990,7 @@ int dstr_assign_sz(DSTR p, const char* value)
     dstr_assert_valid(p);
 
     if (value == NULL) {
-        dstr_truncate(p);
+        dstr_clear(p);
         return DSTR_SUCCESS;
     }
 
@@ -1004,7 +1003,7 @@ int dstr_assign_bl(DSTR p, const char* buff, size_t len)
     dstr_assert_valid(p);
 
     if (buff == NULL || len == 0) {
-        dstr_truncate(p);
+        dstr_clear(p);
         return DSTR_SUCCESS;
     }
 
@@ -1020,7 +1019,7 @@ int dstr_assign_range(DSTR p, const char* first, const char* last)
     size_t len = last - first;
 
     if (first == NULL || len == 0) {
-        dstr_truncate(p);
+        dstr_clear(p);
         return DSTR_SUCCESS;
     }
 
@@ -1048,7 +1047,7 @@ int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count)
 int dstr_assign_cc(DSTR p, char c, size_t count)
 {
     dstr_assert_valid(p);
-    dstr_truncate(p);
+    dstr_clear(p);
     return dstr_insert_cc_imp(p, DLEN(p), c, count);
 }
 /*-------------------------------------------------------------------------------*/
@@ -1339,7 +1338,7 @@ int dstr_append_sprintf(DSTR p, const char* fmt, ...)
 int dstr_assign_vsprintf(DSTR p, const char* fmt, va_list argptr)
 {
     dstr_assert_valid(p);
-    dstr_truncate(p);
+    dstr_clear(p);
     return dstr_append_vsprintf(p, fmt, argptr);
 }
 /*-------------------------------------------------------------------------------*/
@@ -1564,7 +1563,7 @@ void dstr_trim_left(DSTR p)
 
     if (pos > 0) {
         if (pos == DLEN(p))
-            dstr_truncate(p);
+            dstr_clear(p);
         else
             dstr_remove_imp(p, 0, pos);
     }
@@ -1686,7 +1685,7 @@ int dstr_fgets(DSTR p, FILE* fp)
     dstr_assert_valid(p);
     assert(fp != NULL);
 
-    dstr_truncate(p);
+    dstr_clear(p);
 
     /* skip blanks */
     do {
@@ -1715,7 +1714,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
     int c;
 
     dstr_assert_valid(p);
-    dstr_truncate(p);
+    dstr_clear(p);
 
     /* make room for at least 120 chars */
     if (DCAP(p) < 120)
@@ -1723,7 +1722,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
 
     while ((c = fgetc(fp)) != EOF && c != '\n') {
         if (!dstr_append_c(p, (char)c)) {
-            dstr_truncate(p);
+            dstr_clear(p);
             return EOF;
         }
     }
