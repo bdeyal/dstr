@@ -10,42 +10,46 @@ class DString {
 public:
     static const size_t NPOS = DSTR_NPOS;
 
-    // Constructors
+    // Default Constructor and Destructor have no code since all is done withen
+    // the wrapper object (see private section below)
     //
     DString()
     {
     }
 
+    ~DString()
+    {
+    }
+
+    // DString s('A', 100);
+    //
     DString(char c, size_t count)
     {
         if (c == '\0' || count == 0) return;
-        if (count >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow_ctor(pImp(), count);
-        }
-        m_imp.length = count;
-        memset(m_imp.data, c, count);
-        m_imp.data[count] = '\0';
+        grow(count);
+        setdata(c, count);
+        setlen(count);
     }
 
+    // DString s("A C string");
+    //
     DString(const char* sz)
     {
         if (!sz) return;
         size_t len = strlen(sz);
-        if (len >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow_ctor(pImp(), len);
-        }
-        m_imp.length = len;
-        memcpy(m_imp.data, sz, len + 1);
+        grow(len);
+        setdata(sz, len);
+        setlen(len);
     }
 
+    // DString s(other_DString);
+    //
     DString(const DString& rhs)
     {
         if (rhs.empty()) return;
-        if (rhs.length() >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow_ctor(pImp(), rhs.length());
-        }
-        m_imp.length = rhs.length();
-        memcpy(m_imp.data, rhs.m_imp.data, rhs.length() + 1);
+        grow(rhs.length());
+        setdata(rhs.data(), rhs.length());
+        setlen(rhs.length());
     }
 
 #if __cplusplus >= 201103L
@@ -55,41 +59,45 @@ public:
     }
 #endif
 
+    // DString sub_string(other_dstr, 5, 5);
+    //
     DString(const DString& rhs, size_t pos, size_t count)
     {
-        assign(rhs, pos, count);
+        if (pos >= rhs.size()) return;
+        if (!count) return;
+
+        if (count > rhs.size() - pos)
+            count = rhs.size() - pos;
+
+        grow(count);
+        setdata(rhs.data() + pos, count);
+        setlen(count);
     }
 
+    // DString s("abcdefg", 3) -> "abc"
+    //
     DString(const char* buffer, size_t len)
     {
         if (!buffer) return;
         if ((len = strnlen(buffer, len)) == 0) return;
-        if (len >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow_ctor(pImp(), len);
-        }
-        m_imp.length = len;
-        memcpy(m_imp.data, buffer, len);
-        m_imp.data[len] = '\0';
+        grow(len);
+        setdata(buffer, len);
+        setlen(len);
     }
 
+    // DString s(&str[5], &str[15]);
+    //
     DString(const char* first, const char* last)
     {
-        size_t distance = last - first;
-        if (distance == 0) return;
-        if (distance >= DSTR_INITIAL_CAPACITY) {
-            dstr_grow_ctor(pImp(), distance);
-        }
-        m_imp.length = distance;
-        memcpy(m_imp.data, first, distance);
-        m_imp.data[distance] = '\0';
+        size_t len = last - first;
+        if ((len = strnlen(first, len)) == 0) return;
+        grow(len);
+        setdata(first, len);
+        setlen(len);
     }
 
-    // Destructor
+    // substr returns a new string constructed by the 'substr constructor'
     //
-    ~DString()
-    {
-    }
-
     DString substr(size_t pos, size_t count = NPOS) const
     {
         return DString(*this, pos, count);
@@ -611,21 +619,11 @@ public:
 
     // Inline queries
     //
-    const char* c_str() const {
-        return m_imp.data;
-    }
-
-    size_t length() const {
-        return m_imp.length;
-    }
-
-    size_t capacity() const {
-        return m_imp.capacity;
-    }
-
-    bool empty() const {
-        return length() == 0;
-    }
+    const char* c_str()    const { return m_imp.data;     }
+    const char* data()     const { return m_imp.data;     }
+    size_t      length()   const { return m_imp.length;   }
+    size_t      capacity() const { return m_imp.capacity; }
+    bool        empty()    const { return length() == 0;  }
 
     bool index_ok(size_t pos) const {
         return dstr_valid_index(pImp(), pos);
@@ -907,6 +905,19 @@ private:
         }
     } m_imp;
 
+    // Used by ctor to copy and set DSTR correctly.
+    //
+    void setdata(char c, size_t count)        { memset(m_imp.data, c, count); }
+    void setdata(const char* p, size_t count) { memcpy(m_imp.data, p, count); }
+    void setlen(size_t count) {
+        m_imp.length = count;
+        m_imp.data[count] = '\0';
+    }
+    void grow(size_t len) {
+        if (len < DSTR_INITIAL_CAPACITY) return;
+        dstr_grow_ctor(pImp(), len);
+    }
+
     // C++98-like compile time assert for container value type
     //
     template <typename T>
@@ -1115,9 +1126,9 @@ void DString::partition(const char* s, Container& dest) const
     dstr_partition(pImp(), s, &pinfo);
 
     Container tmp;
-    tmp.push_back(this->substr(pinfo.l_pos, pinfo.l_len));
-    tmp.push_back(this->substr(pinfo.m_pos, pinfo.m_len));
-    tmp.push_back(this->substr(pinfo.r_pos, pinfo.r_len));
+    tmp.push_back(substr(pinfo.l_pos, pinfo.l_len));
+    tmp.push_back(substr(pinfo.m_pos, pinfo.m_len));
+    tmp.push_back(substr(pinfo.r_pos, pinfo.r_len));
     tmp.swap(dest);
 }
 //-----------------------------------------------------------
@@ -1131,9 +1142,9 @@ void DString::rpartition(const char* s, Container& dest) const
     dstr_rpartition(pImp(), s, &pinfo);
 
     Container tmp;
-    tmp.push_back(this->substr(pinfo.l_pos, pinfo.l_len));
-    tmp.push_back(this->substr(pinfo.m_pos, pinfo.m_len));
-    tmp.push_back(this->substr(pinfo.r_pos, pinfo.r_len));
+    tmp.push_back(substr(pinfo.l_pos, pinfo.l_len));
+    tmp.push_back(substr(pinfo.m_pos, pinfo.m_len));
+    tmp.push_back(substr(pinfo.r_pos, pinfo.r_len));
     tmp.swap(dest);
 }
 //-----------------------------------------------------------
