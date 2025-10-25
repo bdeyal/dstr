@@ -1268,12 +1268,6 @@ size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_isblank(CDSTR p)
-{
-    return dstr_ffno_sz(p, 0, " \t") == DSTR_NPOS;
-}
-/*-------------------------------------------------------------------------------*/
-
 size_t dstr_substr(CDSTR p,
                    size_t pos,
                    size_t count,
@@ -1612,6 +1606,30 @@ void dstr_ascii_lower(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
+void dstr_ascii_swapcase(DSTR p)
+{
+    char* s;
+
+    dstr_assert_valid(p);
+
+    for (s = DBUF(p); *s; ++s) {
+        char c = *s;
+
+        if (!isalpha(c))
+            continue;
+
+        if (islower(c)) {
+            *s = toupper(c);
+        }
+        else if (isupper(c)) {
+            *s = tolower(c);
+        }
+    }
+
+    dstr_assert_valid(p);
+}
+/*-------------------------------------------------------------------------------*/
+
 void dstr_reverse(DSTR p)
 {
     size_t first;
@@ -1795,6 +1813,191 @@ DSTR_BOOL dstr_isdigits(CDSTR src)
 DSTR_BOOL dstr_isxdigits(CDSTR src)
 {
     return dstr_isdigits_imp(src, DSTR_TRUE);
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isalnum(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!isalnum(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isalpha(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!isalpha(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isascii(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!isascii(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isblank(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!isblank(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isdecimal(CDSTR p)
+{
+    return dstr_isdigits(p);
+}
+/*-------------------------------------------------------------------------------*/
+
+static inline bool is_ident_(char c) { return isalnum(c) || c == '_'; }
+
+DSTR_BOOL dstr_isidentifier(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    if (isdigit(DVAL(p, 0)))
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!is_ident_(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_islower(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        char ch = DVAL(p, n);
+        if (isalpha(ch) && !islower(ch))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isnumeric(CDSTR p)
+{
+    return dstr_isdigits(p);
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isprintable(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!isprint(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isspace(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        if (!isspace(DVAL(p, n)))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_istitle(CDSTR p)
+{
+    bool curr_is_alpha = false;
+
+    for (size_t pos = 0; pos < DLEN(p); ++pos)
+    {
+        char ch = DVAL(p, pos);
+        bool prev_is_alpha = curr_is_alpha;
+        curr_is_alpha = isalpha(ch);
+
+        if (curr_is_alpha  &&
+            !prev_is_alpha &&
+            !isupper(ch))
+        {
+            return DSTR_FALSE;
+        }
+    }
+
+    return DSTR_TRUE;
+}
+/*-------------------------------------------------------------------------------*/
+
+DSTR_BOOL dstr_isupper(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        char c = DVAL(p, n);
+        if (isalpha(c) && !isupper(c))
+            return DSTR_FALSE;
+    }
+
+    return DSTR_TRUE;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -2475,5 +2678,75 @@ void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2)
 {
     dstr_translate(dest, arr1, arr2);
     dstr_squeeze(dest, arr2);
+}
+/*--------------------------------------------------------------------------*/
+
+size_t dstr_partition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
+{
+    dstr_assert_valid(p);
+
+    if (!s)
+        s = "";
+
+    size_t len = strnlen(s, DLEN(p));
+
+    size_t pos =
+        (len == 0) ?
+        0 :
+        dstr_find_sz(p, 0, s);
+
+    if (pos == DSTR_NPOS) {
+        pos = DLEN(p);
+        len = 0;
+    }
+
+    if (pInfo) {
+        pInfo->l_pos = 0;
+        pInfo->l_len = pos;
+        pInfo->m_pos = pos;
+        pInfo->m_len = len;
+        pInfo->r_pos = pos + len;
+        pInfo->r_len = DLEN(p) - (pos + len);
+
+        assert((pInfo->l_len + pInfo->m_len + pInfo->r_len) == DLEN(p));
+        return 0;
+    }
+
+    return pos;
+}
+/*--------------------------------------------------------------------------*/
+
+size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
+{
+    dstr_assert_valid(p);
+
+    if (!s)
+        s = "";
+
+    size_t len = strnlen(s, DLEN(p));
+
+    size_t pos =
+        (len == 0) ?
+        DLEN(p) :
+        dstr_rfind_sz(p, DLEN(p), s);
+
+    if (pos == DSTR_NPOS) {
+        pos = 0;
+        len = 0;
+    }
+
+    if (pInfo) {
+        pInfo->l_pos = 0;
+        pInfo->l_len = pos;
+        pInfo->m_pos = pos;
+        pInfo->m_len = len;
+        pInfo->r_pos = pos + len;
+        pInfo->r_len = DLEN(p) - (pos + len);
+
+        assert((pInfo->l_len + pInfo->m_len + pInfo->r_len) == DLEN(p));
+        return 0;
+    }
+
+    return pos;
 }
 /*--------------------------------------------------------------------------*/

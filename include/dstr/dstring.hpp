@@ -524,6 +524,22 @@ public:
         split("\r\n", dest);
     }
 
+    template <class Container>
+    void partition(const char* s, Container& dest) const;
+
+    template <class Container>
+    void rpartition(const char* s, Container& dest) const;
+
+    template <class Container>
+    void partition(const DString& s, Container& dest) const {
+        partition(s.c_str(), dest);
+    }
+
+    template <class Container>
+    void rpartition(const DString& s, Container& dest) const {
+        rpartition(s.c_str(), dest);
+    }
+
     void reserve(size_t len)
     {
         dstr_reserve(pImp(), len);
@@ -546,6 +562,11 @@ public:
     void lower()
     {
         dstr_ascii_lower(pImp());
+    }
+
+    void swapcase()
+    {
+        dstr_ascii_swapcase(pImp());
     }
 
     void reverse()
@@ -646,14 +667,6 @@ public:
         dstr_itoa(pImp(), n);
     }
 
-    bool isdigits() const {
-        return dstr_isdigits(pImp());
-    }
-
-    bool isxdigits() const {
-        return dstr_isxdigits(pImp());
-    }
-
     size_t find(char c, size_t pos=0) const {
         return dstr_find_c(pImp(), pos, c);
     }
@@ -710,9 +723,23 @@ public:
         return dstr_icontains_sz(pImp(), s);
     }
 
-    bool isblank() const {
-        return dstr_isblank(pImp());
-    }
+    bool isdigits()     const { return dstr_isdigits(pImp()); }
+    bool isxdigits()    const { return dstr_isxdigits(pImp());  }
+    bool isblank()      const { return dstr_isblank(pImp()); }
+    bool isalnum()      const { return dstr_isalnum(pImp()); }
+    bool isalpha()      const { return dstr_isalpha(pImp()); }
+    bool is_ascii()     const { return dstr_isascii(pImp()); }
+#if !defined(_WIN32)
+    bool isascii()      const { return is_ascii();           }
+#endif
+    bool isdecimal()    const { return dstr_isdecimal(pImp()); }
+    bool isidentifier() const { return dstr_isidentifier(pImp()); }
+    bool islower()      const { return dstr_islower(pImp()); }
+    bool isnumeric()    const { return dstr_isnumeric(pImp()); }
+    bool isprintable()  const { return dstr_isprintable(pImp()); }
+    bool isspace()      const { return dstr_isspace(pImp()); }
+    bool istitle()      const { return dstr_istitle(pImp()); }
+    bool isupper()      const { return dstr_isupper(pImp()); }
 
     bool startswith(const char* s) const {
         return dstr_prefix_sz(pImp(), s);
@@ -1077,6 +1104,40 @@ DString& DString::join_inplace(const char* sep, const Container& v)
     return *this;
 }
 //-----------------------------------------------------------
+
+template <class Container>
+void DString::partition(const char* s, Container& dest) const
+{
+    CHECK_VALUE_TYPE(Container);
+
+
+    struct DSTR_PartInfo pinfo;
+    dstr_partition(pImp(), s, &pinfo);
+
+    Container tmp;
+    tmp.push_back(this->substr(pinfo.l_pos, pinfo.l_len));
+    tmp.push_back(this->substr(pinfo.m_pos, pinfo.m_len));
+    tmp.push_back(this->substr(pinfo.r_pos, pinfo.r_len));
+    tmp.swap(dest);
+}
+//-----------------------------------------------------------
+
+template <class Container>
+void DString::rpartition(const char* s, Container& dest) const
+{
+    CHECK_VALUE_TYPE(Container);
+
+    struct DSTR_PartInfo pinfo;
+    dstr_rpartition(pImp(), s, &pinfo);
+
+    Container tmp;
+    tmp.push_back(this->substr(pinfo.l_pos, pinfo.l_len));
+    tmp.push_back(this->substr(pinfo.m_pos, pinfo.m_len));
+    tmp.push_back(this->substr(pinfo.r_pos, pinfo.r_len));
+    tmp.swap(dest);
+}
+//-----------------------------------------------------------
+
 
 
 #endif

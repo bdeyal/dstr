@@ -479,12 +479,12 @@ void test_trim()
 {
     TRACE_FN();
 
-    TEST_TRIM_LEFT("H",          "H");
-    TEST_TRIM_LEFT("Hello",  "Hello");
-    TEST_TRIM_LEFT("      H",        "H");
+    TEST_TRIM_LEFT("H", "H");
+    TEST_TRIM_LEFT("Hello", "Hello");
+    TEST_TRIM_LEFT("      H", "H");
     TEST_TRIM_LEFT("      Hello", "Hello");
     TEST_TRIM_LEFT("         ",  "");
-    TEST_TRIM_LEFT("",           "");
+    TEST_TRIM_LEFT("", "");
 
     TEST_TRIM_RIGHT("Hello",      "Hello");
     TEST_TRIM_RIGHT("Hello    ", "Hello");
@@ -1008,6 +1008,7 @@ void test_put_get_safe()
         DString s(before);                                  \
         s.upper();                                          \
         assert(s == after);                                 \
+        assert(s.size() == 0 || s.isupper());              \
     } while (0)
 //-------------------------------------------------
 
@@ -1015,6 +1016,14 @@ void test_put_get_safe()
         DString s(before);                                  \
         s.lower();                                          \
         assert( s == after );                               \
+        assert(s.size() == 0 || s.islower());              \
+    } while (0)
+//-------------------------------------------------
+
+#define TEST_ASCII_SWAPCASE(before, after) do {             \
+        DString s(before);                                  \
+        s.swapcase();                                       \
+        assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
@@ -1038,6 +1047,9 @@ void test_ascii_upper_lower()
     TEST_ASCII_LOWER( "", "");
     TEST_ASCII_UPPER( "", "");
 
+    TEST_ASCII_SWAPCASE("Hello World", "hELLO wORLD");
+    TEST_ASCII_SWAPCASE("", "");
+    TEST_ASCII_SWAPCASE("a_b_c234DeF", "A_B_C234dEf");
 }
 //-------------------------------------------------
 
@@ -1302,9 +1314,13 @@ void test_atoi_itoa()
 }
 //-------------------------------------------------
 
-#define TEST_DIGIT(s, result) do {                          \
-        DString d(s);                                       \
-        assert( d.isdigits() == result );                   \
+#define TEST_DIGIT(s, result) do {                            \
+        DString d(s);                                         \
+        puts(s);                                              \
+        assert( d.isdigits() == result );                     \
+        assert( d.isnumeric() == result );                    \
+        assert( d.isdecimal() == result );                    \
+        assert( d.isdigits() == result );                     \
     } while (0)
 
 #define TEST_XDIGIT(s, result) do {                         \
@@ -1330,6 +1346,17 @@ void test_isdigit()
     TEST_XDIGIT("1XAYBZ2", DSTR_FALSE);
     TEST_XDIGIT("1234567890", DSTR_TRUE);
     TEST_XDIGIT("1234567890ABCDEF", DSTR_TRUE);
+}
+//-------------------------------------------------
+
+void test_is_identifier()
+{
+    assert(DString("MyFolder").isidentifier());
+    assert(DString("Demo001").isidentifier());
+    assert(DString("_Demo001").isidentifier());
+    assert(!DString("4Demo001").isidentifier());
+    assert(!DString("2bring").isidentifier());
+    assert(!DString("my demo").isidentifier());
 }
 //-------------------------------------------------
 
@@ -1608,22 +1635,27 @@ void test_title()
 
     cout << d1.make_title() << endl;
     assert(d1.make_title() == "Hello World Today 33 Is SAT");
+    assert(d1.make_title().istitle());
 
     d1 = "Welcome to my 2nd world";
     cout << d1.make_title() << endl;
     assert(d1.make_title() == "Welcome To My 2Nd World");
+    assert(d1.make_title().istitle());
 
     d1 = "hello b2b2b2 and 3g3g3g";
     cout << d1.make_title() << endl;
     assert(d1.make_title() == "Hello B2B2B2 And 3G3G3G");
+    assert(d1.make_title().istitle());
 
     d1 = "hello b2bb2b2 a.n.d 3g3g3g";
     cout << d1.make_title() << endl;
     assert(d1.make_title() == "Hello B2Bb2B2 A.N.D 3G3G3G");
+    assert(d1.make_title().istitle());
 
     d1 = "hello b2b2b2 a_n_d 3g3g3g";
     cout << d1.make_title() << endl;
     assert(d1.make_title() == "Hello B2B2B2 A_N_D 3G3G3G");
+    assert(d1.make_title().istitle());
 }
 //-------------------------------------------------
 
@@ -1719,6 +1751,8 @@ void test_split()
 
 void test_translate()
 {
+    TRACE_FN();
+
     DSTRTRANS("Hello Sam!", "S", "P", "Hello Pam!");
     DSTRTRANS("Hi Sam!", "mSa", "eJo", "Hi Joe!");
 
@@ -1734,6 +1768,99 @@ void test_translate()
     DSTRTRSQZ("hello", "l", "r", "hero");
     DSTRTRSQZ("hello", "el", "-", "h-o");
     DSTRTRSQZ("hello", "el", "hx", "hxo");
+}
+//-------------------------------------------------
+
+#define ASSERT_PARTITION(str, what, p1, p2, p3) do {  \
+    std::vector<DString> v;                           \
+    DString(str).partition((what), v);                \
+    assert(v.size() == 3);                            \
+    assert(v[0] == p1);                               \
+    assert(v[1] == p2);                               \
+    assert(v[2] == p3);                               \
+    } while(0)
+
+void test_partition()
+{
+    TRACE_FN();
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "bananas",
+                     "I could eat ",
+                     "bananas",
+                     " all day");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "apples",
+                     "I could eat bananas all day",
+                     "",
+                     "");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "I could eat bananas all day",
+                     "",
+                     "I could eat bananas all day",
+                     "");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "",
+                     "",
+                     "",
+                     "I could eat bananas all day");
+
+    ASSERT_PARTITION("x=y", "=", "x", "=", "y");
+    ASSERT_PARTITION("=y", "=", "", "=", "y");
+    ASSERT_PARTITION("x=", "=", "x", "=", "");
+}
+//-------------------------------------------------
+
+#define ASSERT_RPARTITION(str, what, p1, p2, p3) do {  \
+        std::vector<DString> v;                        \
+        DString(str).rpartition((what), v);            \
+        assert(v.size() == 3);                         \
+        assert(v[0] == p1);                            \
+        assert(v[1] == p2);                            \
+        assert(v[2] == p3);                            \
+    } while(0)
+
+void test_rpartition()
+{
+    TRACE_FN();
+
+    ASSERT_PARTITION("We all could eat bananas all day",
+                     "all",
+                     "We ",
+                     "all",
+                     " could eat bananas all day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "all",
+                      "We all could eat bananas ",
+                      "all",
+                      " day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "apples",
+                      "",
+                      "",
+                      "We all could eat bananas all day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "We all could eat bananas all day",
+                      "",
+                      "We all could eat bananas all day",
+                      "");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "",
+                      "We all could eat bananas all day",
+                      "",
+                      "");
+
+    ASSERT_RPARTITION("x=y", "=", "x", "=", "y");
+    ASSERT_RPARTITION("=y", "=", "", "=", "y");
+    ASSERT_RPARTITION("x=", "=", "x", "=", "");
+
 }
 //-------------------------------------------------
 
@@ -1790,5 +1917,8 @@ int main()
     test_join();
     test_split();
     test_translate();
+    test_is_identifier();
+    test_partition();
+    test_rpartition();
     // last test
 }

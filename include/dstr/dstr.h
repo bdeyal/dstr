@@ -141,6 +141,7 @@ int dstr_shrink_to_fit(DSTR d);
  */
 void dstr_ascii_upper(DSTR p);
 void dstr_ascii_lower(DSTR p);
+void dstr_ascii_swapcase(DSTR p);
 void dstr_title(DSTR p);
 void dstr_swap(DSTR d1, DSTR d2);
 void dstr_reverse(DSTR p);
@@ -165,8 +166,6 @@ long      dstr_atoi(CDSTR src);
 long      dstr_atoll(CDSTR src);
 int       dstr_itoa(DSTR dest, long n);
 double    dstr_atof(CDSTR src);
-DSTR_BOOL dstr_isdigits(CDSTR src);
-DSTR_BOOL dstr_isxdigits(CDSTR src);
 
 /* find s in p. returns index or DSTR_NPOS if not found*/
 size_t dstr_find_c(CDSTR p, size_t pos, char c);
@@ -188,7 +187,21 @@ size_t dstr_icount_ds(CDSTR p, CDSTR s);
 
 DSTR_BOOL dstr_contains_sz(CDSTR p, const char* s);
 DSTR_BOOL dstr_icontains_sz(CDSTR p, const char* s);
+
 DSTR_BOOL dstr_isblank(CDSTR p);
+DSTR_BOOL dstr_isdigits(CDSTR p);
+DSTR_BOOL dstr_isxdigits(CDSTR p);
+DSTR_BOOL dstr_isalnum(CDSTR p);
+DSTR_BOOL dstr_isalpha(CDSTR p);
+DSTR_BOOL dstr_isascii(CDSTR p);
+DSTR_BOOL dstr_isdecimal(CDSTR p);
+DSTR_BOOL dstr_isidentifier(CDSTR p);
+DSTR_BOOL dstr_islower(CDSTR p);
+DSTR_BOOL dstr_isnumeric(CDSTR p);
+DSTR_BOOL dstr_isprintable(CDSTR p);
+DSTR_BOOL dstr_isspace(CDSTR p);
+DSTR_BOOL dstr_istitle(CDSTR p);
+DSTR_BOOL dstr_isupper(CDSTR p);
 
 /* p has suffix s, 'endswith' */
 DSTR_BOOL dstr_suffix_sz(CDSTR p, const char* s);
@@ -230,6 +243,18 @@ int dstr_fgetline(DSTR d, FILE* fp);
 void dstr_translate(DSTR dest, const char* arr1, const char* arr2);
 void dstr_squeeze(DSTR dest, const char* squeeze);
 void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2);
+
+struct DSTR_PartInfo {
+    // l, m, r = left, mid, right
+    size_t l_pos;
+    size_t l_len;
+    size_t m_pos;
+    size_t m_len;
+    size_t r_pos;
+    size_t r_len;
+};
+size_t dstr_partition(CDSTR p,  const char* s, struct DSTR_PartInfo* pInfo);
+size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo);
 
 static inline size_t dstr_length(CDSTR p) {
     return p->length;
@@ -389,7 +414,6 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstartswith         dstr_prefix_sz
 #define dstartswith_i       dstr_iprefix_sz
 #define dindex_ok           dstr_valid_index
-#define dstrblank           dstr_isblank
 
 #define dstrffo_sz          dstr_ffo_sz
 #define dstrffo_ds          dstr_ffo_ds
@@ -471,6 +495,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrtrim_l          dstr_trim_left
 #define dstrupper           dstr_ascii_upper
 #define dstrlower           dstr_ascii_lower
+#define dstrswapcase        dstr_ascii_swapcase
 #define dstrrev             dstr_reverse
 #define dstrswap            dstr_swap
 #define dgetline            dstr_fgetline
@@ -479,6 +504,19 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 
 #define disdigits           dstr_isdigits
 #define disxdigits          dstr_isxdigits
+#define dstrblank           dstr_isblank
+#define disalnum            dstr_isalnum
+#define disalpha            dstr_isalpha
+#define disascii            dstr_isascii
+#define disdecimal          dstr_isdecimal
+#define disident            dstr_isidentifier
+#define dislower            dstr_islower
+#define disnumeric          dstr_isnumeric
+#define disprint            dstr_isprintable
+#define disspace            dstr_isspace
+#define distitle            dstr_istitle
+#define dsisupper           dstr_isupper
+
 #define dstrhash            dstr_hash
 
 #define datoi               dstr_atoi
@@ -497,6 +535,9 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrtrans           dstr_translate
 #define dstrsqz             dstr_squeeze
 #define dstrtrsqz           dstr_translate_squeeze
+
+#define dstrpart            dstr_partition
+#define dstrrpart           dstr_rpartition
 
 /* clean namespace */
 #endif
