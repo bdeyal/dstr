@@ -209,7 +209,11 @@ static DSTR dstr_grow(DSTR p, size_t len)
             return NULL;
         }
 
-        memcpy(newbuff, p->data, p->length + 1);
+        if (p->length)
+            memcpy(newbuff, p->data, p->length + 1);
+        else
+            *newbuff = '\0';
+
         p->data[0] = '\0';
     }
     else {
@@ -1706,9 +1710,8 @@ static int assign_itoa_range(DSTR dest, const char* first, const char* last)
     if (DLEN(dest) > 0)
         dstr_clear(dest);
 
-    if (DCAP(dest) <= len)
-        if (!dstr_grow_ctor(dest, len))
-            return DSTR_FAIL;
+    if (!dstr_grow(dest, len))
+        return DSTR_FAIL;
 
     memcpy(DBUF(dest), first, len);
     DLEN(dest) = len;
