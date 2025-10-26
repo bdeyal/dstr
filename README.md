@@ -1,4 +1,4 @@
-#Copyright
+# Copyright
 Copyright (C) 2025 Eyal Ben-David (bdeyal@gmail.com).
 This code is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3, or (at your option) any later version. See LICENSE file
 
