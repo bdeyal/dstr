@@ -62,11 +62,6 @@
  */
 #define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
 
-#if defined(_WIN32)
-#define strcasecmp  _stricmp
-#define strncasecmp _strnicmp
-#endif
-
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
     const char* cp = haystack;
@@ -1431,69 +1426,6 @@ int dstr_insert_range(DSTR p, size_t index, const char* first, const char* last)
     len = strnlen(first, len);
 
     return dstr_insert_imp(p, index, first, len);
-}
-/*-------------------------------------------------------------------------------*/
-
-int dstr_compare_sz(CDSTR lhs, const char* sz)
-{
-    int result;
-
-    dstr_assert_valid(lhs);
-
-    if (sz == NULL) {
-        if (DLEN(lhs) > 0)
-            result = 1;
-        else
-            result = 0;
-    }
-    else {
-        result = strcmp(DBUF(lhs), sz);
-    }
-
-    return result;
-}
-/*-------------------------------------------------------------------------------*/
-
-int dstr_compare_ds(CDSTR lhs, CDSTR rhs)
-{
-    dstr_assert_valid(lhs);
-    dstr_assert_valid(rhs);
-
-    return strcmp(DBUF(lhs), DBUF(rhs));
-}
-/*-------------------------------------------------------------------------------*/
-
-DSTR_BOOL dstr_equal_sz(CDSTR lhs, const char* sz)
-{
-    dstr_assert_valid(lhs);
-
-    if (sz == NULL)
-        return (DLEN(lhs) == 0);
-
-    return (strcmp(DBUF(lhs), sz) == 0);
-}
-/*-------------------------------------------------------------------------------*/
-
-DSTR_BOOL dstr_iequal_sz(CDSTR lhs, const char* sz)
-{
-    dstr_assert_valid(lhs);
-
-    if (sz == NULL)
-        return (DLEN(lhs) == 0);
-
-    return (strcasecmp(DBUF(lhs), sz) == 0);
-}
-/*-------------------------------------------------------------------------------*/
-
-DSTR_BOOL dstr_equal_ds(CDSTR lhs, CDSTR rhs)
-{
-    dstr_assert_valid(lhs);
-    dstr_assert_valid(rhs);
-
-    if (DLEN(lhs) != DLEN(rhs))
-        return 0;
-
-    return (strncmp(DBUF(lhs), DBUF(rhs), DLEN(lhs)) == 0);
 }
 /*-------------------------------------------------------------------------------*/
 

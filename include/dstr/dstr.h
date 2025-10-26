@@ -11,6 +11,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#define strcasecmp  _stricmp
+#define strncasecmp _strnicmp
+#endif
+
 #define DSTR_INITIAL_CAPACITY (16U)
 
 typedef struct DSTR_TYPE
@@ -227,13 +232,57 @@ size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s);
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
 
 /* 3way strcmp-like comparison*/
-int dstr_compare_sz(CDSTR lhs, const char* sz);
-int dstr_compare_ds(CDSTR lhs, CDSTR rhs);
+static inline int dstr_compare_sz(CDSTR lhs, const char* sz)
+{
+    const char* l = lhs ? lhs->data : "";
+    const char* r = sz ? sz : "";
+    return strcmp(l, r);
+}
 
-/* is equal*/
-DSTR_BOOL dstr_equal_sz(CDSTR lhs, const char* sz);
-DSTR_BOOL dstr_iequal_sz(CDSTR lhs, const char* sz);
-DSTR_BOOL dstr_equal_ds(CDSTR lhs, CDSTR rhs);
+static inline int dstr_icompare_sz(CDSTR lhs, const char* sz)
+{
+    const char* l = lhs ? lhs->data : "";
+    const char* r = sz ? sz : "";
+    return strcasecmp(l, r);
+}
+
+static inline int dstr_compare_ds(CDSTR lhs, CDSTR rhs)
+{
+    const char* l = lhs ? lhs->data : "";
+    const char* r = rhs ? rhs->data : "";
+    return strcmp(l, r);
+}
+
+static inline int dstr_icompare_ds(CDSTR lhs, CDSTR rhs)
+{
+    const char* l = lhs ? lhs->data : "";
+    const char* r = rhs ? rhs->data : "";
+    return strcasecmp(l, r);
+}
+
+static inline DSTR_BOOL dstr_equal_sz(CDSTR lhs, const char* sz)
+{
+    return dstr_compare_sz(lhs, sz) == 0;
+}
+
+static inline DSTR_BOOL dstr_iequal_sz(CDSTR lhs, const char* sz)
+{
+    return dstr_icompare_sz(lhs, sz) == 0;
+}
+
+static inline DSTR_BOOL dstr_equal_ds(CDSTR lhs, CDSTR rhs)
+{
+    return
+        (lhs->length == rhs->length) &&
+        (dstr_compare_ds(lhs, rhs) == 0);
+}
+
+static inline DSTR_BOOL dstr_iequal_ds(CDSTR lhs, CDSTR rhs)
+{
+    return
+        (lhs->length == rhs->length) &&
+        (dstr_icompare_ds(lhs, rhs) == 0);
+}
 
 /* I/O functions*/
 int dstr_fgets(DSTR d, FILE* fp);
@@ -285,16 +334,15 @@ static inline DSTR_BOOL dstr_valid_index(CDSTR p, size_t pos) {
 }
 
 static inline void dstr_chop(DSTR p) {
-    if (dstr_length(p) > 0) {
-        p->data[--p->length] = '\0';
-    }
+    if (dstr_isempty(p)) return;
+    p->data[--p->length] = '\0';
 }
 
 static inline char dstr_getchar_safe(CDSTR p, long pos) {
     if (pos < 0)
         pos += (long) dstr_length(p);
 
-    return dstr_valid_index(p, pos) ?
+    return ((0 <= pos) && (pos < p->length)) ?
         dstr_getchar(p, pos) :
         (char)'\0';
 }
@@ -303,7 +351,7 @@ static inline void dstr_putchar_safe(DSTR p, long pos, char c) {
     if (pos < 0)
         pos += (long) dstr_length(p);
 
-    if (dstr_valid_index(p, pos))
+    if ((0 <= pos) && (pos < p->length))
         dstr_putchar(p, pos, c);
 }
 
@@ -426,10 +474,13 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define dstrflno_ds         dstr_flno_ds
 
 #define dstrcmp_sz          dstr_compare_sz
+#define dstricmp_sz         dstr_icompare_sz
 #define dstrcmp_ds          dstr_compare_ds
+#define dstricmp_ds         dstr_icompare_ds
 #define dstreq_sz           dstr_equal_sz
 #define dstreq_i            dstr_iequal_sz
 #define dstreq_ds           dstr_equal_ds
+#define dstreq_ids          dstr_iequal_ds
 
 #define dstrchop            dstr_chop
 #define dstrchomp           dstr_trim_right

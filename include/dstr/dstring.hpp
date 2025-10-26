@@ -795,38 +795,37 @@ public:
         return dstr_flno_ds(pImp(), pos, rhs.pImp());
     }
 
-    int compare(const char* sz) const {
-        return dstr_compare_sz(pImp(), sz);
-    }
+    // Comparisons and operators ==, !=, >, <, >=, <=
+    //
+    // Note: NULL C string is considered empty string ""
+    //
+    int compare(const char* sz)      const { return strcmp(data(), sz ? sz : ""); }
+    int icompare(const char* sz)     const { return strcasecmp(data(), sz ? sz : ""); }
+    int compare(const DString& rhs)  const { return strcmp(data(), rhs.data()); }
+    int icompare(const DString& rhs) const { return strcasecmp(data(), rhs.data()); }
 
-    int compare(const DString& rhs) const {
-        return dstr_compare_ds(pImp(), rhs.pImp());
-    }
+    bool iequal(const char* sz)     const { return (icompare(sz) == 0);  }
+    bool iequal(const DString& rhs) const { return (icompare(rhs) == 0); }
 
-    bool operator==(const char* sz) const {
-        return dstr_equal_sz(pImp(), sz);
-    }
-    bool operator!=(const char* sz) const {
-        return !dstr_equal_sz(pImp(), sz);
-    }
+    bool operator==(const char* sz) const { return (compare(sz) == 0);  }
+    bool operator!=(const char* sz) const { return (compare(sz) != 0);  }
     bool operator<(const char* sz) const  { return (compare(sz) < 0);   }
     bool operator>(const char* sz) const  { return (compare(sz) > 0);   }
     bool operator<=(const char* sz) const { return (compare(sz) <= 0);  }
     bool operator>=(const char* sz) const { return (compare(sz) >= 0);  }
 
-    bool operator==(const DString& rhs) const {
-        return dstr_equal_ds(pImp(), rhs.pImp());
-    }
-    bool operator!=(const DString& rhs) const {
-        return !dstr_equal_ds(pImp(), rhs.pImp());
-    }
     bool operator<(const DString& rhs) const  { return (compare(rhs) < 0);  }
     bool operator>(const DString& rhs) const  { return (compare(rhs) > 0);  }
     bool operator<=(const DString& rhs) const { return (compare(rhs) <= 0); }
     bool operator>=(const DString& rhs) const { return (compare(rhs) >= 0); }
 
-    bool iequal(const char* sz) const {
-        return dstr_iequal_sz(pImp(), sz);
+    // micro optimization - check length before buffer
+    //
+    bool operator==(const DString& rhs) const {
+        return (size() == rhs.size()) && (compare(rhs) == 0);
+    }
+    bool operator!=(const DString& rhs) const {
+        return (size() != rhs.size()) || (compare(rhs) != 0);
     }
 
     int fgets(FILE* fp) {
