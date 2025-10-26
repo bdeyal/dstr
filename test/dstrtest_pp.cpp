@@ -1311,6 +1311,20 @@ void test_atoi_itoa()
     TEST_ITOA(1234, "1234");
     TEST_ITOA(0, "0");
     TEST_ITOA(-1234, "-1234");
+
+    // Verify itoa conversion against plain C sprintf.
+    // Must be equal
+    //
+    DString d;;
+    for (int i = 0; i < 1000000; ++i) {
+        char buf[100];
+        long n = rand();
+        n *= rand();
+        if (n % 2) n = -n;
+        sprintf(buf, "%ld", n);
+        d.itoa(n);
+        assert(d == buf);
+    }
 }
 //-------------------------------------------------
 

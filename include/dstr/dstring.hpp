@@ -661,8 +661,12 @@ public:
         return dstr_atoll(pImp());
     }
 
-    void itoa(long n) {
+    void itoa(long long n) {
         dstr_itoa(pImp(), n);
+    }
+
+    void itoa_ul(unsigned long long n, unsigned int base = 10) {
+        dstr_itoa_ul(pImp(), n, base);
     }
 
     size_t find(char c, size_t pos=0) const {
@@ -970,58 +974,60 @@ std::istream& io_getline(std::istream& in, DString& s);
 // to_dstring() functions
 //
 inline DString to_dstring(int val) {
-    DString result;
-    result.sprintf("%d", val);
-    return result;
+    DString r;
+    r.itoa(val);
+    return r;
 }
 
 inline DString to_dstring(unsigned int val) {
-    DString result;
-    result.sprintf("%u", val);
-    return result;
+    DString r;
+    r.itoa_ul(val);
+    return r;
 }
 
 inline DString to_dstring(long val) {
-    DString result;
-    result.sprintf("%ld", val);
-    return result;
+    DString r;
+    r.itoa(val);
+    return r;
 }
 
 inline DString to_dstring(unsigned long val) {
-    DString result;
-    result.sprintf("%lu", val);
-    return result;
+    DString r;
+    r.itoa_ul(val);
+    return r;
 }
 
 inline DString to_dstring(long long val) {
-    DString result;
-    result.sprintf("%lld", val);
-    return result;
+    DString r;
+    r.itoa(val);
+    return r;
 }
 
 inline DString to_dstring(unsigned long long val) {
-    DString result;
-    result.sprintf("%llu", val);
-    return result;
+    DString r;
+    r.itoa_ul(val);
+    return r;
 }
 
+#define NUMBER_TO_DSTRING(v, fmt) do {           \
+    char buf[40];                                \
+    int n = sprintf(buf, fmt, v);                \
+    DString res; res.assign(buf, buf + n);       \
+    return res; } while(0)
+
 inline DString to_dstring(float val) {
-    DString result;
-    result.sprintf("%f", val);
-    return result;
+    NUMBER_TO_DSTRING(val, "%f");
 }
 
 inline DString to_dstring(double val) {
-    DString result;
-    result.sprintf("%f", val);
-    return result;
+    NUMBER_TO_DSTRING(val, "%f");
 }
 
 inline DString to_dstring(long double val) {
-    DString result;
-    result.sprintf("%Lf", val);
-    return result;
+    NUMBER_TO_DSTRING(val, "%Lf");
 }
+
+#undef NUMBER_TO_DSTRING
 //----------------------------------------------------------------
 
 // C++98-like compile time assert for container value type

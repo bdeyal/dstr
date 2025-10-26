@@ -3,7 +3,7 @@
 PREFIX=/usr/local
 ARCH=x86-64-v3
 
-CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude
+CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
 #CFLAGS += -Iinclude $(shell rpm --eval '%{optflags}') -O3
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS=-L./lib64 -s
@@ -15,6 +15,7 @@ endif
 ifeq ($(COMP),gcc)
 	CC=gcc
 	CXX=g++
+	NO_UNINIT=-Wno-maybe-uninitialized
 endif
 
 ifeq ($(COMP),clang)
@@ -49,7 +50,7 @@ all: $(PROGRAMS)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
 ./test/test_map: ./test/test_map.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+	$(CXX) $(CXXFLAGS) $(NO_UNINIT) -o $@ $< $(LDFLAGS) -ldstr
 
 ./test/test_vector: ./test/test_vector.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr

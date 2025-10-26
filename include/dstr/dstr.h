@@ -169,8 +169,10 @@ unsigned int dstr_hash(CDSTR src);
  */
 long      dstr_atoi(CDSTR src);
 long      dstr_atoll(CDSTR src);
-int       dstr_itoa(DSTR dest, long n);
 double    dstr_atof(CDSTR src);
+
+int       dstr_itoa_ul(DSTR dest, unsigned long long n, unsigned int base);
+int       dstr_itoa(DSTR dest, long long n);
 
 /* find s in p. returns index or DSTR_NPOS if not found*/
 size_t dstr_find_c(CDSTR p, size_t pos, char c);

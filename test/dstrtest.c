@@ -1379,6 +1379,21 @@ void test_atoi_itoa()
     TEST_ITOA(1234, "1234");
     TEST_ITOA(0, "0");
     TEST_ITOA(-1234, "-1234");
+#if 1
+    // test itoa vs sprintf
+    //
+    DSTR d = dstrnew();
+    for (int i = 0; i < 1000000; ++i) {
+        char buf[100];
+        long n = rand();
+        n *= rand();
+        if (n % 2) n = -n;
+        sprintf(buf, "%ld", n);
+        ditoa(d, n);
+        assert(dstreq_sz(d, buf));
+    }
+    dstrfree(d);
+#endif
 }
 //-------------------------------------------------
 

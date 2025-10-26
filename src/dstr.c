@@ -1687,12 +1687,62 @@ unsigned int dstr_hash(CDSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_itoa(DSTR dest, long n)
+static char* itos_aux(char* last, unsigned long long n, unsigned int base)
 {
-    /*
-     *   Not the fastest but definitely the simplest
-     */
-    return dstr_assign_sprintf(dest, "%ld", n);
+    static const char digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    do {
+        *--last = digits[n % base];
+        n /= base;
+    } while (n);
+
+    return last;
+}
+/*-------------------------------------------------------------------------------*/
+
+static int assign_itoa_range(DSTR dest, const char* first, const char* last)
+{
+    size_t len = last - first;
+
+    if (DLEN(dest) > 0)
+        dstr_clear(dest);
+
+    if (DCAP(dest) <= len)
+        if (!dstr_grow_ctor(dest, len))
+            return DSTR_FAIL;
+
+    memcpy(DBUF(dest), first, len);
+    DLEN(dest) = len;
+    DVAL(dest, len) = '\0';
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_itoa_ul(DSTR dest, unsigned long long n, unsigned int base)
+{
+    char buf[64];
+    char* last = buf + sizeof buf;
+    char* first = itos_aux(last, n, base);
+    return assign_itoa_range(dest, first, last);
+}
+//---------------------------------------------------------
+
+int dstr_itoa(DSTR dest, long long n)
+{
+    DSTR_BOOL negative = 0;
+
+    if (n < 0) {
+        n = -n;
+        negative = 1;
+    }
+
+    char buf[64];
+    char* last  = buf + sizeof buf;
+    char* first = itos_aux(last, n, 10);
+
+    if (negative)
+        *--first = '-';
+
+    return assign_itoa_range(dest, first, last);
 }
 /*-------------------------------------------------------------------------------*/
 
