@@ -110,6 +110,13 @@ void test_empty_dstr()
     assert(strlen(s6.c_str()) == 0);
     assert(strlen(s7.c_str()) == 0);
     assert(strlen(s8.c_str()) == 0);
+
+    assert(strcmp(s1.c_str(), "") == 0);
+    assert(strcmp(s2.c_str(), "") == 0);
+    assert(strcmp(s5.c_str(), "") == 0);
+    assert(strcmp(s6.c_str(), "") == 0);
+    assert(strcmp(s7.c_str(), "") == 0);
+    assert(strcmp(s8.c_str(), "") == 0);
 }
 //-------------------------------------------------
 
