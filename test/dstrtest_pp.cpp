@@ -1289,15 +1289,15 @@ void test_blank()
     } while (0)
 //-------------------------------------------------
 
-#define TEST_ITOA(n, result) do {                                       \
+#define TEST_ITOS(n, result) do {                                       \
         DString s;                                                      \
-        s.itoa(n);                                                      \
+        s.itos(n);                                                      \
         printf("Converted = %s, Expected = %s\n", s.c_str(), result);   \
         assert(s == result);                                            \
     } while (0)
 //-------------------------------------------------
 
-void test_atoi_itoa()
+void test_atoi_itos()
 {
     TRACE_FN();
 
@@ -1306,13 +1306,13 @@ void test_atoi_itoa()
     TEST_ATOI("0b111001", 57L);
     TEST_ATOI("0xFFFF", 65535L);
 
-    TEST_ITOA(1, "1");
-    TEST_ITOA(-1, "-1");
-    TEST_ITOA(1234, "1234");
-    TEST_ITOA(0, "0");
-    TEST_ITOA(-1234, "-1234");
+    TEST_ITOS(1, "1");
+    TEST_ITOS(-1, "-1");
+    TEST_ITOS(1234, "1234");
+    TEST_ITOS(0, "0");
+    TEST_ITOS(-1234, "-1234");
 
-    // Verify itoa conversion against plain C sprintf.
+    // Verify itos conversion against plain C sprintf.
     // Must be equal
     //
     DString d;;
@@ -1322,7 +1322,7 @@ void test_atoi_itoa()
         n *= rand();
         if (n % 2) n = -n;
         sprintf(buf, "%ld", n);
-        d.itoa(n);
+        d.itos(n);
         assert(d == buf);
     }
 }
@@ -1915,7 +1915,7 @@ int main()
     test_prefix();
     test_suffix();
     test_blank();
-    test_atoi_itoa();
+    test_atoi_itos();
     test_isdigit();
     test_move_ctor_assign();
     test_push_back_front();

@@ -1357,15 +1357,15 @@ void test_blank()
     } while (0)
 //-------------------------------------------------
 
-#define TEST_ITOA(n, result) do {                           \
+#define TEST_ITOS(n, result) do {                           \
         DSTR s = dstrnew();                                 \
-        ditoa(s, n);                                        \
+        ditos(s, n);                                        \
         assert( dstreq_sz(s, result) );                     \
         dstrfree(s);                                        \
     } while (0)
 //-------------------------------------------------
 
-void test_atoi_itoa()
+void test_atoi_itos()
 {
     TRACE_FN();
 
@@ -1374,13 +1374,13 @@ void test_atoi_itoa()
     TEST_ATOI("0b111001", 57L);
     TEST_ATOI("0xFFFF", 65535L);
 
-    TEST_ITOA(1, "1");
-    TEST_ITOA(-1, "-1");
-    TEST_ITOA(1234, "1234");
-    TEST_ITOA(0, "0");
-    TEST_ITOA(-1234, "-1234");
+    TEST_ITOS(1, "1");
+    TEST_ITOS(-1, "-1");
+    TEST_ITOS(1234, "1234");
+    TEST_ITOS(0, "0");
+    TEST_ITOS(-1234, "-1234");
 #if 1
-    // test itoa vs sprintf
+    // test itos vs sprintf
     //
     DSTR d = dstrnew();
     for (int i = 0; i < 1000000; ++i) {
@@ -1389,7 +1389,7 @@ void test_atoi_itoa()
         n *= rand();
         if (n % 2) n = -n;
         sprintf(buf, "%ld", n);
-        ditoa(d, n);
+        ditos(d, n);
         assert(dstreq_sz(d, buf));
     }
     dstrfree(d);
@@ -1566,7 +1566,7 @@ int main()
     test_suffix();
     test_blank();
     test_fgets();
-    test_atoi_itoa();
+    test_atoi_itos();
     test_isdigit();
     test_getline();
     test_center();

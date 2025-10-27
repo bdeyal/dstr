@@ -351,6 +351,23 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
+/*  For cases we are SURE that 'value' is not in 'dest' buffer range
+ */
+static int dstr_assign_unsafe(DSTR dest, const char* value, size_t len)
+{
+    if (DLEN(dest) > 0)
+        dstr_clear(dest);
+
+    if (!dstr_grow(dest, len))
+        return DSTR_FAIL;
+
+    memcpy(DBUF(dest), value, len);
+    DLEN(dest) = len;
+    DVAL(dest, len) = '\0';
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
 static int dstr_replace_imp(DSTR p,
                             size_t pos,
                             size_t count,
@@ -377,7 +394,7 @@ static int dstr_replace_imp(DSTR p,
     //
     if (first <= buff && buff <= last) {
         INIT_DSTR(tmp);
-        if (dstr_assign_bl(&tmp, buff, buflen))
+        if (dstr_assign_unsafe(&tmp, buff, buflen))
         {
             dstr_remove_imp(p, pos, count);
             buff = DBUF(&tmp);
@@ -867,6 +884,14 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
         if ((p = dstr_alloc_empty()) == NULL)
             goto err_close_fp;
     }
+    else {
+        // clear before assign
+        //
+        if (DLEN(p)) {
+            DLEN(p) = 0;
+            DVAL(p, 0) = '\0';
+        }
+    }
 
     if (dstr_slurp_stream(p, fp) == NULL)
         goto err_clean_result;
@@ -980,7 +1005,10 @@ int dstr_assign_ds(DSTR dest, CDSTR src)
     dstr_assert_valid(dest);
     dstr_assert_valid(src);
 
-    return dstr_assign_imp(dest, DBUF(src), DLEN(src));
+    return
+        (dest == src) ?
+        DSTR_SUCCESS :
+        dstr_assign_unsafe(dest, DBUF(src), DLEN(src));
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1693,7 +1721,7 @@ unsigned int dstr_hash(CDSTR src)
 
 static char* itos_aux(char* last, unsigned long long n, unsigned int base)
 {
-    static const char digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static const char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     do {
         *--last = digits[n % base];
         n /= base;
@@ -1703,33 +1731,18 @@ static char* itos_aux(char* last, unsigned long long n, unsigned int base)
 }
 /*-------------------------------------------------------------------------------*/
 
-static int assign_itoa_range(DSTR dest, const char* first, const char* last)
-{
-    size_t len = last - first;
-
-    if (DLEN(dest) > 0)
-        dstr_clear(dest);
-
-    if (!dstr_grow(dest, len))
-        return DSTR_FAIL;
-
-    memcpy(DBUF(dest), first, len);
-    DLEN(dest) = len;
-    DVAL(dest, len) = '\0';
-    return DSTR_SUCCESS;
-}
-/*-------------------------------------------------------------------------------*/
-
-int dstr_itoa_ul(DSTR dest, unsigned long long n, unsigned int base)
+int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base)
 {
     char buf[64];
     char* last = buf + sizeof buf;
     char* first = itos_aux(last, n, base);
-    return assign_itoa_range(dest, first, last);
+    size_t len = last - first;
+    return dstr_assign_unsafe(dest, first, len);
+
 }
 //---------------------------------------------------------
 
-int dstr_itoa(DSTR dest, long long n)
+int dstr_itos(DSTR dest, long long n)
 {
     DSTR_BOOL negative = 0;
 
@@ -1745,7 +1758,8 @@ int dstr_itoa(DSTR dest, long long n)
     if (negative)
         *--first = '-';
 
-    return assign_itoa_range(dest, first, last);
+    size_t len = last - first;
+    return dstr_assign_unsafe(dest, first, len);
 }
 /*-------------------------------------------------------------------------------*/
 

@@ -661,12 +661,12 @@ public:
         return dstr_atoll(pImp());
     }
 
-    void itoa(long long n) {
-        dstr_itoa(pImp(), n);
+    void itos(long long n) {
+        dstr_itos(pImp(), n);
     }
 
-    void itoa_ul(unsigned long long n, unsigned int base = 10) {
-        dstr_itoa_ul(pImp(), n, base);
+    void itos_ul(unsigned long long n, unsigned int base = 10) {
+        dstr_itos_ul(pImp(), n, base);
     }
 
     size_t find(char c, size_t pos=0) const {
@@ -975,37 +975,37 @@ std::istream& io_getline(std::istream& in, DString& s);
 //
 inline DString to_dstring(int val) {
     DString r;
-    r.itoa(val);
+    r.itos(val);
     return r;
 }
 
 inline DString to_dstring(unsigned int val) {
     DString r;
-    r.itoa_ul(val);
+    r.itos_ul(val);
     return r;
 }
 
 inline DString to_dstring(long val) {
     DString r;
-    r.itoa(val);
+    r.itos(val);
     return r;
 }
 
 inline DString to_dstring(unsigned long val) {
     DString r;
-    r.itoa_ul(val);
+    r.itos_ul(val);
     return r;
 }
 
 inline DString to_dstring(long long val) {
     DString r;
-    r.itoa(val);
+    r.itos(val);
     return r;
 }
 
 inline DString to_dstring(unsigned long long val) {
     DString r;
-    r.itoa_ul(val);
+    r.itos_ul(val);
     return r;
 }
 

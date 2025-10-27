@@ -171,8 +171,9 @@ long      dstr_atoi(CDSTR src);
 long      dstr_atoll(CDSTR src);
 double    dstr_atof(CDSTR src);
 
-int       dstr_itoa_ul(DSTR dest, unsigned long long n, unsigned int base);
-int       dstr_itoa(DSTR dest, long long n);
+/* itos = int to string */
+int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base);
+int dstr_itos(DSTR dest, long long n);
 
 /* find s in p. returns index or DSTR_NPOS if not found*/
 size_t dstr_find_c(CDSTR p, size_t pos, char c);
@@ -575,7 +576,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
 #define datoi               dstr_atoi
 #define datol               dstr_atoi
 #define datoll              dstr_atoll
-#define ditoa               dstr_itoa
+#define ditos               dstr_itos
 #define dstrtoi             dstr_to_int
 #define dstrtol             dstr_to_long
 #define dstrtoul            dstr_to_ulong
