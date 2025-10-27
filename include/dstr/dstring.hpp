@@ -1050,8 +1050,8 @@ void DString::split(char sep, Container& dest) const
     Container v;
     DString str;
 
-    for (const_iterator i = begin(); i != end(); ++i) {
-        char c= *i;
+    for (size_t i = 0; i < size(); ++i) {
+        char c = get(i);
         if (c == sep) {
             v.push_back(str);
             str.clear();
