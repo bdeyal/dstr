@@ -14,6 +14,7 @@ public:
     // the wrapper object (see private section below)
     //
     DString()
+        : m_imp()
     {
     }
 
@@ -24,6 +25,7 @@ public:
     // DString s('A', 100);
     //
     DString(char c, size_t count)
+        : m_imp()
     {
         if (c == '\0' || count == 0) return;
         grow(count);
@@ -34,6 +36,7 @@ public:
     // DString s("A C string");
     //
     DString(const char* sz)
+        : m_imp()
     {
         if (!sz) return;
         size_t len = strlen(sz);
@@ -45,6 +48,7 @@ public:
     // DString s(other_DString);
     //
     DString(const DString& rhs)
+        : m_imp()
     {
         if (rhs.empty()) return;
         grow(rhs.length());
@@ -54,6 +58,7 @@ public:
 
 #if __cplusplus >= 201103L
     DString(DString&& rhs)
+        : m_imp()
     {
         swap(rhs);
     }
@@ -62,6 +67,7 @@ public:
     // DString sub_string(other_dstr, 5, 5);
     //
     DString(const DString& rhs, size_t pos, size_t count)
+        : m_imp()
     {
         if (pos >= rhs.size()) return;
         if (!count) return;
@@ -77,6 +83,7 @@ public:
     // DString s("abcdefg", 3) -> "abc"
     //
     DString(const char* buffer, size_t len)
+        : m_imp()
     {
         if (!buffer) return;
         if ((len = strnlen(buffer, len)) == 0) return;
@@ -88,6 +95,7 @@ public:
     // DString s(&str[5], &str[15]);
     //
     DString(const char* first, const char* last)
+        : m_imp()
     {
         size_t len = last - first;
         if ((len = strnlen(first, len)) == 0) return;

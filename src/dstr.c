@@ -1623,6 +1623,9 @@ void dstr_swap(DSTR d1, DSTR d2)
     // Although this is 32 bytes copy, each copy takes one
     // AVX instruction
     //
+    // AVX bit copy causes valgrind to complain on uninitialized capacity below
+    // but it is 100% correct
+    //
     struct DSTR_TYPE tmp = *d1;
     *d1 = *d2;
     *d2 = tmp;
