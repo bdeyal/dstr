@@ -135,7 +135,7 @@ static const char* my_strcasechr(const char* s, int c)
 static void dstr_out_of_memory()
 {
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
-    abort();
+    exit(EXIT_FAILURE);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -165,7 +165,7 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
         new_capacity *= 2;
 
     if (new_capacity >= UINT32_MAX) {
-        errno = ERANGE;
+        dstr_out_of_memory();
         return NULL;
     }
 
@@ -634,8 +634,8 @@ static size_t dstr_rfind_c_imp(CDSTR p,
         pos = DLEN(p) - 1;
 
     for (const char* search_loc = dstr_address_c(p, pos);
-          search_loc >= DBUF(p) ;
-          --search_loc)
+         search_loc >= DBUF(p);
+         --search_loc)
     {
         if (*search_loc == c) {
             found_loc = search_loc;
