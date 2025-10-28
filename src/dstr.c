@@ -9,6 +9,12 @@
 
 #include <dstr/dstr.h>
 
+#if !defined(__cplusplus)
+#if __STDC_VERSION__ < 199901L
+#error dstr requires at least a C99 compiler
+#endif
+#endif
+
 /*
  *   garbage collector / memory checker
  */
@@ -48,13 +54,6 @@
 #define INIT_DSTR(identifier)    \
     struct DSTR_TYPE identifier; \
     dstr_init_data(&identifier)
-
-
-#if !defined(__cplusplus)
-#if __STDC_VERSION__ < 199901L
-#error dstr requires at least a C99 compiler
-#endif
-#endif
 
 /*
  *   Get the number of characters vsnprintf would write
