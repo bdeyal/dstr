@@ -1140,7 +1140,7 @@ DString& DString::join_inplace(const char* sep, const Container& v)
 
     typename Container::const_iterator p = v.begin();
 
-    while (true) {
+    for (;;) {
         this->append(*p);
         if (++p == v.end()) break;
         this->append(sep);

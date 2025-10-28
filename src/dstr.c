@@ -849,7 +849,7 @@ DSTR dstr_slurp_stream(DSTR p, FILE* fp)
 {
     char chunk[512];
 
-    while (1) {
+    for (;;) {
         size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
         if (len < sizeof(chunk)) {
             if (ferror(fp)) {
@@ -2483,7 +2483,7 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
         sep = "";
 
     size_t index = 0;
-    while (1) {
+    for (;;) {
         if (!dstr_append_sz(dest, argv[index]))
             return DSTR_FAIL;
 
