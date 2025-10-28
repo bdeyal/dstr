@@ -10,56 +10,62 @@ class DString {
 public:
     static const size_t NPOS = DSTR_NPOS;
 
-    // Default Constructor and Destructor have no code since all is done withen
-    // the wrapper object (see private section below)
-    //
     DString()
-        : m_imp()
     {
+        dstr_init_data(pImp());
     }
 
     ~DString()
     {
+        if (capacity() > DSTR_INITIAL_CAPACITY)
+            dstr_clean_data(pImp());
     }
 
     // DString s('A', 100);
     //
     DString(char c, size_t count)
-        : m_imp()
     {
-        if (c == '\0' || count == 0) return;
-        grow(count);
-        setdata(c, count);
-        setlen(count);
+        if (c == '\0' || count == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
+        init_capacity(count);
+        init_data(c, count);
+        init_length(count);
     }
 
     // DString s("A C string");
     //
     DString(const char* sz)
-        : m_imp()
     {
-        if (!sz) return;
-        size_t len = strlen(sz);
-        grow(len);
-        setdata(sz, len);
-        setlen(len);
+        size_t len = sz ? strlen(sz) : 0;
+
+        if (!len) {
+            dstr_init_data(pImp());
+            return;
+        }
+        init_capacity(len);
+        init_data(sz, len);
+        init_length(len);
     }
 
     // DString s(other_DString);
     //
     DString(const DString& rhs)
-        : m_imp()
     {
-        if (rhs.empty()) return;
-        grow(rhs.length());
-        setdata(rhs.data(), rhs.length());
-        setlen(rhs.length());
+        if (rhs.length() == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
+        init_capacity(rhs.length());
+        init_data(rhs.data(), rhs.length());
+        init_length(rhs.length());
     }
 
 #if __cplusplus >= 201103L
     DString(DString&& rhs)
-        : m_imp()
     {
+        dstr_init_data(pImp());
         swap(rhs);
     }
 #endif
@@ -67,41 +73,47 @@ public:
     // DString sub_string(other_dstr, 5, 5);
     //
     DString(const DString& rhs, size_t pos, size_t count)
-        : m_imp()
     {
-        if (pos >= rhs.size()) return;
-        if (!count) return;
+        if (pos >= rhs.size() || count == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
 
         if (count > rhs.size() - pos)
             count = rhs.size() - pos;
 
-        grow(count);
-        setdata(rhs.data() + pos, count);
-        setlen(count);
+        init_capacity(count);
+        init_data(rhs.data() + pos, count);
+        init_length(count);
     }
 
     // DString s("abcdefg", 3) -> "abc"
     //
     DString(const char* buffer, size_t len)
-        : m_imp()
     {
-        if (!buffer) return;
-        if ((len = strnlen(buffer, len)) == 0) return;
-        grow(len);
-        setdata(buffer, len);
-        setlen(len);
+        if (!buffer || (len = strnlen(buffer, len)) == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
+        init_capacity(len);
+        init_data(buffer, len);
+        init_length(len);
     }
 
     // DString s(&str[5], &str[15]);
     //
     DString(const char* first, const char* last)
-        : m_imp()
     {
         size_t len = last - first;
-        if ((len = strnlen(first, len)) == 0) return;
-        grow(len);
-        setdata(first, len);
-        setlen(len);
+
+        if ((len = strnlen(first, len)) == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
+
+        init_capacity(len);
+        init_data(first, len);
+        init_length(len);
     }
 
     // substr returns a new string constructed by the 'substr constructor'
@@ -426,6 +438,11 @@ public:
 
     DString& join_inplace(const char* sep, const char* argv[], size_t argc) {
         dstr_join_sz(pImp(), sep, argv, argc);
+        return *this;
+    }
+
+    DString& join_inplace(const char* sep, char* argv[], size_t argc) {
+        dstr_join_sz(pImp(), sep, (const char**)argv, argc);
         return *this;
     }
 
@@ -819,7 +836,6 @@ public:
     bool iequal(const char* sz)     const { return (icompare(sz) == 0);  }
     bool iequal(const DString& rhs) const { return (icompare(rhs) == 0); }
 
-    bool operator==(const char* sz) const { return (compare(sz) == 0);  }
     bool operator!=(const char* sz) const { return (compare(sz) != 0);  }
     bool operator<(const char* sz) const  { return (compare(sz) < 0);   }
     bool operator>(const char* sz) const  { return (compare(sz) > 0);   }
@@ -833,6 +849,9 @@ public:
 
     // micro optimization - check length before buffer
     //
+    bool operator==(const char* sz) const {
+        return (compare(sz) == 0);
+    }
     bool operator==(const DString& rhs) const {
         return (size() == rhs.size()) && (compare(rhs) == 0);
     }
@@ -899,34 +918,36 @@ public:
     const_iterator end()   const { return &m_imp.data[m_imp.length]; }
 
 private:
+    // Single data member.
+    //
+    DSTR_TYPE m_imp;
 
+private:
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
-    // Single member. Thin wrapper around C type DSTR_TYPE
-    //
-    struct DSTR_TYPE_Wrapper : public DSTR_TYPE
+    void init_capacity(size_t len)
     {
-        DSTR_TYPE_Wrapper() {
-            dstr_init_data(this);
+        if (len < DSTR_INITIAL_CAPACITY) {
+            m_imp.capacity = DSTR_INITIAL_CAPACITY;
+            m_imp.data = m_imp.sso_buffer;
         }
-        ~DSTR_TYPE_Wrapper() {
-            if (capacity > DSTR_INITIAL_CAPACITY)
-                dstr_clean_data(this);
+        else {
+            dstr_grow_ctor(&m_imp, len);
         }
-    } m_imp;
+    }
 
-    // Used by ctor to copy and set DSTR correctly.
-    //
-    void setdata(char c, size_t count)        { memset(m_imp.data, c, count); }
-    void setdata(const char* p, size_t count) { memcpy(m_imp.data, p, count); }
-    void setlen(size_t count) {
+    void init_data(char c, size_t count) {
+        memset(m_imp.data, c, count);
+    }
+
+    void init_data(const char* p, size_t count) {
+        memcpy(m_imp.data, p, count);
+    }
+
+    void init_length(size_t count) {
         m_imp.length = count;
         m_imp.data[count] = '\0';
-    }
-    void grow(size_t len) {
-        if (len < DSTR_INITIAL_CAPACITY) return;
-        dstr_grow_ctor(pImp(), len);
     }
 
     // C++98-like compile time assert for container value type
