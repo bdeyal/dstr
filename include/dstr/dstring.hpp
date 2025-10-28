@@ -409,7 +409,8 @@ public:
 
     DString& append_sprintf(const char* fmt, ...);
 
-    DString& append_vsprintf(const char* fmt, va_list args) {
+    DString& append_vsprintf(const char* fmt, va_list args)
+    {
         dstr_append_vsprintf(pImp(), fmt, args);
         return *this;
     }
@@ -432,34 +433,40 @@ public:
     DString& join_inplace(const char* sep, const Container& v);
 
     template <class Container>
-    DString& join_inplace(const DString& sep, const Container& v) {
+    DString& join_inplace(const DString& sep, const Container& v)
+    {
         return join_inplace(sep.c_str(), v);
     }
 
-    DString& join_inplace(const char* sep, const char* argv[], size_t argc) {
+    DString& join_inplace(const char* sep, const char* argv[], size_t argc)
+    {
         dstr_join_sz(pImp(), sep, argv, argc);
         return *this;
     }
 
-    DString& join_inplace(const char* sep, char* argv[], size_t argc) {
+    DString& join_inplace(const char* sep, char* argv[], size_t argc)
+    {
         dstr_join_sz(pImp(), sep, (const char**)argv, argc);
         return *this;
     }
 
-    DString& join_inplace(const DString& sep, const char* argv[], size_t argc) {
+    DString& join_inplace(const DString& sep, const char* argv[], size_t argc)
+    {
         return join_inplace(sep.c_str(), argv, argc);
     }
 
     // join
     //
     template <class Container>
-    DString join(const Container& v) const {
+    DString join(const Container& v) const
+    {
         DString result;
         result.join_inplace(this->c_str(), v);
         return result;
     }
 
-    DString join(const char* argv[], size_t argc) const {
+    DString join(const char* argv[], size_t argc) const
+    {
         DString result;
         result.join_inplace(this->c_str(), argv, argc);
         return result;
@@ -548,12 +555,14 @@ public:
     void split(const char* separators, Container& dest) const;
 
     template <class Container>
-    void split(const DString& separators, Container& dest)  const {
+    void split(const DString& separators, Container& dest)  const
+    {
         split(separators.c_str(), dest);
     }
 
     template <class Container>
-    void splitlines(Container& dest) const {
+    void splitlines(Container& dest) const
+    {
         split("\r\n", dest);
     }
 
@@ -564,12 +573,14 @@ public:
     void rpartition(const char* s, Container& dest) const;
 
     template <class Container>
-    void partition(const DString& s, Container& dest) const {
+    void partition(const DString& s, Container& dest) const
+    {
         partition(s.c_str(), dest);
     }
 
     template <class Container>
-    void rpartition(const DString& s, Container& dest) const {
+    void rpartition(const DString& s, Container& dest) const
+    {
         rpartition(s.c_str(), dest);
     }
 
@@ -650,103 +661,128 @@ public:
     size_t      capacity() const { return m_imp.capacity; }
     bool        empty()    const { return length() == 0;  }
 
-    bool index_ok(size_t pos) const {
+    bool index_ok(size_t pos) const
+    {
         return dstr_valid_index(pImp(), pos);
     }
 
-    char get(long pos) const {
+    char get(long pos) const
+    {
         return dstr_getchar_safe(pImp(), pos);
     }
 
-    void put(long pos, char c) {
+    void put(long pos, char c)
+    {
         dstr_putchar_safe(pImp(), pos, c);
     }
 
-    char operator[](size_t pos) const {
+    char operator[](size_t pos) const
+    {
         return m_imp.data[pos];
     }
 
-    char& operator[](size_t pos) {
+    char& operator[](size_t pos)
+    {
         return m_imp.data[pos];
     }
 
-    unsigned int hash() const {
+    unsigned int hash() const
+    {
         return dstr_hash(pImp());
     }
 
-    long atoi() const {
+    long atoi() const
+    {
         return dstr_atoi(pImp());
     }
 
-    double atof() const {
+    double atof() const
+    {
         return dstr_atof(pImp());
     }
 
-    long atoll() const {
+    long atoll() const
+    {
         return dstr_atoll(pImp());
     }
 
-    void itos(long long n) {
+    void itos(long long n)
+    {
         dstr_itos(pImp(), n);
     }
 
-    void itos_ul(unsigned long long n, unsigned int base = 10) {
+    void itos_ul(unsigned long long n, unsigned int base = 10)
+    {
         dstr_itos_ul(pImp(), n, base);
     }
 
-    size_t find(char c, size_t pos=0) const {
+    size_t find(char c, size_t pos=0) const
+    {
         return dstr_find_c(pImp(), pos, c);
     }
 
-    size_t find(const char* sz, size_t pos=0) const {
+    size_t find(const char* sz, size_t pos=0) const
+    {
         return dstr_find_sz(pImp(), pos, sz);
     }
 
-    size_t ifind(char c, size_t pos=0) const {
+    size_t ifind(char c, size_t pos=0) const
+    {
         return dstr_ifind_c(pImp(), pos, c);
     }
 
-    size_t ifind(const char* sz, size_t pos=0) const {
+    size_t ifind(const char* sz, size_t pos=0) const
+    {
         return dstr_ifind_sz(pImp(), pos, sz);
     }
 
-    size_t rfind(char c, size_t pos = NPOS) const {
+    size_t rfind(char c, size_t pos = NPOS) const
+    {
         return dstr_rfind_c(pImp(), pos, c);
     }
 
-    size_t rfind(const char* sz, size_t pos = NPOS) const {
+    size_t rfind(const char* sz, size_t pos = NPOS) const
+    {
         return dstr_rfind_sz(pImp(), pos, sz);
     }
 
-    size_t irfind(char c, size_t pos = NPOS) const {
+    size_t irfind(char c, size_t pos = NPOS) const
+    {
         return dstr_irfind_c(pImp(), pos, c);
     }
 
-    size_t irfind(const char* sz, size_t pos = NPOS) const {
+    size_t irfind(const char* sz, size_t pos = NPOS) const
+    {
         return dstr_irfind_sz(pImp(), pos, sz);
     }
 
-    size_t count(const char* sz) const {
+    size_t count(const char* sz) const
+    {
         return dstr_count_sz(pImp(), sz);
     }
 
-    size_t count(const DString& ds) const {
+    size_t count(const DString& ds) const
+    {
         return dstr_count_ds(pImp(), ds.pImp());
     }
 
-    size_t icount(const char* sz) const {
+    size_t icount(const char* sz) const
+    {
         return dstr_icount_sz(pImp(), sz);
     }
 
-    size_t icount(const DString& ds) const {
+    size_t icount(const DString& ds) const
+    {
         return dstr_icount_ds(pImp(), ds.pImp());
     }
 
-    bool contains(const char* s) const {
+    bool contains(const char* s) const
+    {
         return dstr_contains_sz(pImp(), s);
     }
 
-    bool icontains(const char* s) const {
+    bool icontains(const char* s) const
+    {
         return dstr_icontains_sz(pImp(), s);
     }
 
@@ -768,59 +804,71 @@ public:
     bool istitle()      const { return dstr_istitle(pImp()); }
     bool isupper()      const { return dstr_isupper(pImp()); }
 
-    bool startswith(const char* s) const {
+    bool startswith(const char* s) const
+    {
         return dstr_prefix_sz(pImp(), s);
     }
 
-    bool istartswith(const char* s) const {
+    bool istartswith(const char* s) const
+    {
         return dstr_iprefix_sz(pImp(), s);
     }
 
-    bool endswith(const char* s) const {
+    bool endswith(const char* s) const
+    {
         return dstr_suffix_sz(pImp(), s);
     }
 
-    bool iendswith(const char* s) const {
+    bool iendswith(const char* s) const
+    {
         return dstr_isuffix_sz(pImp(), s);
     }
 
     // ffo = find_first of
     //
-    size_t ffo(const char* s, size_t pos = 0) const {
+    size_t ffo(const char* s, size_t pos = 0) const
+    {
         return dstr_ffo_sz(pImp(), pos, s);
     }
 
-    size_t ffo(const DString& rhs, size_t pos = 0) const {
+    size_t ffo(const DString& rhs, size_t pos = 0) const
+    {
         return dstr_ffo_ds(pImp(), pos, rhs.pImp());
     }
 
     // ffno = find first not of
     //
-    size_t ffno(const char* s, size_t pos = 0) const {
+    size_t ffno(const char* s, size_t pos = 0) const
+    {
         return dstr_ffno_sz(pImp(), pos, s);
     }
 
-    size_t ffno(const DString& rhs, size_t pos = 0) const {
+    size_t ffno(const DString& rhs, size_t pos = 0) const
+    {
         return dstr_ffno_ds(pImp(), pos, rhs.pImp());
     }
 
     // flo = find_last_of
     //
-    size_t flo(const char* s, size_t pos = DSTR_NPOS) const {
+    size_t flo(const char* s, size_t pos = DSTR_NPOS) const
+    {
         return dstr_flo_sz(pImp(), pos, s);
     }
 
-    size_t flo(const DString& rhs, size_t pos = DSTR_NPOS) const {
+    size_t flo(const DString& rhs, size_t pos = DSTR_NPOS) const
+    {
         return dstr_flo_ds(pImp(), pos, rhs.pImp());
     }
 
     // flno = find_last_not_of
     //
-    size_t flno(const char* s, size_t pos = DSTR_NPOS) const {
+    size_t flno(const char* s, size_t pos = DSTR_NPOS) const
+    {
         return dstr_flno_sz(pImp(), pos, s);
     }
 
-    size_t flno(const DString& rhs, size_t pos = DSTR_NPOS) const {
+    size_t flno(const DString& rhs, size_t pos = DSTR_NPOS) const
+    {
         return dstr_flno_ds(pImp(), pos, rhs.pImp());
     }
 
@@ -849,53 +897,68 @@ public:
 
     // micro optimization - check length before buffer
     //
-    bool operator==(const char* sz) const {
+    bool operator==(const char* sz) const
+    {
         return (compare(sz) == 0);
     }
-    bool operator==(const DString& rhs) const {
+
+    bool operator==(const DString& rhs) const
+    {
         return (size() == rhs.size()) && (compare(rhs) == 0);
     }
-    bool operator!=(const DString& rhs) const {
+
+    bool operator!=(const DString& rhs) const
+    {
         return (size() != rhs.size()) || (compare(rhs) != 0);
     }
 
-    int fgets(FILE* fp) {
+    int fgets(FILE* fp)
+    {
         return dstr_fgets(pImp(), fp);
     }
 
-    int fgetline(FILE* fp) {
+    int fgetline(FILE* fp)
+    {
         return dstr_fgetline(pImp(), fp);
     }
 
-    int stoi(size_t* index = nullptr, int base = 10) {
+    int stoi(size_t* index = nullptr, int base = 10)
+    {
         return dstr_to_int(pImp(), index, base);
     }
 
-    long stol(size_t* index = nullptr, int base = 10) {
+    long stol(size_t* index = nullptr, int base = 10)
+    {
         return dstr_to_long(pImp(), index, base);
     }
 
-    unsigned long stoul(size_t* index = nullptr, int base = 10) {
+    unsigned long stoul(size_t* index = nullptr, int base = 10)
+    {
         return dstr_to_ulong(pImp(), index, base);
     }
 
-    long long stoll(size_t* index = nullptr, int base = 10) {
+    long long stoll(size_t* index = nullptr, int base = 10)
+    {
         return dstr_to_llong(pImp(), index, base);
     }
 
-    unsigned long long stoull(size_t* index = nullptr, int base = 10) {
+    unsigned long long stoull(size_t* index = nullptr, int base = 10)
+    {
         return dstr_to_ullong(pImp(), index, base);
     }
 
-    float stof(size_t* index = nullptr) {
+    float stof(size_t* index = nullptr)
+    {
         return dstr_to_float(pImp(), index);
     }
 
-    double stod(size_t* index = nullptr) {
+    double stod(size_t* index = nullptr)
+    {
         return dstr_to_double(pImp(), index);
     }
 
-    long double stold(size_t* index = nullptr) {
+    long double stold(size_t* index = nullptr)
+    {
         return dstr_to_ldouble(pImp(), index);
     }
 
@@ -937,15 +1000,18 @@ private:
         }
     }
 
-    void init_data(char c, size_t count) {
+    void init_data(char c, size_t count)
+    {
         memset(m_imp.data, c, count);
     }
 
-    void init_data(const char* p, size_t count) {
+    void init_data(const char* p, size_t count)
+    {
         memcpy(m_imp.data, p, count);
     }
 
-    void init_length(size_t count) {
+    void init_length(size_t count)
+    {
         m_imp.length = count;
         m_imp.data[count] = '\0';
     }
@@ -1002,37 +1068,43 @@ std::istream& io_getline(std::istream& in, DString& s);
 
 // to_dstring() functions
 //
-inline DString to_dstring(int val) {
+inline DString to_dstring(int val)
+{
     DString r;
     r.itos(val);
     return r;
 }
 
-inline DString to_dstring(unsigned int val) {
+inline DString to_dstring(unsigned int val)
+{
     DString r;
     r.itos_ul(val);
     return r;
 }
 
-inline DString to_dstring(long val) {
+inline DString to_dstring(long val)
+{
     DString r;
     r.itos(val);
     return r;
 }
 
-inline DString to_dstring(unsigned long val) {
+inline DString to_dstring(unsigned long val)
+{
     DString r;
     r.itos_ul(val);
     return r;
 }
 
-inline DString to_dstring(long long val) {
+inline DString to_dstring(long long val)
+{
     DString r;
     r.itos(val);
     return r;
 }
 
-inline DString to_dstring(unsigned long long val) {
+inline DString to_dstring(unsigned long long val)
+{
     DString r;
     r.itos_ul(val);
     return r;
@@ -1044,15 +1116,18 @@ inline DString to_dstring(unsigned long long val) {
     DString res; res.assign(buf, buf + n);       \
     return res; } while(0)
 
-inline DString to_dstring(float val) {
+inline DString to_dstring(float val)
+{
     NUMBER_TO_DSTRING(val, "%f");
 }
 
-inline DString to_dstring(double val) {
+inline DString to_dstring(double val)
+{
     NUMBER_TO_DSTRING(val, "%f");
 }
 
-inline DString to_dstring(long double val) {
+inline DString to_dstring(long double val)
+{
     NUMBER_TO_DSTRING(val, "%Lf");
 }
 
@@ -1154,7 +1229,6 @@ template <class Container>
 void DString::partition(const char* s, Container& dest) const
 {
     CHECK_VALUE_TYPE(Container);
-
 
     struct DSTR_PartInfo pinfo;
     dstr_partition(pImp(), s, &pinfo);
