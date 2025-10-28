@@ -2282,7 +2282,7 @@ static int dstr_replace_all_imp(DSTR dest,
     size_t pos = 0;
     size_t num_replaced = 0;
 
-    // We wil work on a copy so if a failure occurs in the middle of replace
+    // We will work on a copy so if a failure occurs in the middle of replace
     // we don't leave the original argument in an undefined status
     //
     INIT_DSTR(tmp);
