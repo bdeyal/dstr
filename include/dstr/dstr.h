@@ -233,6 +233,39 @@ size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s);
 
 /* copy NUMBYTES from INDEX to DEST. returns copied characters*/
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
+/* I/O functions*/
+int dstr_fgets(DSTR d, FILE* fp);
+int dstr_fgetline(DSTR d, FILE* fp);
+
+/* translate and squeeze */
+void dstr_translate(DSTR dest, const char* arr1, const char* arr2);
+void dstr_squeeze(DSTR dest, const char* squeeze);
+void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2);
+
+struct DSTR_PartInfo {
+    // l, m, r = left, mid, right
+    size_t l_pos;
+    size_t l_len;
+    size_t m_pos;
+    size_t m_len;
+    size_t r_pos;
+    size_t r_len;
+};
+size_t dstr_partition(CDSTR p,  const char* s, struct DSTR_PartInfo* pInfo);
+size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo);
+
+/*
+ * conversion funcions
+ */
+int                dstr_to_int(CDSTR p, size_t* index, int base);
+long               dstr_to_long(CDSTR p, size_t* index, int base);
+unsigned long      dstr_to_ulong(CDSTR p, size_t* index, int base);
+long long          dstr_to_llong(CDSTR p, size_t* index, int base);
+unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base);
+float              dstr_to_float(CDSTR p, size_t* index);
+double             dstr_to_double(CDSTR p, size_t* index);
+long double        dstr_to_ldouble(CDSTR p, size_t* index);
+/*-------------------------------------------------------------------------------*/
 
 /* 3way strcmp-like comparison*/
 static inline int dstr_compare_sz(CDSTR lhs, const char* sz)
@@ -287,26 +320,6 @@ static inline DSTR_BOOL dstr_iequal_ds(CDSTR lhs, CDSTR rhs)
         (dstr_icompare_ds(lhs, rhs) == 0);
 }
 
-/* I/O functions*/
-int dstr_fgets(DSTR d, FILE* fp);
-int dstr_fgetline(DSTR d, FILE* fp);
-
-/* translate and squeeze */
-void dstr_translate(DSTR dest, const char* arr1, const char* arr2);
-void dstr_squeeze(DSTR dest, const char* squeeze);
-void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2);
-
-struct DSTR_PartInfo {
-    // l, m, r = left, mid, right
-    size_t l_pos;
-    size_t l_len;
-    size_t m_pos;
-    size_t m_len;
-    size_t r_pos;
-    size_t r_len;
-};
-size_t dstr_partition(CDSTR p,  const char* s, struct DSTR_PartInfo* pInfo);
-size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo);
 
 static inline size_t dstr_length(CDSTR p) {
     return p->length;
@@ -316,32 +329,39 @@ static inline size_t dstr_capacity(CDSTR p) {
     return p->capacity;
 }
 
-static inline DSTR_BOOL dstr_isempty(CDSTR p) {
+static inline DSTR_BOOL dstr_isempty(CDSTR p)
+{
     return (dstr_length(p) == 0);
 }
 
-static inline const char* dstr_cstring(CDSTR p) {
+static inline const char* dstr_cstring(CDSTR p)
+{
     return p->data;
 }
 
-static inline char dstr_getchar(CDSTR p, size_t pos) {
+static inline char dstr_getchar(CDSTR p, size_t pos)
+{
     return p->data[pos];
 }
 
-static inline void dstr_putchar(DSTR p, size_t pos, char c) {
+static inline void dstr_putchar(DSTR p, size_t pos, char c)
+{
     p->data[pos] = c;
 }
 
-static inline DSTR_BOOL dstr_valid_index(CDSTR p, size_t pos) {
+static inline DSTR_BOOL dstr_valid_index(CDSTR p, size_t pos)
+{
     return (pos < dstr_length(p));
 }
 
-static inline void dstr_chop(DSTR p) {
+static inline void dstr_chop(DSTR p)
+{
     if (dstr_isempty(p)) return;
     p->data[--p->length] = '\0';
 }
 
-static inline char dstr_getchar_safe(CDSTR p, long pos) {
+static inline char dstr_getchar_safe(CDSTR p, long pos)
+{
     if (pos < 0)
         pos += (long) dstr_length(p);
 
@@ -350,7 +370,8 @@ static inline char dstr_getchar_safe(CDSTR p, long pos) {
         (char)'\0';
 }
 
-static inline void dstr_putchar_safe(DSTR p, long pos, char c) {
+static inline void dstr_putchar_safe(DSTR p, long pos, char c)
+{
     if (pos < 0)
         pos += (long) dstr_length(p);
 
@@ -358,17 +379,16 @@ static inline void dstr_putchar_safe(DSTR p, long pos, char c) {
         dstr_putchar(p, pos, c);
 }
 
-static inline int dstr_append_inline(DSTR p, char c) {
-    if (c == '\0')
-        return DSTR_SUCCESS;
+static inline int dstr_append_inline(DSTR p, char c)
+{
+    if (c == '\0') return DSTR_SUCCESS;
 
-    if (dstr_length(p) + 1 < dstr_capacity(p)) {
-        p->data[p->length] = c;
-        p->data[++p->length] = '\0';
-        return DSTR_SUCCESS;
-    }
-    /*else*/
-    return dstr_append_c(p, c);
+    if (p->length + 1 == p->capacity)
+        return dstr_append_c(p, c);
+
+    p->data[p->length] = c;
+    p->data[++p->length] = '\0';
+    return DSTR_SUCCESS;
 }
 
 static inline void dstr_init_data(DSTR p)
@@ -376,7 +396,7 @@ static inline void dstr_init_data(DSTR p)
     p->length = 0;
     p->capacity = DSTR_INITIAL_CAPACITY;
     p->sso_buffer[0] = '\0';
-    p->data = &p->sso_buffer[0];
+    p->data = p->sso_buffer;
 }
 
 static inline void dstr_clear(DSTR p)
@@ -386,32 +406,23 @@ static inline void dstr_clear(DSTR p)
 }
 
 /* BASIC & MFC like: left, mid, right operations */
-static inline int dstr_assign_left(DSTR dest, CDSTR src, size_t count) {
+static inline int dstr_assign_left(DSTR dest, CDSTR src, size_t count)
+{
     return dstr_assign_substr(dest, src, 0, count);
 }
 
-static inline int dstr_assign_mid(DSTR dest, CDSTR src, size_t pos, size_t count) {
+static inline int dstr_assign_mid(DSTR dest, CDSTR src, size_t pos, size_t count)
+{
     return dstr_assign_substr(dest, src, pos, count);
 }
 
-static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count) {
+static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count)
+{
     return (count >= dstr_length(src)) ?
         dstr_assign_ds(dest, src) :
         dstr_assign_substr(dest, src, (dstr_length(src) - count), count);
 }
 
-/*
- * conversion funcions
- */
-int                dstr_to_int(CDSTR p, size_t* index, int base);
-long               dstr_to_long(CDSTR p, size_t* index, int base);
-unsigned long      dstr_to_ulong(CDSTR p, size_t* index, int base);
-long long          dstr_to_llong(CDSTR p, size_t* index, int base);
-unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base);
-float              dstr_to_float(CDSTR p, size_t* index);
-double             dstr_to_double(CDSTR p, size_t* index);
-long double        dstr_to_ldouble(CDSTR p, size_t* index);
-/*-------------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
