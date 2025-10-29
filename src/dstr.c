@@ -55,12 +55,6 @@
     struct DSTR_TYPE identifier; \
     dstr_init_data(&identifier)
 
-/*
- *   Get the number of characters vsnprintf would write
- *   vsnprintf is from C99 onwards
- */
-#define get_vsprintf_len(f, a) vsnprintf(NULL, 0, f, a)
-
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
     const char* cp = haystack;
@@ -1325,23 +1319,32 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
 {
     int len;
     va_list argptr2;
+    char buff[512];
 
     va_copy(argptr2, argptr);
-    len = get_vsprintf_len(fmt, argptr2);
+    len = vsnprintf(buff, sizeof buff, fmt, argptr2);
     va_end(argptr2);
 
-    if (len < 0) {
+    if (len < 0)
         return DSTR_FAIL;
+
+    // formatting was successful on tmp buffer
+    //
+    if ((size_t)len < sizeof(buff)) {
+        dstr_append_imp(p, buff, (size_t) len);
     }
+    else {
+        // Second pass with enough buffer size
+        //
+        if (!dstr_grow_by(p, len))
+            return DSTR_FAIL;
 
-    if (!dstr_grow_by(p, len))
-        return DSTR_FAIL;
+        if ((len = vsnprintf(dstr_tail(p), len + 1, fmt, argptr)) < 0) {
+            return DSTR_FAIL;
+        }
 
-    if ((len = vsnprintf(dstr_tail(p), len + 1, fmt, argptr)) < 0) {
-        return DSTR_FAIL;
+        DLEN(p) += len;
     }
-
-    DLEN(p) += len;
 
     dstr_assert_valid(p);
     return DSTR_SUCCESS;
