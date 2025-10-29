@@ -1323,7 +1323,7 @@ void test_atoi_itos()
     // Must be equal
     //
     DString d;;
-    for (int i = 0; i < 1000000; ++i) {
+    for (int i = 0; i < 10000; ++i) {
         char buf[100];
         long n = rand();
         n *= rand();

@@ -5,21 +5,21 @@ set -e
 for COMP in gcc clang; do
 	echo ">>>> VALGRIND ($COMP) TEST..."
 	$COMP -I../include -O0 -Og dstrtest.c ../src/dstr.c -o dstrtest
-	valgrind --quiet ./dstrtest > /dev/null
+	valgrind --quiet ./dstrtest
 	rm -f dstrtest
 	echo ">>>> OK"
 	echo
 
 	echo ">>>> SANITZE ($COMP) TEST"
 	$COMP -I../include -fsanitize=address -O0 -Og dstrtest.c ../src/dstr.c -o dstrtest
-	./dstrtest > /dev/null
+	./dstrtest
 	rm -f dstrtest
 	echo ">>>> OK"
 	echo
 
 	echo ">>>> GC ($COMP) TEST"
 	$COMP -I../include -DGC_DEBUG -O0 -Og dstrtest.c ../src/dstr.c -o dstrtest -lgc
-	./dstrtest > /dev/null
+	./dstrtest
 	rm -f dstrtest
 	echo ">>>> GC OK"
 	echo
@@ -34,21 +34,21 @@ SRCFILES="dstrtest_pp.cpp ../src/dstring.cpp ../src/dstr.c"
 for COMP in g++ clang++; do
 	echo ">>>> VALGRIND ($COMP) TEST..."
 	$COMP $CXXFLAGS -O0 -Og $SRCFILES -o dstrtest
-	valgrind --quiet ./dstrtest > /dev/null
+	valgrind --quiet ./dstrtest
 	rm -f dstrtest
 	echo ">>>> OK"
 	echo
 
 	echo ">>>> SANITZE ($COMP) TEST"
 	$COMP $CXXFLAGS -fsanitize=address -O0 -Og $SRCFILES -o dstrtest
-	./dstrtest > /dev/null
+	./dstrtest
 	rm -f dstrtest
 	echo ">>>> OK"
 	echo
 
 	echo ">>>> GC ($COMP) TEST"
 	$COMP $CXXFLAGS -DGC_DEBUG -O0 -Og $SRCFILES -o dstrtest -lgc
-	./dstrtest > /dev/null
+	./dstrtest
 	rm -f dstrtest
 	echo ">>>> GC OK"
 	echo

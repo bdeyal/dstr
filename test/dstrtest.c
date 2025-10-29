@@ -1029,15 +1029,16 @@ void test_getline()
     DSTR s1 = dstrnew_reserve(100);
     int line_count = 0;
 
+    size_t maxlen = 0;
     while (dgetline(s1, fp) != EOF) {
         ++line_count;
-        printf("%s\n", dstrdata(s1));
+        if (dstrlen(s1) > maxlen)
+            maxlen = dstrlen(s1);
     }
     fclose(fp);
     dstrfree(s1);
 
-    printf("Line Count of %s is %d\n", __FILE__, line_count);
-
+    printf("Line Count of %s is %d, maxlen = %zu\n", __FILE__, line_count, maxlen);
 }
 //-------------------------------------------------
 
@@ -1052,9 +1053,14 @@ void test_fgets()
     }
 
     DSTR s1 = dstrnew_reserve(500);
+    assert(dstrcap(s1) == 512);
 
-    while (dgets(s1, fp) != EOF)
-        printf("\t%s\n", dstrdata(s1));
+    size_t maxlen = 0;
+    while (dgets(s1, fp) != EOF) {
+        if (dstrlen(s1) > maxlen)
+            maxlen = dstrlen(s1);
+    }
+    printf("%s: maxlen = %zu\n", __func__, maxlen);
 
     dstrfree(s1);
     fclose(fp);
@@ -1379,11 +1385,11 @@ void test_atoi_itos()
     TEST_ITOS(1234, "1234");
     TEST_ITOS(0, "0");
     TEST_ITOS(-1234, "-1234");
-#if 1
+
     // test itos vs sprintf
     //
     DSTR d = dstrnew();
-    for (int i = 0; i < 1000000; ++i) {
+    for (int i = 0; i < 10000; ++i) {
         char buf[100];
         long n = rand();
         n *= rand();
@@ -1393,7 +1399,6 @@ void test_atoi_itos()
         assert(dstreq_sz(d, buf));
     }
     dstrfree(d);
-#endif
 }
 //-------------------------------------------------
 

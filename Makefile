@@ -95,12 +95,12 @@ testvg: $(PROGRAMS) ./test/test_file.txt
 
 .PHONY: test_various
 test_various: ./test/dstr_test.sh
-	cd ./test && ./dstr_test.sh
+	cd ./test && ./dstr_test.sh | tee test_various.txt
 
 clean:
 	rm -rf ./lib64
 	rm -f ./src/dstr.o ./src/dstring.o
-	rm -f ./test/test_file.txt $(PROGRAMS)
+	rm -f ./test/test_file.txt ./test/test_various.txt  $(PROGRAMS)
 
 PREFIX_INCLUDE=$(PREFIX)/include/dstr
 PREFIX_LIB=$(PREFIX)/lib64
