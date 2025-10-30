@@ -1060,7 +1060,7 @@ void test_fgets()
         if (dstrlen(s1) > maxlen)
             maxlen = dstrlen(s1);
     }
-    printf("%s: maxlen = %zu\n", __func__, maxlen);
+    printf("dstr_fgets: maxlen = %zu\n", maxlen);
 
     dstrfree(s1);
     fclose(fp);
