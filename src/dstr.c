@@ -1617,30 +1617,26 @@ void dstr_reverse(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
+static inline void bitcopy_dstr(DSTR_TYPE* dest, const DSTR_TYPE* src)
+{
+    *dest = *src;
+
+    if (src->capacity == DSTR_INITIAL_CAPACITY) {
+        dest->capacity = src->capacity;
+        dest->data = dest->sso_buffer;
+    }
+}
+/*-------------------------------------------------------------------------------*/
+
 void dstr_swap(DSTR d1, DSTR d2)
 {
     dstr_assert_valid(d1);
     dstr_assert_valid(d2);
 
-    // Although this is 32 bytes copy, each copy takes one
-    // AVX instruction
-    //
-    // AVX bit copy causes valgrind to complain on uninitialized capacity below
-    // but it is 100% correct
-    //
-    struct DSTR_TYPE tmp = *d1;
-    *d1 = *d2;
-    *d2 = tmp;
-
-    // it we were in SSO mode, make the fix
-    //
-    if (d1->capacity == DSTR_INITIAL_CAPACITY) {
-        d1->data = &d1->sso_buffer[0];
-    }
-
-    if (d2->capacity == DSTR_INITIAL_CAPACITY) {
-        d2->data = &d2->sso_buffer[0];
-    }
+    DSTR_TYPE tmp;
+    bitcopy_dstr(&tmp, d1);
+    bitcopy_dstr(d1, d2);
+    bitcopy_dstr(d2, &tmp);
 
     dstr_assert_valid(d1);
     dstr_assert_valid(d2);
