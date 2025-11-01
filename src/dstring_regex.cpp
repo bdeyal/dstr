@@ -16,119 +16,162 @@ public:
 private:
     DString m_s;
 };
+/*-------------------------------------------------------------------------------*/
 
-
-class MatchData
-{
-public:
+// RAII wrapper around pcre2_match_data*
+//
+namespace {
+struct MatchData {
     MatchData(pcre2_code* code)
-        :
-        _match( pcre2_match_data_create_from_pattern(code, nullptr) )
-   {
-       if (!_match)
-           throw DStringError("cannot create match data");
-   }
-
-    ~MatchData()
+        : _match(pcre2_match_data_create_from_pattern(code, nullptr))
     {
-        if (_match)
-            pcre2_match_data_free(_match);
+       if (!_match) throw DStringError("cannot create match data");
     }
-
-    uint32_t count() const
-    {
-        return pcre2_get_ovector_count(_match);
+    ~MatchData()  {
+        if (_match) pcre2_match_data_free(_match);
     }
-
-    const PCRE2_SIZE* data() const
-    {
-        return pcre2_get_ovector_pointer(_match);
-    }
-
-    operator pcre2_match_data*()
-    {
-        return _match;
-    }
-
-private:
-    pcre2_match_data* _match;
+    uint32_t count()         const { return pcre2_get_ovector_count(_match);   }
+    const PCRE2_SIZE* data() const { return pcre2_get_ovector_pointer(_match); }
+    operator pcre2_match_data*()   { return _match;    }
+    pcre2_match_data* _match;  // actual pointer
 };
+} // unnamed NS
+/*-------------------------------------------------------------------------------*/
 
+static int compile_options(int options)
+{
+    int pcre_opts = 0;
+
+    if (options & DSTR_REGEX_CASELESS)
+        pcre_opts |= PCRE2_CASELESS;
+    if (options & DSTR_REGEX_MULTILINE)
+        pcre_opts |= PCRE2_MULTILINE;
+    if (options & DSTR_REGEX_DOTALL)
+        pcre_opts |= PCRE2_DOTALL;
+    if (options & DSTR_REGEX_EXTENDED)
+        pcre_opts |= PCRE2_EXTENDED;
+    if (options & DSTR_REGEX_ANCHORED)
+        pcre_opts |= PCRE2_ANCHORED;
+    if (options & DSTR_REGEX_DOLLAR_ENDONLY)
+        pcre_opts |= PCRE2_DOLLAR_ENDONLY;
+    if (options & DSTR_REGEX_UNGREEDY)
+        pcre_opts |= PCRE2_UNGREEDY;
+    if (options & DSTR_REGEX_UTF8)
+        pcre_opts |= PCRE2_UTF | PCRE2_UCP;
+    if (options & DSTR_REGEX_NO_AUTO_CAPTURE)
+        pcre_opts |= PCRE2_NO_AUTO_CAPTURE;
+    if (options & DSTR_REGEX_FIRSTLINE)
+        pcre_opts |= PCRE2_FIRSTLINE;
+    if (options & DSTR_REGEX_DUPNAMES)
+        pcre_opts |= PCRE2_DUPNAMES;
+
+    return pcre_opts;
+}
+/*-------------------------------------------------------------------------------*/
+
+static int match_options(int options)
+{
+    int pcre_opts = 0;
+
+    if (options & DSTR_REGEX_ANCHORED)
+        pcre_opts |= PCRE2_ANCHORED;
+    if (options & DSTR_REGEX_NOTBOL)
+        pcre_opts |= PCRE2_NOTBOL;
+    if (options & DSTR_REGEX_NOTEOL)
+        pcre_opts |= PCRE2_NOTEOL;
+    if (options & DSTR_REGEX_NOTEMPTY)
+        pcre_opts |= PCRE2_NOTEMPTY;
+    if (options & DSTR_REGEX_NO_AUTO_CAPTURE)
+        pcre_opts |= PCRE2_NO_AUTO_CAPTURE;
+    if (options & DSTR_REGEX_NO_UTF8_CHECK)
+        pcre_opts |= PCRE2_NO_UTF_CHECK;
+
+    return pcre_opts;
+}
+/*-------------------------------------------------------------------------------*/
+
+// Syntactic sugar to make code more readable
+//
+#define _pRE ((pcre2_code*)(this->_pcre))
 
 DStringRegex::DStringRegex(const DString& pattern, int options)
     :
     _pcre(nullptr)
 {
-    int errorCode;
-    PCRE2_SIZE errorOffset;
-    unsigned nameCount;
-    unsigned nameEntrySize;
-    unsigned char* nameTable;
-
     pcre2_compile_context* context = pcre2_compile_context_create(nullptr);
-    if (!context) throw DStringError("cannot create compile context");
+    if (!context)
+        throw DStringError("cannot create compile context");
 
-    if (options & RE_NEWLINE_LF)
+    if (options & DSTR_REGEX_NEWLINE_LF)
         pcre2_set_newline(context, PCRE2_NEWLINE_LF);
-    else if (options & RE_NEWLINE_CRLF)
+    else if (options & DSTR_REGEX_NEWLINE_CRLF)
         pcre2_set_newline(context, PCRE2_NEWLINE_CRLF);
-    else if (options & RE_NEWLINE_ANY)
+    else if (options & DSTR_REGEX_NEWLINE_ANY)
         pcre2_set_newline(context, PCRE2_NEWLINE_ANY);
-    else if (options & RE_NEWLINE_ANYCRLF)
+    else if (options & DSTR_REGEX_NEWLINE_ANYCRLF)
         pcre2_set_newline(context, PCRE2_NEWLINE_ANYCRLF);
-    else // default RE_NEWLINE_CR
+    else // default DSTR_REGEX_NEWLINE_CR
         pcre2_set_newline(context, PCRE2_NEWLINE_CR);
 
-    _pcre = pcre2_compile((PCRE2_SPTR)pattern.c_str(),
-                          pattern.length(),
-                          compileOptions(options),
-                          &errorCode,
-                          &errorOffset,
-                          context);
+    int error_code;
+    PCRE2_SIZE error_offset;
+    this->_pcre = pcre2_compile((PCRE2_SPTR)pattern.c_str(),
+                                pattern.length(),
+                                compile_options(options),
+                                &error_code,
+                                &error_offset,
+                                context);
 
     pcre2_compile_context_free(context);
 
-    if (!_pcre)
+    if (!_pRE)
     {
         PCRE2_UCHAR buffer[256];
-        pcre2_get_error_message(errorCode, buffer, sizeof(buffer));
+        pcre2_get_error_message(error_code, buffer, sizeof(buffer));
         DString msg;
-        msg.sprintf("%s (at offset %zu)", (char*)buffer, (size_t)(errorOffset));
+        msg.sprintf("%s (at offset %zu)", (char*)buffer, (size_t)(error_offset));
         throw DStringError(msg);
     }
 
-    pcre2_pattern_info((pcre2_code*)_pcre, PCRE2_INFO_NAMECOUNT, &nameCount);
-    pcre2_pattern_info((pcre2_code*)_pcre, PCRE2_INFO_NAMEENTRYSIZE, &nameEntrySize);
-    pcre2_pattern_info((pcre2_code*)_pcre, PCRE2_INFO_NAMETABLE, &nameTable);
+    unsigned int name_count;
+    pcre2_pattern_info(_pRE, PCRE2_INFO_NAMECOUNT, &name_count);
 
-    for (uint32_t i = 0; i < nameCount; i++)
+    unsigned int name_entry_size;
+    pcre2_pattern_info(_pRE, PCRE2_INFO_NAMEENTRYSIZE, &name_entry_size);
+
+    unsigned char* name_table;
+    pcre2_pattern_info(_pRE, PCRE2_INFO_NAMETABLE, &name_table);
+
+    for (uint32_t i = 0; i < name_count; i++)
     {
-        unsigned char* group = nameTable + 2 + (nameEntrySize * i);
-        int n = pcre2_substring_number_from_name((pcre2_code*)_pcre, group);
-        _groups[n] = DString((char*)group);
+        unsigned char* group = name_table + 2 + (name_entry_size * i);
+        int n = pcre2_substring_number_from_name(_pRE, group);
+        this->_groups[n] = DString((char*)group);
     }
 }
-
+/*-------------------------------------------------------------------------------*/
 
 DStringRegex::~DStringRegex()
 {
     if (_pcre)
-        pcre2_code_free((pcre2_code*)_pcre);
+        pcre2_code_free(_pRE);
 }
+/*-------------------------------------------------------------------------------*/
 
-
-int DStringRegex::match(const DString& subject, size_t offset, Match& mtch, int options) const
+int DStringRegex::match(const DString& subject, size_t offset,
+                        RE_Match& mtch,
+                        int options) const
 {
     assert (offset <= subject.length());
 
-    MatchData matchData((pcre2_code*)_pcre);
+    MatchData mdata(_pRE);
 
-    int rc = pcre2_match((pcre2_code*)_pcre,
+    int rc = pcre2_match(_pRE,
                          (PCRE2_SPTR)(subject.c_str()),
                          subject.size(),
                          offset,
-                         matchOptions(options),
-                         matchData, nullptr);
+                         match_options(options),
+                         mdata, nullptr);
 
     if (rc == PCRE2_ERROR_NOMATCH)
     {
@@ -151,27 +194,36 @@ int DStringRegex::match(const DString& subject, size_t offset, Match& mtch, int 
         throw DStringError((char*)buffer);
     }
 
-    const PCRE2_SIZE* ovec = matchData.data();
-    mtch.offset = ovec[0] < 0 ? DString::NPOS : ovec[0];
-    mtch.length = ovec[1] - mtch.offset;
+    const PCRE2_SIZE* ovec = mdata.data();
+    if (ovec[0] == PCRE2_UNSET) {
+        mtch.offset = DString::NPOS;
+        mtch.length = 0;
+    }
+    else {
+        mtch.offset = ovec[0];
+        mtch.length = ovec[1] - mtch.offset;
+    }
+
     return rc;
 }
+/*-------------------------------------------------------------------------------*/
 
-
-int DStringRegex::match(const DString& subject, size_t offset, MatchVector& matches, int options) const
+int DStringRegex::match_all(const DString& subject, size_t offset,
+                            RE_MatchVector& matches,
+                            int options) const
 {
     assert (offset <= subject.length());
 
-    MatchVector mvec;
+    RE_MatchVector mvec;
 
-    MatchData matchData((pcre2_code*)_pcre);
+    MatchData mdata(_pRE);
 
-    int rc = pcre2_match((pcre2_code*)_pcre,
+    int rc = pcre2_match(_pRE,
                          (PCRE2_SPTR)(subject.c_str()),
                          subject.size(),
                          offset,
                          options & 0xFFFF,
-                         matchData,
+                         mdata,
                          nullptr);
 
     if (rc == PCRE2_ERROR_NOMATCH)
@@ -192,20 +244,27 @@ int DStringRegex::match(const DString& subject, size_t offset, MatchVector& matc
         pcre2_get_error_message(rc, buffer, sizeof(buffer));
         throw DStringError((char*)buffer);
     }
-    matches.reserve(rc);
-    const PCRE2_SIZE* ovec = matchData.data();
+
+    mvec.reserve(rc);
+    const PCRE2_SIZE* ovec = mdata.data();
+
     for (int i = 0; i < rc; ++i)
     {
-        Match m;
-        GroupDict::const_iterator it;
+        RE_Match m;
 
-        m.offset = ovec[i*2] < 0 ? DString::NPOS : ovec[i*2] ;
-        m.length = ovec[i*2 + 1] - m.offset;
+        if (ovec[2 * i] == PCRE2_UNSET) {
+            m.offset = DString::NPOS;
+            m.length = 0;
+        }
+        else {
+            m.offset = ovec[2 * i];
+            m.length = ovec[2 * i + 1] - m.offset;
+        }
 
-        it = _groups.find(i);
-        if (it != _groups.end())
+        GroupDict::const_iterator it = this->_groups.find(i);
+        if (it != this->_groups.end())
         {
-            m.name = (*it).second;
+            m.name = it->second;
         }
 
         mvec.push_back(m);
@@ -214,39 +273,30 @@ int DStringRegex::match(const DString& subject, size_t offset, MatchVector& matc
     mvec.swap(matches);
     return rc;
 }
-
+/*-------------------------------------------------------------------------------*/
 
 bool DStringRegex::match(const DString& subject, size_t offset) const
 {
-    Match mtch;
-    match(subject, offset, mtch, RE_ANCHORED | RE_NOTEMPTY);
+    RE_Match mtch;
+    match(subject, offset, mtch, DSTR_REGEX_ANCHORED | DSTR_REGEX_NOTEMPTY);
     return mtch.offset == offset && mtch.length == subject.length() - offset;
 }
+/*-------------------------------------------------------------------------------*/
 
-
-bool DStringRegex::match(const DString& subject, size_t offset, int options) const
+bool DStringRegex::match(const DString& subject, size_t offset,
+                         int options) const
 {
-    Match mtch;
+    RE_Match mtch;
     match(subject, offset, mtch, options);
     return mtch.offset == offset && mtch.length == subject.length() - offset;
 }
+/*-------------------------------------------------------------------------------*/
 
-
-int DStringRegex::extract(const DString& subject, DString& str, int options) const
+int DStringRegex::extract(const DString& subject, size_t offset,
+                          DString& str,
+                          int options) const
 {
-    Match mtch;
-    int rc = match(subject, 0, mtch, options);
-    if (mtch.offset != DString::NPOS)
-        str.assign(subject, mtch.offset, mtch.length);
-    else
-        str.clear();
-    return rc;
-}
-
-
-int DStringRegex::extract(const DString& subject, size_t offset, DString& str, int options) const
-{
-    Match mtch;
+    RE_Match mtch;
     int rc = match(subject, offset, mtch, options);
     if (mtch.offset != DString::NPOS)
         str.assign(subject, mtch.offset, mtch.length);
@@ -254,14 +304,16 @@ int DStringRegex::extract(const DString& subject, size_t offset, DString& str, i
         str.clear();
     return rc;
 }
+/*-------------------------------------------------------------------------------*/
 
-
-int DStringRegex::split(const DString& subject, size_t offset, std::vector<DString>& strings, int options) const
+int DStringRegex::split(const DString& subject, size_t offset,
+                        std::vector<DString>& strings,
+                        int options) const
 {
-    MatchVector matches;
+    RE_MatchVector matches;
     std::vector<DString> tmp;
 
-    int rc = match(subject, offset, matches, options);
+    int rc = match_all(subject, offset, matches, options);
 
     for (const auto& m: matches)
     {
@@ -274,40 +326,44 @@ int DStringRegex::split(const DString& subject, size_t offset, std::vector<DStri
     strings.swap(tmp);
     return rc;
 }
+/*-------------------------------------------------------------------------------*/
 
-
-int DStringRegex::subst(DString& subject, size_t offset, const DString& replacement, int options) const
+int DStringRegex::subst(DString& subject, size_t offset,
+                        const DString& replacement,
+                        int options) const
 {
-    if (options & RE_GLOBAL)
+    if (options & DSTR_REGEX_GLOBAL)
     {
         int rc = 0;
-        size_t pos = substOne(subject, offset, replacement, options);
+        size_t pos = subst_single(subject, offset, replacement, options);
         while (pos != DString::NPOS)
         {
             ++rc;
-            pos = substOne(subject, pos, replacement, options);
+            pos = subst_single(subject, pos, replacement, options);
         }
         return rc;
     }
     else
     {
-        return substOne(subject, offset, replacement, options) != DString::NPOS ? 1 : 0;
+        return subst_single(subject, offset, replacement, options) != DString::NPOS ? 1 : 0;
     }
 }
+/*-------------------------------------------------------------------------------*/
 
-
-size_t DStringRegex::substOne(DString& subject, size_t offset, const DString& replacement, int options) const
+size_t DStringRegex::subst_single(DString& subject, size_t offset,
+                                  const DString& replacement,
+                                  int options) const
 {
     if (offset >= subject.length()) return DString::NPOS;
 
-    MatchData matchData((pcre2_code*)_pcre);
+    MatchData mdata(_pRE);
 
-    int rc = pcre2_match((pcre2_code*)_pcre,
+    int rc = pcre2_match(_pRE,
                          (PCRE2_SPTR)(subject.c_str()),
                          subject.size(),
                          offset,
-                         matchOptions(options),
-                         matchData,
+                         match_options(options),
+                         mdata,
                          nullptr);
 
     if (rc == PCRE2_ERROR_NOMATCH)
@@ -329,7 +385,7 @@ size_t DStringRegex::substOne(DString& subject, size_t offset, const DString& re
         throw DStringError((char*)buffer);
     }
 
-    const PCRE2_SIZE* ovec = matchData.data();
+    const PCRE2_SIZE* ovec = mdata.data();
     DString result;
     size_t len = subject.length();
     size_t pos = 0;
@@ -342,7 +398,7 @@ size_t DStringRegex::substOne(DString& subject, size_t offset, const DString& re
             DString::const_iterator end = replacement.end();
             while (it != end)
             {
-                if (*it == '$' && !(options & RE_NO_VARS))
+                if (*it == '$' && !(options & DSTR_REGEX_NO_VARS))
                 {
                     ++it;
                     if (it != end)
@@ -378,82 +434,31 @@ size_t DStringRegex::substOne(DString& subject, size_t offset, const DString& re
     subject = result;
     return rp;
 }
+/*-------------------------------------------------------------------------------*/
 
-
-bool DStringRegex::match(const DString& subject, const DString& pattern, int options)
+bool dstring_match(const DString& subject, const DString& pattern, int options)
 {
-    int ctorOptions = options &
-        (RE_CASELESS |
-         RE_MULTILINE |
-         RE_DOTALL |
-         RE_EXTENDED |
-         RE_ANCHORED |
-         RE_DOLLAR_ENDONLY |
-         RE_EXTRA |
-         RE_UNGREEDY |
-         RE_UTF8 |
-         RE_NO_AUTO_CAPTURE);
+    int ctor_opts = options &
+        (DSTR_REGEX_CASELESS |
+         DSTR_REGEX_MULTILINE |
+         DSTR_REGEX_DOTALL |
+         DSTR_REGEX_EXTENDED |
+         DSTR_REGEX_ANCHORED |
+         DSTR_REGEX_DOLLAR_ENDONLY |
+         DSTR_REGEX_EXTRA |
+         DSTR_REGEX_UNGREEDY |
+         DSTR_REGEX_UTF8 |
+         DSTR_REGEX_NO_AUTO_CAPTURE);
 
-    int mtchOptions = options &
-        (RE_ANCHORED |
-         RE_NOTBOL |
-         RE_NOTEOL |
-         RE_NOTEMPTY |
-         RE_NO_AUTO_CAPTURE |
-         RE_NO_UTF8_CHECK);
+    int match_opts = options &
+        (DSTR_REGEX_ANCHORED |
+         DSTR_REGEX_NOTBOL |
+         DSTR_REGEX_NOTEOL |
+         DSTR_REGEX_NOTEMPTY |
+         DSTR_REGEX_NO_AUTO_CAPTURE |
+         DSTR_REGEX_NO_UTF8_CHECK);
 
-    DStringRegex re(pattern, ctorOptions);
-    return re.match(subject, 0, mtchOptions);
+    DStringRegex re(pattern, ctor_opts);
+    return re.match(subject, 0, match_opts);
 }
-
-
-int DStringRegex::compileOptions(int options)
-{
-    int pcreOptions = 0;
-
-    if (options & RE_CASELESS)
-        pcreOptions |= PCRE2_CASELESS;
-    if (options & RE_MULTILINE)
-        pcreOptions |= PCRE2_MULTILINE;
-    if (options & RE_DOTALL)
-        pcreOptions |= PCRE2_DOTALL;
-    if (options & RE_EXTENDED)
-        pcreOptions |= PCRE2_EXTENDED;
-    if (options & RE_ANCHORED)
-        pcreOptions |= PCRE2_ANCHORED;
-    if (options & RE_DOLLAR_ENDONLY)
-        pcreOptions |= PCRE2_DOLLAR_ENDONLY;
-    if (options & RE_UNGREEDY)
-        pcreOptions |= PCRE2_UNGREEDY;
-    if (options & RE_UTF8)
-        pcreOptions |= PCRE2_UTF | PCRE2_UCP;
-    if (options & RE_NO_AUTO_CAPTURE)
-        pcreOptions |= PCRE2_NO_AUTO_CAPTURE;
-    if (options & RE_FIRSTLINE)
-        pcreOptions |= PCRE2_FIRSTLINE;
-    if (options & RE_DUPNAMES)
-        pcreOptions |= PCRE2_DUPNAMES;
-
-    return pcreOptions;
-}
-
-
-int DStringRegex::matchOptions(int options)
-{
-    int pcreOptions = 0;
-
-    if (options & RE_ANCHORED)
-        pcreOptions |= PCRE2_ANCHORED;
-    if (options & RE_NOTBOL)
-        pcreOptions |= PCRE2_NOTBOL;
-    if (options & RE_NOTEOL)
-        pcreOptions |= PCRE2_NOTEOL;
-    if (options & RE_NOTEMPTY)
-        pcreOptions |= PCRE2_NOTEMPTY;
-    if (options & RE_NO_AUTO_CAPTURE)
-        pcreOptions |= PCRE2_NO_AUTO_CAPTURE;
-    if (options & RE_NO_UTF8_CHECK)
-        pcreOptions |= PCRE2_NO_UTF_CHECK;
-
-    return pcreOptions;
-}
+/*-------------------------------------------------------------------------------*/
