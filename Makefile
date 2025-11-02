@@ -15,7 +15,6 @@ endif
 ifeq ($(COMP),gcc)
 	CC=gcc
 	CXX=g++
-	NO_UNINIT=-Wno-maybe-uninitialized
 endif
 
 ifeq ($(COMP),clang)
