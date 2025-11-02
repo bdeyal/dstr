@@ -65,8 +65,20 @@ public:
 #if __cplusplus >= 201103L
     DString(DString&& rhs)
     {
-        dstr_init_data(pImp());
-        swap(rhs);
+        // shallow copy data from rhs (+ sso_buffer fix if needed)
+        //
+        m_imp.length   = rhs.length();
+        m_imp.capacity = rhs.capacity();
+        if (rhs.capacity() == DSTR_INITIAL_CAPACITY) {
+            memcpy(m_imp.sso_buffer, rhs.m_imp.sso_buffer, DSTR_INITIAL_CAPACITY);
+            m_imp.data = m_imp.sso_buffer;
+        }
+        else
+            m_imp.data = rhs.m_imp.data;
+
+        // put rhs in an intial state
+        //
+        dstr_init_data(&rhs.m_imp);
     }
 #endif
 
