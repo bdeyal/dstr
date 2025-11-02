@@ -32,7 +32,7 @@ struct MatchData {
     }
     uint32_t count()         const { return pcre2_get_ovector_count(_match);   }
     const PCRE2_SIZE* data() const { return pcre2_get_ovector_pointer(_match); }
-    operator pcre2_match_data*()   { return _match;    }
+    operator pcre2_match_data*()   { return _match; }
     pcre2_match_data* _match;  // actual pointer
 };
 } // unnamed NS
@@ -129,7 +129,7 @@ DStringRegex::DStringRegex(const DString& pattern, int options)
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(error_code, buffer, sizeof(buffer));
         DString msg;
-        msg.sprintf("%s (at offset %zu)", (char*)buffer, (size_t)(error_offset));
+        msg.sprintf("%s (at offset %zu)", (char*)buffer, error_offset);
         throw DStringError(msg);
     }
 
@@ -346,7 +346,11 @@ int DStringRegex::subst(DString& subject, size_t offset,
     }
     else
     {
-        return subst_single(subject, offset, replacement, options) != DString::NPOS ? 1 : 0;
+        size_t n = subst_single(subject, offset, replacement, options);
+        if (n == DString::NPOS)
+            return 0;
+
+        return 1;
     }
 }
 /*-------------------------------------------------------------------------------*/
