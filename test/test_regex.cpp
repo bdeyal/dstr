@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <cassert>
 
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_regex.hpp>
@@ -115,12 +116,113 @@ void test_extract_all()
 }
 //--------------------------------------------------------------------------------
 
+void test_extract_numbers()
+{
+    TRACE_FN();
+
+    const char *pattern = R"/(\d+)/";
+    DStringRegex re(pattern);
+
+    DString subject = "Today is 2025-10-29 and tomorrow is 2025-10-30";
+
+    // Extract with groups into a vector
+    std::vector<DString> parts;
+    re.split(subject, parts);
+    cout << "Split parts (captured groups):" << endl;
+    for (const auto& part : parts) {
+        cout << "...." << part << endl;
+    }
+
+    size_t offset = 0;
+    for (;;) {
+        RE_MatchVector matches;
+        int n = re.match_all(subject, offset, matches);
+        if (n == 0) break;
+
+        for (const auto& m : matches) {
+            cout << m << " ==> ";
+            cout << subject.substr(m.offset, m.length) << endl;
+        }
+
+        offset = matches[0].offset + matches[0].length;
+    }
+}
+//--------------------------------------------------------------------------------
+
+void test_various()
+{
+    TRACE_FN();
+
+    DStringRegex re1("[0-9]+");
+    assert(re1.match("123"));
+    assert(!re1.match("abc"));
+    assert(re1.match("abc123", 3));
+
+    RE_Match pos;
+    re1.match("123", 0, pos);
+    assert(pos.offset == 0 && pos.length == 3);
+
+    re1.match("ab12de", 0, pos);
+    assert(pos.offset == 2 && pos.length == 2);
+
+    re1.match("abcd", 0, pos);
+    assert(pos.offset == DString::NPOS);
+
+    DStringRegex re2("([0-9]+) ([0-9]+)");
+    RE_MatchVector v;
+
+    re2.match_all("123 456", v);
+    assert(v.size() == 3);
+    assert(v[0].offset == 0 && v[0].length == 7);
+    assert(v[1].offset == 0 && v[1].length == 3);
+    assert(v[2].offset == 4 && v[2].length == 3);
+
+    DString s;
+    int n = re1.extract("123", s);
+    assert(n == 1 && s == "123");
+
+    n = re1.extract("ab12de", 0, s);
+    assert(n == 1 && s == "12");
+
+    n = re1.extract("abcd", 0, s);
+    assert(n == 0 && s == "");
+
+    std::vector<DString> vec;
+    re2.split("123 456", 0, vec, DSTR_REGEX_GLOBAL);
+    cout << "VEC size = " << vec.size() << endl;
+    for (uint32_t i = 0; i < vec.size(); ++i)
+        cout << "vec[" << i << "] = " << vec[i] << endl;
+
+    assert(vec.size() == 3);
+    assert(vec[0] == "123 456");
+    assert(vec[1] == "123");
+    assert(vec[2] == "456");
+
+    s = "123";
+    re1.subst(s, "ABC");
+    assert(s == "ABC");
+
+    s = "123 456";
+    re2.subst(s, "$2 $1");
+    assert(s == "456 123");
+
+    DStringRegex re3("ABC");
+    DStringRegex re4("ABC", DSTR_REGEX_CASELESS);
+
+    assert(!re3.match("abc"));
+    assert(re4.match("abc"));
+}
+//--------------------------------------------------------------------------------
+
+
 int main()
 {
     try {
         test_replace();
         test_pattern_with_groups();
         test_extract_all();
+        test_extract_numbers();
+        test_various();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;

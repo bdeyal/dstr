@@ -222,7 +222,8 @@ int DStringRegex::match_all(const DString& subject, size_t offset,
                          (PCRE2_SPTR)(subject.c_str()),
                          subject.size(),
                          offset,
-                         options & 0xFFFF,
+                         match_options(options) & 0xFFFF,
+                         //options & 0xFFFF,
                          mdata,
                          nullptr);
 
@@ -320,7 +321,7 @@ int DStringRegex::split(const DString& subject, size_t offset,
         if (m.offset != DString::NPOS)
             tmp.push_back(subject.substr(m.offset, m.length));
         else
-            tmp.push_back(DString());
+            tmp.push_back("");
     }
 
     strings.swap(tmp);
