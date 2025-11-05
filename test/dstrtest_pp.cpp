@@ -1739,7 +1739,7 @@ void test_split()
 
     DString s2 = "  Hello,World,,,\t\tToday is Tuesday 1.1.1.1, 2.2.2.2,33.33.33";
 
-    s2.split(", \t", dest);
+    s2.tokenize(", \t", dest);
     assert(dest.size() == 8);
     assert(dest[0] == "Hello");
     assert(dest[1] == "World");
@@ -1747,13 +1747,93 @@ void test_split()
     assert(dest[7] == "33.33.33");
     copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
 
-    DString s3("Hello\nWorld\nGood\nMorning");
+    DString s3("Hello\nWorld\n\nGood\n\nMorning");
     s3.splitlines(dest);
+    assert(dest.size() == 6);
+    int i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    dest.clear();
+    s3 = "Hello:World::Good::Morning";
+    s3.split(':', dest);
+    assert(dest.size() == 6);
+    i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    dest.clear();
+    s3 = "Hello,World,,Good,,Morning";
+    s3.split(",", dest);
+    assert(dest.size() == 6);
+    i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+
+    dest.clear();
+    s3 = "hello";
+    s3.split("hello", dest);
+    assert(dest.size() == 2);
+    i = 0;
+    assert(dest[i++] == "");
+    assert(dest[i++] == "");
+
+    dest.clear();
+    s3 = "hello";
+    s3.split("xxx", dest);
+    assert(dest.size() == 1);
+    i = 0;
+    assert(dest[i++] == "hello");
+
+    dest.clear();
+    s3 = "hello";
+    s3.split("helloxxx", dest);
+    assert(dest.size() == 1);
+    i = 0;
+    assert(dest[i++] == "hello");
+
+    dest.clear();
+    s3 = "hello";
+    s3.split("el", dest);
+    assert(dest.size() == 2);
+    i = 0;
+    assert(dest[i++] == "h");
+    assert(dest[i++] == "lo");
+    dest.clear();
+
+    s3 = "helello";
+    s3.split("el", dest);
+    assert(dest.size() == 3);
+    i = 0;
+    assert(dest[i++] == "h");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "lo");
+
+    s3 = "Hello \t\r\nWorld\n  \t\t\nGood\n\f\r\nMorning";
+    dest.clear();
+    s3.split(dest);
     assert(dest.size() == 4);
-    assert(dest[0] == "Hello");
-    assert(dest[1] == "World");
-    assert(dest[2] == "Good");
-    assert(dest[3] == "Morning");
+    i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "Morning");
     copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
 }
 //-------------------------------------------------

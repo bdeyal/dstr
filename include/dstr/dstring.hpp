@@ -560,22 +560,43 @@ public:
         return translate_squeeze(from, to);
     }
 
+    // split: empty string between separator character or string
+    //
     template <class Container>
     void split(char c, Container& dest) const;
 
     template <class Container>
-    void split(const char* separators, Container& dest) const;
+    void split(const char* sep, Container& dest) const;
 
     template <class Container>
-    void split(const DString& separators, Container& dest)  const
+    void split(const DString& sep, Container& dest)  const
     {
-        split(separators.c_str(), dest);
+        split(sep.c_str(), dest);
     }
 
     template <class Container>
     void splitlines(Container& dest) const
     {
-        split("\r\n", dest);
+        split('\n', dest);
+    }
+
+    template <class Container>
+    void tokenize(const char* separators, Container& dest) const;
+
+    template <class Container>
+    void tokenize(const DString& separators, Container& dest)  const
+    {
+        tokenize(separators.c_str(), dest);
+    }
+
+    // split() without any separator will split on any whitespace
+    // character (including \n \r \t \f and spaces) and will discard
+    // empty strings from the result
+    //
+    template <class Container>
+    void split(Container& dest) const
+    {
+        tokenize("\n\r\t\f ", dest);
     }
 
     template <class Container>
@@ -1178,7 +1199,31 @@ void DString::split(char sep, Container& dest) const
 //-----------------------------------------------------------
 
 template <class Container>
-void DString::split(const char* pattern, Container& dest) const
+void DString::split(const char* sep, Container& dest) const
+{
+    CHECK_VALUE_TYPE(Container);
+
+    if (!sep)
+        return;
+
+    size_t start = 0;
+    size_t sep_len = strlen(sep);
+    Container v;
+
+    for (;;) {
+        size_t pos = find(sep, start);
+        v.push_back(substr(start, pos - start));
+        if (pos == NPOS)
+            break;
+        start = pos + sep_len;;
+    }
+
+    dest.swap(v);
+}
+//-----------------------------------------------------------
+
+template <class Container>
+void DString::tokenize(const char* pattern, Container& dest) const
 {
     CHECK_VALUE_TYPE(Container);
 
