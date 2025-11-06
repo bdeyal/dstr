@@ -45,7 +45,7 @@ void test_dgets(const char* fname)
     }
     fclose(fp);
 
-    cout << __func__ << ": Good! all lines were equal" << endl;
+    cout << __func__ << ": Good! all \'words\' were equal" << endl;
 }
 //-------------------------------------------------
 

@@ -1646,6 +1646,8 @@ void dstr_swap(DSTR d1, DSTR d2)
 int dstr_fgets(DSTR p, FILE* fp)
 {
     int c;
+    char buf[32];
+    size_t bindex = 0;
 
     dstr_assert_valid(p);
     assert(fp != NULL);
@@ -1656,21 +1658,36 @@ int dstr_fgets(DSTR p, FILE* fp)
     do {
         if ((c = fgetc(fp)) == EOF)
             return EOF;
-
     } while (isspace(c));
 
     /* read until next blank characters */
-    do {
-        if (!dstr_append_c(p, (char)c))
-            return EOF;
+    for (;;) {
+        buf[bindex] = c;
+        if (++bindex == sizeof(buf)) {
+            if (!dstr_append_imp(p, buf, bindex))
+                goto clear_eof;
+            bindex = 0;
+        }
 
         if ((c = fgetc(fp)) == EOF)
-            return DSTR_SUCCESS;
+            break;
 
-    } while (!isspace(c));
+        if (isspace(c)) {
+            ungetc(c, fp);
+            break;
+        }
+    }
 
-    ungetc(c, fp);
+    if (bindex) {
+        if (!dstr_append_imp(p, buf, bindex))
+            goto clear_eof;
+    }
+
     return DSTR_SUCCESS;
+
+clear_eof:
+    dstr_clear(p);
+    return EOF;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1681,12 +1698,25 @@ int dstr_fgetline(DSTR p, FILE* fp)
     dstr_assert_valid(p);
     dstr_clear(p);
 
-    /* make room for at least 120 chars */
-    if (DCAP(p) < 120)
-        dstr_grow(p, 120);
+    // We append to DSTR in chunks. In most cases only one chunk will be
+    // needed
+    //
+    char buf[128];
+    size_t bindex = 0;
 
     while ((c = fgetc(fp)) != EOF && c != '\n') {
-        if (!dstr_append_c(p, (char)c)) {
+        buf[bindex] = c;
+        if (++bindex == sizeof(buf)) {
+            if (!dstr_append_imp(p, buf, bindex)) {
+                dstr_clear(p);
+                return EOF;
+            }
+            bindex = 0;
+        }
+    }
+
+    if (bindex) {
+        if (!dstr_append_imp(p, buf, bindex)) {
             dstr_clear(p);
             return EOF;
         }
@@ -1745,7 +1775,7 @@ unsigned long dstr_hash(CDSTR src)
         h *= m;
     };
 
-    // Do a few final mixes of the hash to ensure the last few
+    // A few final mixes of the hash to ensure the last few
     // bytes are well-incorporated.
     h ^= (h >> 13);
     h *= m;
