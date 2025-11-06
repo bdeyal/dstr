@@ -719,7 +719,7 @@ public:
         return m_imp.data[pos];
     }
 
-    unsigned int hash() const
+    unsigned long hash() const
     {
         return dstr_hash(pImp());
     }

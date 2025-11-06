@@ -308,8 +308,8 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 
     if (bytes_to_move > 0) {
         memmove(dstr_address(p, index + count),
-                  dstr_address(p, index),
-                  bytes_to_move);
+                dstr_address(p, index),
+                bytes_to_move);
     }
 
     memset(dstr_address(p, index), c, count);
@@ -1699,24 +1699,59 @@ int dstr_fgetline(DSTR p, FILE* fp)
 }
 /*-------------------------------------------------------------------------------*/
 
-unsigned int dstr_hash(CDSTR src)
-{
-    const char* p;
-    size_t len;
-    unsigned int result = 0;
 
+// tested on /usr/share/dict/words (479826 words, 0 collisions)
+// https://github.com/aappleby/smhasher/blob/master/src/MurmurHash2.cpp
+//
+unsigned long dstr_hash(CDSTR src)
+{
     dstr_assert_valid(src);
 
-    len = DLEN(src);
-    p   = DBUF(src);
+    const unsigned long m = 0x5bd1e995;
+    const int r = 24;
 
-    while (len) {
-        result = (result << 5) - result + (unsigned int)(*p);
-        ++p;
-        --len;
+    size_t len = DLEN(src);
+    const char* data = DBUF(src);
+
+    // the hash result
+    //
+    unsigned long h =  0;
+    h ^= len;
+
+    while (len >= 4) {
+        unsigned long k = *(unsigned int*)data;
+
+        k *= m;
+        k ^= (k >> r);
+        k *= m;
+
+        h *= m;
+        h ^= k;
+
+        data += 4;
+        len -= 4;
     }
 
-    return result;
+    switch(len)
+    {
+    case 3:
+        h ^= (data[2] << 16);
+        /* fall through */
+    case 2:
+        h ^= (data[1] << 8);
+        /* fall through */
+    case 1:
+        h ^= (data[0]);
+        h *= m;
+    };
+
+    // Do a few final mixes of the hash to ensure the last few
+    // bytes are well-incorporated.
+    h ^= (h >> 13);
+    h *= m;
+    h ^= (h >> 15);
+
+    return h;
 }
 /*-------------------------------------------------------------------------------*/
 

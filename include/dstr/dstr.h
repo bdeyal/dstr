@@ -156,8 +156,8 @@ void dstr_trim_both(DSTR p);
 //void dstr_truncate(DSTR p);
 void dstr_remove(DSTR p, size_t pos, size_t count);
 
-/* 31 bit hash value */
-unsigned int dstr_hash(CDSTR src);
+/* hash for use in hash table */
+unsigned long dstr_hash(CDSTR src);
 
 /*   atoi integer conversion
  *
