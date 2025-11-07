@@ -36,6 +36,11 @@
 #define DVAL(p, i)    DBUF(p)[(i)]
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
+
+/* Stack base init. For use in this file */
+#define INIT_DSTR(identifier)    \
+    struct DSTR_TYPE identifier; \
+    dstr_init_data(&identifier)
 /*--------------------------------------------------------------------------*/
 
 #define dstr_assert_valid(p) do {                               \
@@ -48,12 +53,6 @@
     assert((DCAP(p) % DSTR_INITIAL_CAPACITY) == 0);             \
 } while(0)
 /*--------------------------------------------------------------------------*/
-
-// Stack base init. For use in this file
-//
-#define INIT_DSTR(identifier)    \
-    struct DSTR_TYPE identifier; \
-    dstr_init_data(&identifier)
 
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
@@ -569,7 +568,7 @@ static DSTR_BOOL dstr_prefix_sz_imp(CDSTR p,
 
     pbuf = DBUF(p);
     if (ignore_case) {
-        while (*s && (toupper(*pbuf) == toupper(*s))) {
+        while (*s && ((*pbuf == *s) || (toupper(*pbuf) == toupper(*s)))) {
             ++pbuf;
             ++s;
         }
@@ -626,6 +625,8 @@ static size_t dstr_rfind_c_imp(CDSTR p,
     if (pos >= DLEN(p))
         pos = DLEN(p) - 1;
 
+    char C_ = ignore_case ? toupper(c) : c;
+
     for (const char* search_loc = dstr_address_c(p, pos);
          search_loc >= DBUF(p);
          --search_loc)
@@ -635,7 +636,7 @@ static size_t dstr_rfind_c_imp(CDSTR p,
             break;
         }
 
-        if (ignore_case && toupper(*search_loc) == toupper(c)) {
+        if (ignore_case && toupper(*search_loc) == C_) {
             found_loc = search_loc;
             break;
         }
@@ -840,18 +841,23 @@ DSTR dstr_create_cc(char ch, size_t count)
 
 DSTR dstr_slurp_stream(DSTR p, FILE* fp)
 {
-    char chunk[512];
+    char chunk[4096];
 
     for (;;) {
         size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
         if (len < sizeof(chunk)) {
             if (ferror(fp)) {
+                dstr_clear(p);
                 return NULL;
             }
         }
 
-        if (len)
-            dstr_append_imp(p, chunk, len);
+        if (len) {
+            if (!dstr_append_imp(p, chunk, len)) {
+                dstr_clear(p);
+                return NULL;
+            }
+        }
 
         if (feof(fp)) {
             break;
@@ -874,17 +880,11 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
     }
 
     if (create_new) {
-        if ((p = dstr_alloc_empty()) == NULL)
-            goto err_close_fp;
+        p = dstr_alloc_empty();
+        if (!p) goto err_close_fp;
     }
-    else {
-        // clear before assign
-        //
-        if (DLEN(p)) {
-            DLEN(p) = 0;
-            DVAL(p, 0) = '\0';
-        }
-    }
+    else
+        dstr_clear(p);
 
     if (dstr_slurp_stream(p, fp) == NULL)
         goto err_clean_result;
@@ -895,9 +895,9 @@ DSTR dstr_assign_fromfile(DSTR p, const char* fname)
 
 err_clean_result:
     original_errno = errno;
-    if (create_new) {
+    if (create_new)
         dstr_destroy(p);
-    }
+    /* fall through */
 
 err_close_fp:
     if (!original_errno)
