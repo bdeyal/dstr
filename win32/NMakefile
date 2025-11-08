@@ -3,13 +3,13 @@
 !IF "$(COMP)" == "clang"
 CC = clang-cl.exe
 CXX = clang-cl.exe
-CFLAGS = -O2 /MD /D_CRT_SECURE_NO_WARNINGS /I..\include
+CFLAGS = -O2 /D_CRT_SECURE_NO_WARNINGS /I..\include
 CXXFLAGS = $(CFLAGS)
 !ELSE
 CC = cl.exe
 CXX = cl.exe
-CFLAGS = /std:c11 /O2 /nologo /MD /I..\include
-CXXFLAGS = /EHsc /O2 /nologo /MD /I..\include
+CFLAGS = /std:c11 /O2 /nologo /I..\include
+CXXFLAGS = /EHsc /O2 /nologo /I..\include
 !ENDIF
 
 PROGRAMS = \
@@ -27,30 +27,28 @@ DEPS_PP = ..\include\dstr\dstring.hpp ..\include\dstr\dstr.h
 all: $(PROGRAMS)
 
 dstrtest.exe: ..\test\dstrtest.c dstr.obj
-	$(CC) $(CFLAGS) /nologo /MD ..\test\dstrtest.c dstr.obj /Fe"$@"
+	$(CC) $(CFLAGS) /nologo ..\test\dstrtest.c dstr.obj /Fe"$@"
 
 dstrtest_pp.exe: ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
+	$(CXX) $(CXXFLAGS) /nologo ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 test_dgets.exe: ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
+	$(CXX) $(CXXFLAGS) /nologo ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 test_vector.exe: ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
+	$(CXX) $(CXXFLAGS) /nologo ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 test_map.exe: ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
+	$(CXX) $(CXXFLAGS) /nologo ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 test_tokens.exe: ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
+	$(CXX) $(CXXFLAGS) /nologo ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 test_algs.exe: ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj
-	$(CXX) $(CXXFLAGS) /nologo /MD ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
+	$(CXX) $(CXXFLAGS) /nologo ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 clean:
 	del *~ *.obj
-
-distclean: clean
 	del $(PROGRAMS)
 
 test: $(PROGRAMS)

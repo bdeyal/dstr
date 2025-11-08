@@ -365,7 +365,7 @@ static inline char dstr_getchar_safe(CDSTR p, long pos)
     if (pos < 0)
         pos += (long) dstr_length(p);
 
-    return ((0 <= pos) && (pos < p->length)) ?
+    return ((0 <= pos) && (pos < (long)(p->length))) ?
         dstr_getchar(p, pos) :
         (char)'\0';
 }
@@ -375,7 +375,7 @@ static inline void dstr_putchar_safe(DSTR p, long pos, char c)
     if (pos < 0)
         pos += (long) dstr_length(p);
 
-    if ((0 <= pos) && (pos < p->length))
+    if ((0 <= pos) && (pos < (long)(p->length)))
         dstr_putchar(p, pos, c);
 }
 

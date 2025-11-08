@@ -3,11 +3,6 @@
 PREFIX=/usr/local
 ARCH=x86-64-v3
 
-CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-#CFLAGS += -Iinclude $(shell rpm --eval '%{optflags}') -O3
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
-LDFLAGS=-L./lib64 -s
-
 ifeq ($(COMP),)
 	COMP=gcc
 endif
@@ -17,10 +12,31 @@ ifeq ($(COMP),gcc)
 	CXX=g++
 endif
 
+ifeq ($(COMP),mingw64)
+	CC=x86_64-w64-mingw32-gcc
+	CXX=x86_64-w64-mingw32-g++
+	LDFLAGS += -static
+endif
+
+ifeq ($(COMP),mingw32)
+	CC=i686-w64-mingw32-gcc
+	CXX=i686-w64-mingw32-g++
+	LDFLAGS += -static
+	ARCH=core2
+	CFLAGS=-m32 -msse2 -mssse3 -msse4.1 -msse4.2 -mfpmath=sse
+endif
+
 ifeq ($(COMP),clang)
 	CC=clang
 	CXX=clang++
 endif
+
+CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+#CFLAGS += -Iinclude $(shell rpm --eval '%{optflags}') -O3
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
+LDFLAGS += -L./lib64 -s
+
+
 
 PROGRAMS = \
 	./test/dstrtest \
@@ -107,6 +123,7 @@ clean:
 	rm -rf ./lib64
 	rm -f ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o
 	rm -f ./test/test_file.txt ./test/test_various.txt  $(PROGRAMS)
+	rm -f ./test/*.exe
 
 PREFIX_INCLUDE=$(PREFIX)/include/dstr
 PREFIX_LIB=$(PREFIX)/lib64

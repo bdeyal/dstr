@@ -13,4 +13,4 @@ nmake -f NMakefile COMP=clang test
 
 REM  Clean all
 REM
-nmake -f NMakefile distclean
+nmake -f NMakefile clean
