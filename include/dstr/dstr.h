@@ -157,7 +157,7 @@ void dstr_trim_both(DSTR p);
 void dstr_remove(DSTR p, size_t pos, size_t count);
 
 /* hash for use in hash table */
-unsigned long dstr_hash(CDSTR src);
+unsigned long dstr_hash(CDSTR src, int seed /*=0*/);
 
 /*   atoi integer conversion
  *

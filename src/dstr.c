@@ -1733,7 +1733,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
 // tested on /usr/share/dict/words (479826 words, 0 collisions)
 // https://github.com/aappleby/smhasher/blob/master/src/MurmurHash2.cpp
 //
-unsigned long dstr_hash(CDSTR src)
+unsigned long dstr_hash(CDSTR src, int seed)
 {
     dstr_assert_valid(src);
 
@@ -1745,7 +1745,7 @@ unsigned long dstr_hash(CDSTR src)
 
     // the hash result
     //
-    unsigned long h =  0;
+    unsigned long h = (unsigned long) seed;
     h ^= len;
 
     while (len >= 4) {

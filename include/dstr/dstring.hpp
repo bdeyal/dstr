@@ -719,9 +719,9 @@ public:
         return m_imp.data[pos];
     }
 
-    unsigned long hash() const
+    unsigned long hash(int seed = 0) const
     {
-        return dstr_hash(pImp());
+        return dstr_hash(pImp(), seed);
     }
 
     long atoi() const
@@ -1056,6 +1056,23 @@ private:
 };
 //----------------------------------------------------------------
 
+// For use with std::unordered_map
+//
+struct DStringHasher {
+    size_t operator()(const DString& d) const { return d.hash(); }
+};
+
+// for use with std::map + no case comparisons
+//
+struct DString_NoCase {
+    bool operator()(const DString& s1, const DString& s2) const {
+        return s1.icompare(s2);
+    }
+};
+//----------------------------------------------------------------
+
+// various operator+()
+//
 inline DString operator+(const DString& lhs, const DString& rhs)
 {
     DString result(lhs);
@@ -1145,7 +1162,7 @@ inline DString to_dstring(unsigned long long val)
 
 #define NUMBER_TO_DSTRING(v, fmt) do {           \
     char buf[40];                                \
-    int n = sprintf(buf, fmt, v);                \
+    int n = snprintf(buf, sizeof(buf), fmt, v);  \
     DString res; res.assign(buf, buf + n);       \
     return res; } while(0)
 
