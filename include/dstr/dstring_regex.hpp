@@ -2,7 +2,7 @@
 #define DSTRING_REGEXP_INCLUDED
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <dstr/dstring.hpp>
 
 enum {
@@ -52,57 +52,60 @@ public:
     DStringRegex(const DString& pattern, int options = 0);
     ~DStringRegex();
 
-    bool match(const DString& subject, size_t offset = 0) const;
-    bool match(const DString& subject, size_t offset, int options) const;
-
     // match
     //
     int match(const DString& subject, size_t offset,
               RE_Match& m,
               int options = 0) const;
+
     int match(const DString& subject, RE_Match& mtch, int options = 0) const
     {
         return match(subject, 0, mtch, options);
     }
-    //------------------------------------------------------------------------
 
-    // match all
-    //
-    int match_all(const DString& subject, size_t offset,
-                  RE_MatchVector& matches,
-                  int options = 0) const;
-
-    int match_all(const DString& subject,
-                  RE_MatchVector& matches,
-                  int options = 0) const
+    bool match(const DString& subject,
+               size_t offset = 0,
+               int options   = DSTR_REGEX_ANCHORED | DSTR_REGEX_NOTEMPTY) const
     {
-        return match_all(subject, 0, matches, options);
+        RE_Match mtch;
+        match(subject, offset, mtch, options);
+        return
+            mtch.offset == offset &&
+            mtch.length == subject.length() - offset;
+    }
+
+    // match groups into a vector of matches
+    //
+    int match_groups(const DString& subject, size_t offset,
+                     RE_MatchVector& matches,
+                     int options = 0) const;
+
+    int match_groups(const DString& subject,
+                     RE_MatchVector& matches,
+                     int options = 0) const
+    {
+        return match_groups(subject, 0, matches, options);
     }
     //------------------------------------------------------------------------
 
-    // extract
+    // capture - returns matches as strings or vector of strings
     //
-    int extract(const DString& subject,
-                size_t offset,
-                DString& str,
+    DString capture(const DString& subject, size_t offset,
+                    int options = 0) const;
+    DString capture(const DString& subject, int options = 0) const
+    {
+        return capture(subject, 0, options);
+    }
+
+    int capture(const DString& subject, size_t offset,
+                std::vector<DString>& strings,
                 int options = 0) const;
-    int extract(const DString& subject, DString& str, int options = 0) const
-    {
-        return extract(subject, 0, str, options);
-    }
-    //------------------------------------------------------------------------
 
-
-    // split
-    //
-    int split(const DString& subject, size_t offset,
-              std::vector<DString>& strings,
-              int options = 0) const;
-    int split(const DString& subject,
-              std::vector<DString>& strings,
-              int options = 0) const
+    int capture(const DString& subject,
+                std::vector<DString>& strings,
+                int options = 0) const
     {
-        return split(subject, 0, strings, options);
+        return capture(subject, 0, strings, options);
     }
     //------------------------------------------------------------------------
 
@@ -118,13 +121,12 @@ public:
     }
     //------------------------------------------------------------------------
 
-
 private:
       // Actual type is pcre2_code_8*
     void* _pcre;
 
-    typedef std::map<int, DString> GroupDict;
-    GroupDict _groups;
+    typedef std::unordered_map<int, DString> GroupDict;
+    GroupDict m_groups;
 
 private:
     size_t subst_single(DString& subject, size_t offset,
@@ -133,9 +135,12 @@ private:
 
     // Prevent default, copy and assignment
     //
-    DStringRegex();
-    DStringRegex(const DStringRegex&);
-    DStringRegex& operator=(const DStringRegex&);
+    DStringRegex() = delete;
+    DStringRegex(const DStringRegex&) = delete;
+    DStringRegex& operator=(const DStringRegex&) = delete;
+    DStringRegex(DStringRegex&&) = delete;
+    DStringRegex& operator=(DStringRegex&&) = delete;
+
 };
 
 // simple one shot for match, using above class internally

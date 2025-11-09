@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <iterator>
 #include <cassert>
+#include <functional>
+#include <unordered_map>
 
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_regex.hpp>
@@ -13,36 +15,6 @@
 #endif
 
 using namespace std;
-
-void test_replace()
-{
-    TRACE_FN();
-
-    // Compile the regex pattern (case-sensitive by default)
-    DStringRegex re(R"([\w\.-]+@[\w\.-]+\.\w+)");
-
-    DString subject = "Contact me at user@example.com or admin@domain.org.";
-
-    // Simple match check (anchored, non-empty)
-    if (re.match(subject)) {
-        cout << "Full string matches the pattern." << endl;
-    } else {
-        cout << "Full string does not match." << endl;
-    }
-
-    // Extract the first match
-    DString extracted;
-    int matches = re.extract(subject, extracted);
-    if (matches > 0) {
-        cout << "Extracted: " << extracted << endl;
-    }
-
-    // Replace all matches (global, mask emails with '***')
-    DString replacement = "***";
-    int replacements = re.subst(subject, replacement, DSTR_REGEX_GLOBAL);
-    cout << "Replaced " << replacements << " occurrences: " << subject << endl;
-}
-//--------------------------------------------------------------------------------
 
 void test_pattern_with_groups()
 {
@@ -58,7 +30,7 @@ void test_pattern_with_groups()
     size_t offset = 8;
     for (;;) {
         RE_MatchVector matches;
-        int n = re.match_all(subject, offset, matches);
+        int n = re.match_groups(subject, offset, matches);
         if (n == 0) break;
 
         cout << "Found " << n << " matches:" << endl;
@@ -66,19 +38,6 @@ void test_pattern_with_groups()
             cout << "  Offset: " << match.offset << ", Length: " << match.length << " ==> ";
             cout << "\"" << subject.substr(match.offset, match.length) << "\"" << endl;
         }
-
-        // // Extract with groups into a vector
-        // std::vector<DString> parts;
-        // re.split(subject, parts);
-        // cout << "Split parts (captured groups):" << endl;
-        // for (const auto& part : parts) {
-        //     cout << "  - " << part << endl;
-        // }
-
-        // Replace with group reference: e.g., $1@$2 (preserves but could transform)
-        // DString repl = "$1 [at] $2";  // Avoids raw '@' if needed
-        // re.subst(subject, repl, DSTR_REGEX_GLOBAL);
-        // cout << "After replacement: " << subject << endl;
 
         offset = matches[0].offset + matches[0].length;
     }
@@ -96,18 +55,22 @@ void test_extract_all()
     TRACE_FN();
 
     const char *pattern = "(?<date>(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2}))";
+    // const char *pattern = R"(?<date>(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2}))";
+    // const char *pattern = R"((\d{4})-(\d{2})-(\d{2}))";
 
     DStringRegex re(pattern);
     DString subject = "Today is 2025-10-29 and tomorrow is 2025-10-30";
 
     size_t offset = 0;
+    size_t match_group_count = 0;
     for (;;) {
         RE_MatchVector matches;
-        int n = re.match_all(subject, offset, matches);
+        int n = re.match_groups(subject, offset, matches);
         if (n == 0) break;
 
+        ++match_group_count;
         for (const auto& m : matches) {
-            cout << m << " ==> ";
+            cout << match_group_count << ") " << m << " ==> ";
             cout << subject.substr(m.offset, m.length) << endl;
         }
 
@@ -120,27 +83,29 @@ void test_extract_numbers()
 {
     TRACE_FN();
 
-    const char *pattern = R"/(\d+)/";
+    const char *pattern = R"/((\d+)-(\d+)-(\d+))/";
     DStringRegex re(pattern);
 
     DString subject = "Today is 2025-10-29 and tomorrow is 2025-10-30";
 
     // Extract with groups into a vector
     std::vector<DString> parts;
-    re.split(subject, parts);
+    re.capture(subject, parts);
     cout << "Split parts (captured groups):" << endl;
     for (const auto& part : parts) {
         cout << "...." << part << endl;
     }
 
     size_t offset = 0;
+    size_t match_group_count = 0;
     for (;;) {
         RE_MatchVector matches;
-        int n = re.match_all(subject, offset, matches);
+        int n = re.match_groups(subject, offset, matches);
         if (n == 0) break;
 
+        ++match_group_count;
         for (const auto& m : matches) {
-            cout << m << " ==> ";
+            cout << match_group_count << ") " << m << " ==> ";
             cout << subject.substr(m.offset, m.length) << endl;
         }
 
@@ -168,27 +133,26 @@ void test_various()
     re1.match("abcd", 0, pos);
     assert(pos.offset == DString::NPOS);
 
+    DString s = re1.capture("123");
+    assert(s == "123");
+
+    s = re1.capture("ab12de");
+    assert(s == "12");
+
+    s = re1.capture("abcd");
+    assert(s == "");
+
     DStringRegex re2("([0-9]+) ([0-9]+)");
     RE_MatchVector v;
 
-    re2.match_all("123 456", v);
+    re2.match_groups("123 456", v);
     assert(v.size() == 3);
     assert(v[0].offset == 0 && v[0].length == 7);
     assert(v[1].offset == 0 && v[1].length == 3);
     assert(v[2].offset == 4 && v[2].length == 3);
 
-    DString s;
-    int n = re1.extract("123", s);
-    assert(n == 1 && s == "123");
-
-    n = re1.extract("ab12de", 0, s);
-    assert(n == 1 && s == "12");
-
-    n = re1.extract("abcd", 0, s);
-    assert(n == 0 && s == "");
-
     std::vector<DString> vec;
-    re2.split("123 456", 0, vec, DSTR_REGEX_GLOBAL);
+    re2.capture("123 456", vec, DSTR_REGEX_GLOBAL);
     cout << "VEC size = " << vec.size() << endl;
     for (uint32_t i = 0; i < vec.size(); ++i)
         cout << "vec[" << i << "] = " << vec[i] << endl;
@@ -211,18 +175,80 @@ void test_various()
 
     assert(!re3.match("abc"));
     assert(re4.match("abc"));
+
+    DStringRegex re5(R"(([\w\.-]+)@([\w\.-]+\.\w+))");
+    DString tmplt = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
+    re5.subst(tmplt, "***@$2", DSTR_REGEX_GLOBAL);
+    cout << tmplt << endl;
+
 }
 //--------------------------------------------------------------------------------
 
+DString replace_all(const DString& data,
+                    const DString& pattern,
+                    const std::function<DString(const DString&, const RE_MatchVector&)>& cb)
+{
+    DStringRegex re(pattern);
+    DString result = data;
+    RE_MatchVector matches;
+    int offset = 0;
+
+    while (re.match_groups(result, offset, matches)) {
+        DString repl = cb(result, matches);
+        result.replace(matches[0].offset, matches[0].length, repl);
+        offset = matches[0].offset + repl.size();
+    }
+
+    return result;
+}
+//--------------------------------------------------------------------------------
+
+void test_replace_all()
+{
+    TRACE_FN();
+
+    DString tmplt = "Hello ${USER}! Your IP: ${IP}. Balance: ${BALANCE}";
+
+    std::unordered_map<DString, DString, DStringHasher> env = {
+        {"USER",    "alice"},
+        {"IP",      "1.2.3.4"},
+        {"BALANCE", "42.00"}
+    };
+
+    auto rendered = replace_all(
+        tmplt,
+        R"(\$\{([^}]+)\})",
+        [&env](const DString& subject, const RE_MatchVector& mvec)->DString {
+            assert(mvec.size() == 2);
+            DString key = subject.substr(mvec[1].offset, mvec[1].length);
+            auto it = env.find(key);
+            return it == env.end() ? "N/A" : it->second;
+        });
+
+    cout << rendered.c_str() << endl;
+
+    tmplt = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
+    rendered = replace_all(
+        tmplt,
+        R"(([\w\.-]+)@([\w\.-]+\.\w+))",
+        [] (const DString& subject, const RE_MatchVector& mvec)->DString {
+            assert(mvec.size() == 3);
+            DString domain = subject.substr(mvec[2].offset, mvec[2].length);
+            return "***@" + domain;
+        });
+
+    cout << rendered.c_str() << endl;
+}
+//--------------------------------------------------------------------------------
 
 int main()
 {
     try {
-        test_replace();
         test_pattern_with_groups();
         test_extract_all();
         test_extract_numbers();
         test_various();
+        test_replace_all();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;

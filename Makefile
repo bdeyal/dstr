@@ -16,6 +16,7 @@ ifeq ($(COMP),mingw64)
 	CC=x86_64-w64-mingw32-gcc
 	CXX=x86_64-w64-mingw32-g++
 	LDFLAGS += -static
+	CFLAGS=-DPCRE2_STATIC
 endif
 
 ifeq ($(COMP),mingw32)
@@ -23,7 +24,7 @@ ifeq ($(COMP),mingw32)
 	CXX=i686-w64-mingw32-g++
 	LDFLAGS += -static
 	ARCH=core2
-	CFLAGS=-m32 -msse2 -mssse3 -msse4.1 -msse4.2 -mfpmath=sse
+	CFLAGS=-m32 -msse2 -mssse3 -msse4.1 -msse4.2 -mfpmath=sse -DPCRE2_STATIC
 endif
 
 ifeq ($(COMP),clang)
@@ -35,8 +36,6 @@ CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat
 #CFLAGS += -Iinclude $(shell rpm --eval '%{optflags}') -O3
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS += -L./lib64 -s
-
-
 
 PROGRAMS = \
 	./test/dstrtest \
@@ -77,7 +76,6 @@ all: $(PROGRAMS)
 
 ./test/test_regex: ./test/test_regex.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
-#	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr /usr/lib64/libpcre2-8.a
 
 $(LIB): ./src/dstring_regex.cpp ./src/dstring.cpp ./src/dstr.c $(DEPS_PP) Makefile
 	mkdir -p ./lib64

@@ -10,7 +10,7 @@
 class DStringError : public std::exception
 {
 public:
-    DStringError(const DString& s) : m_s(s) {}
+    DStringError(DString&& s) : m_s(s) {}
     DStringError(const char* s) : m_s(s) {}
     const char* what() const noexcept { return m_s.c_str(); }
 private:
@@ -23,16 +23,27 @@ private:
 namespace {
 struct MatchData {
     MatchData(pcre2_code* code)
-        : _match(pcre2_match_data_create_from_pattern(code, nullptr))
+        :
+        ovec(nullptr),
+        _match(pcre2_match_data_create_from_pattern(code, nullptr))
     {
-       if (!_match) throw DStringError("cannot create match data");
+       if (!_match)
+           throw DStringError("cannot create match data");
     }
     ~MatchData()  {
         if (_match) pcre2_match_data_free(_match);
     }
-    uint32_t count()         const { return pcre2_get_ovector_count(_match);   }
+    // uint32_t count()         const { return pcre2_get_ovector_count(_match);   }
     const PCRE2_SIZE* data() const { return pcre2_get_ovector_pointer(_match); }
     operator pcre2_match_data*()   { return _match; }
+
+    PCRE2_SIZE operator[](size_t index) const {
+        if (!ovec) ovec = data();
+        return ovec[index];
+    }
+
+private:
+    mutable const PCRE2_SIZE* ovec = nullptr;
     pcre2_match_data* _match;  // actual pointer
 };
 } // unnamed NS
@@ -129,8 +140,8 @@ DStringRegex::DStringRegex(const DString& pattern, int options)
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(error_code, buffer, sizeof(buffer));
         DString msg;
-        msg.sprintf("%s (at offset %zu)", (char*)buffer, error_offset);
-        throw DStringError(msg);
+        msg.sprintf("PCRE2: %s (at offset %zu)", (char*)buffer, error_offset);
+        throw DStringError(std::move(msg));
     }
 
     unsigned int name_count;
@@ -146,7 +157,7 @@ DStringRegex::DStringRegex(const DString& pattern, int options)
     {
         unsigned char* group = name_table + 2 + (name_entry_size * i);
         int n = pcre2_substring_number_from_name(_pRE, group);
-        this->_groups[n] = DString((char*)group);
+        m_groups[n] = DString((char*)group);
     }
 }
 /*-------------------------------------------------------------------------------*/
@@ -162,7 +173,11 @@ int DStringRegex::match(const DString& subject, size_t offset,
                         RE_Match& mtch,
                         int options) const
 {
-    assert (offset <= subject.length());
+    if (offset > subject.length()) {
+        mtch.offset = DString::NPOS;
+        mtch.length = 0;
+        return 0;
+    }
 
     MatchData mdata(_pRE);
 
@@ -173,98 +188,76 @@ int DStringRegex::match(const DString& subject, size_t offset,
                          match_options(options),
                          mdata, nullptr);
 
-    if (rc == PCRE2_ERROR_NOMATCH)
-    {
+    // Success
+    //
+    if (rc > 0) {
+        if (mdata[0] == PCRE2_UNSET) {
+            mtch.offset = DString::NPOS;
+            mtch.length = 0;
+        }
+        else {
+            mtch.offset = mdata[0];
+            mtch.length = mdata[1] - mtch.offset;
+        }
+        return rc;
+    }
+
+    // handle error
+    //
+    switch (rc) {
+    case 0:
+        throw DStringError("too many captured substrings");
+    case PCRE2_ERROR_NOMATCH:
         mtch.offset = DString::NPOS;
         mtch.length = 0;
         return 0;
-    }
-    else if (rc == PCRE2_ERROR_BADOPTION)
-    {
+    case PCRE2_ERROR_BADOPTION:
         throw DStringError("bad option");
-    }
-    else if (rc == 0)
-    {
-        throw DStringError("too many captured substrings");
-    }
-    else if (rc < 0)
-    {
+    default:
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(rc, buffer, sizeof(buffer));
         throw DStringError((char*)buffer);
     }
-
-    const PCRE2_SIZE* ovec = mdata.data();
-    if (ovec[0] == PCRE2_UNSET) {
-        mtch.offset = DString::NPOS;
-        mtch.length = 0;
-    }
-    else {
-        mtch.offset = ovec[0];
-        mtch.length = ovec[1] - mtch.offset;
-    }
-
-    return rc;
 }
 /*-------------------------------------------------------------------------------*/
 
-int DStringRegex::match_all(const DString& subject, size_t offset,
-                            RE_MatchVector& matches,
-                            int options) const
+int DStringRegex::match_groups(const DString& subject, size_t offset,
+                               RE_MatchVector& matches,
+                               int options) const
 {
     assert (offset <= subject.length());
 
     RE_MatchVector mvec;
-
     MatchData mdata(_pRE);
 
     int rc = pcre2_match(_pRE,
                          (PCRE2_SPTR)(subject.c_str()),
                          subject.size(),
                          offset,
-                         match_options(options) & 0xFFFF,
-                         //options & 0xFFFF,
+                         // match_options(options) & 0xFFFF,
+                         options & 0xFFFF,
                          mdata,
                          nullptr);
 
-    if (rc == PCRE2_ERROR_NOMATCH)
-    {
-        return 0;
-    }
-    else if (rc == PCRE2_ERROR_BADOPTION)
-    {
-        throw DStringError("bad option");
-    }
-    else if (rc == 0)
-    {
-        throw DStringError("too many captured substrings");
-    }
-    else if (rc < 0)
-    {
-        PCRE2_UCHAR buffer[256];
-        pcre2_get_error_message(rc, buffer, sizeof(buffer));
-        throw DStringError((char*)buffer);
-    }
+    if (rc <= 0)
+        goto handle_error;
 
-    mvec.reserve(rc);
-    const PCRE2_SIZE* ovec = mdata.data();
-
-    for (int i = 0; i < rc; ++i)
-    {
+    // Success
+    //
+    for (int i = 0; i < rc; ++i) {
         RE_Match m;
 
-        if (ovec[2 * i] == PCRE2_UNSET) {
+        if (mdata[2 * i] == PCRE2_UNSET) {
             m.offset = DString::NPOS;
             m.length = 0;
         }
         else {
-            m.offset = ovec[2 * i];
-            m.length = ovec[2 * i + 1] - m.offset;
+            m.offset = mdata[2 * i];
+            m.length = mdata[2 * i + 1] - m.offset;
         }
 
-        GroupDict::const_iterator it = this->_groups.find(i);
-        if (it != this->_groups.end())
-        {
+        GroupDict::const_iterator it = m_groups.find(i);
+        if (it != m_groups.end()) {
             m.name = it->second;
         }
 
@@ -273,48 +266,45 @@ int DStringRegex::match_all(const DString& subject, size_t offset,
 
     mvec.swap(matches);
     return rc;
+
+    // Error
+    //
+handle_error:
+    switch (rc) {
+    case 0:
+        throw DStringError("too many captured substrings");
+    case PCRE2_ERROR_NOMATCH:
+        return 0;
+    case PCRE2_ERROR_BADOPTION:
+        throw DStringError("bad option");
+    default:
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(rc, buffer, sizeof(buffer));
+        throw DStringError((char*)buffer);
+    }
 }
 /*-------------------------------------------------------------------------------*/
 
-bool DStringRegex::match(const DString& subject, size_t offset) const
-{
-    RE_Match mtch;
-    match(subject, offset, mtch, DSTR_REGEX_ANCHORED | DSTR_REGEX_NOTEMPTY);
-    return mtch.offset == offset && mtch.length == subject.length() - offset;
-}
-/*-------------------------------------------------------------------------------*/
-
-bool DStringRegex::match(const DString& subject, size_t offset,
-                         int options) const
-{
-    RE_Match mtch;
-    match(subject, offset, mtch, options);
-    return mtch.offset == offset && mtch.length == subject.length() - offset;
-}
-/*-------------------------------------------------------------------------------*/
-
-int DStringRegex::extract(const DString& subject, size_t offset,
-                          DString& str,
-                          int options) const
+DString DStringRegex::capture(const DString& subject, size_t offset,
+                              int options) const
 {
     RE_Match mtch;
     int rc = match(subject, offset, mtch, options);
-    if (mtch.offset != DString::NPOS)
-        str.assign(subject, mtch.offset, mtch.length);
+    if (rc > 0 && mtch.offset != DString::NPOS)
+        return DString(subject, mtch.offset, mtch.length);
     else
-        str.clear();
-    return rc;
+        return DString();
 }
 /*-------------------------------------------------------------------------------*/
 
-int DStringRegex::split(const DString& subject, size_t offset,
-                        std::vector<DString>& strings,
-                        int options) const
+int DStringRegex::capture(const DString& subject, size_t offset,
+                          std::vector<DString>& strings,
+                          int options) const
 {
     RE_MatchVector matches;
     std::vector<DString> tmp;
 
-    int rc = match_all(subject, offset, matches, options);
+    int rc = match_groups(subject, offset, matches, options);
 
     for (const auto& m: matches)
     {
@@ -371,33 +361,32 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
                          mdata,
                          nullptr);
 
-    if (rc == PCRE2_ERROR_NOMATCH)
-    {
-        return DString::NPOS;
-    }
-    else if (rc == PCRE2_ERROR_BADOPTION)
-    {
-        throw DStringError("bad option");
-    }
-    else if (rc == 0)
-    {
-        throw DStringError("too many captured substrings");
-    }
-    else if (rc < 0)
-    {
-        PCRE2_UCHAR buffer[256];
-        pcre2_get_error_message(rc, buffer, sizeof(buffer));
-        throw DStringError((char*)buffer);
+    // Handle error
+    //
+    if (rc <= 0) {
+        switch (rc) {
+        case 0:
+            throw DStringError("too many captured substrings");
+        case PCRE2_ERROR_NOMATCH:
+            return DString::NPOS;
+        case PCRE2_ERROR_BADOPTION:
+            throw DStringError("bad option");
+        default:
+            PCRE2_UCHAR buffer[256];
+            pcre2_get_error_message(rc, buffer, sizeof(buffer));
+            throw DStringError((char*)buffer);
+        }
     }
 
-    const PCRE2_SIZE* ovec = mdata.data();
+    // Success (rc > 0)
+    //
     DString result;
     size_t len = subject.length();
     size_t pos = 0;
     size_t rp = DString::NPOS;
     while (pos < len)
     {
-        if (ovec[0] == pos)
+        if (mdata[0] == pos)
         {
             DString::const_iterator it  = replacement.begin();
             DString::const_iterator end = replacement.end();
@@ -414,8 +403,8 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
                             int c = d - '0';
                             if (c < rc)
                             {
-                                size_t o = ovec[c*2];
-                                size_t l = ovec[c*2 + 1] - o;
+                                size_t o = mdata[c*2];
+                                size_t l = mdata[c*2 + 1] - o;
                                 DString tmp = subject.substr(o, l);
                                 result.append(tmp);
                             }
@@ -431,7 +420,7 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
                 }
                 else result += *it++;
             }
-            pos = ovec[1];
+            pos = mdata[1];
             rp = result.length();
         }
         else result += subject[pos++];
