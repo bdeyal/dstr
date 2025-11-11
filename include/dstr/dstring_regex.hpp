@@ -65,14 +65,7 @@ public:
 
     bool match(const DString& subject,
                size_t offset = 0,
-               int options   = DSTR_REGEX_ANCHORED | DSTR_REGEX_NOTEMPTY) const
-    {
-        RE_Match mtch;
-        match(subject, offset, mtch, options);
-        return
-            mtch.offset == offset &&
-            mtch.length == subject.length() - offset;
-    }
+               int options = DSTR_REGEX_ANCHORED | DSTR_REGEX_NOTEMPTY) const;
 
     // match groups into a vector of matches
     //
@@ -142,10 +135,6 @@ private:
     DStringRegex& operator=(DStringRegex&&) = delete;
 
 };
-
-// simple one shot for match, using above class internally
-//
-bool dstring_match(const DString& subject, const DString& pattern, int options = 0);
 
 
 #endif

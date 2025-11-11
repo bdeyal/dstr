@@ -14,6 +14,13 @@
 #define TRACE_FN() printf("\nFUNCTION: %s()\n", __FUNCTION__)
 #endif
 
+inline std::ostream& operator<<(std::ostream& out, const RE_Match& m)
+{
+    out << "Match: \"" << m.name << "\", pos=" << m.offset << ", len=" << m.length;
+    return out;
+}
+//--------------------------------------------------------------------------------
+
 using namespace std;
 
 void test_pattern_with_groups()
@@ -43,12 +50,6 @@ void test_pattern_with_groups()
     }
 }
 //--------------------------------------------------------------------------------
-
-std::ostream& operator<<(std::ostream& out, const RE_Match& m)
-{
-    out << "Match: \"" << m.name << "\", pos=" << m.offset << ", len=" << m.length;
-    return out;
-}
 
 void test_extract_all()
 {
@@ -241,6 +242,86 @@ void test_replace_all()
 }
 //--------------------------------------------------------------------------------
 
+void test_dstring_re_match()
+{
+    TRACE_FN();
+
+    DString s = "123";
+    assert(s.re_match("[0-9]+"));
+
+    s = "abc";
+    assert(!s.re_match("[0-9]+"));
+
+    s = "abc123";
+    assert(!s.re_match("[0-9]+"));
+    assert(s.re_match("[0-9]+", 3));
+
+    cout << "***********************************************************" << endl;
+    cout << "***********************************************************" << endl;
+    cout << "***********************************************************" << endl;
+
+    //s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
+    s = "alice@foo.com";
+    assert(s.re_match(R"(([\w\.-]+)@([\w\.-]+\.\w+))"));
+}
+//--------------------------------------------------------------------------------
+
+void test_dstring_re_search()
+{
+    TRACE_FN();
+
+    DString s = "123";
+    assert(s.re_search("[0-9]+") <= s.length());
+
+    s = "abc";
+    assert(s.re_search("[0-9]+") == DString::NPOS);
+
+    s = "abc123";
+    assert(s.re_search("[0-9]+") <= s.length());
+    assert(!s.re_match("[0-9]+"));
+    assert(s.re_match("[0-9]+", 3));
+
+    cout << "***********************************************************" << endl;
+    cout << "***********************************************************" << endl;
+    cout << "***********************************************************" << endl;
+
+    s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
+    assert(s.re_search(R"(([\w\.-]+)@([\w\.-]+\.\w+))") <= s.length());
+}
+//--------------------------------------------------------------------------------
+
+void test_dstring_re_capture()
+{
+    TRACE_FN();
+
+    const char *pattern = R"/((\d+)-(\d+)-(\d+))/";
+    DString subject = "Today is 2025-10-29 and tomorrow is 2025-10-30";
+
+    // Extract with groups into a vector
+    //
+    std::vector<DString> parts;
+    subject.re_capture(pattern, parts);
+    assert(parts.size() == 4);
+    size_t index = 0;
+    assert(parts[index++] == "2025-10-29");
+    assert(parts[index++] == "2025");
+    assert(parts[index++] == "10");
+    assert(parts[index++] == "29");
+
+    subject = "123";
+    DString s = subject.re_capture("[0-9]+");
+    assert(s == "123");
+
+    subject = "ab12de";
+    s = subject.re_capture("[0-9]+");
+    assert(s == "12");
+
+    subject = "abcd";
+    s = subject.re_capture("[0-9]+");
+    assert(s == "");
+}
+//--------------------------------------------------------------------------------
+
 int main()
 {
     try {
@@ -249,6 +330,9 @@ int main()
         test_extract_numbers();
         test_various();
         test_replace_all();
+        test_dstring_re_match();
+        test_dstring_re_search();
+        test_dstring_re_capture();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;

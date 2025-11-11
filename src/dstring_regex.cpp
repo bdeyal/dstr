@@ -1,6 +1,8 @@
+#include <memory>
 #include <stdexcept>
 #include <cstdint>
 #include <cassert>
+#include <unordered_map>
 
 #include <dstr/dstring_regex.hpp>
 
@@ -221,6 +223,17 @@ int DStringRegex::match(const DString& subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
+bool DStringRegex::match(const DString& subject, size_t offset, int options) const
+{
+    RE_Match mtch;
+    match(subject, offset, mtch, options);
+    printf("Match offset: %zu, len: %zu\n",  mtch.offset,  mtch.length);
+    return
+        mtch.offset == offset &&
+        mtch.length == subject.length() - offset;
+}
+/*-------------------------------------------------------------------------------*/
+
 int DStringRegex::match_groups(const DString& subject, size_t offset,
                                RE_MatchVector& matches,
                                int options) const
@@ -430,29 +443,129 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-bool dstring_match(const DString& subject, const DString& pattern, int options)
+// Borrowed std::make_unique from C++14 code
+//
+#if __cplusplus <= 201103L
+namespace std {
+template<typename _Tp, typename... _Args>
+inline std::unique_ptr<_Tp> make_unique(_Args&&... __args)
 {
-    int ctor_opts = options &
-        (DSTR_REGEX_CASELESS |
-         DSTR_REGEX_MULTILINE |
-         DSTR_REGEX_DOTALL |
-         DSTR_REGEX_EXTENDED |
-         DSTR_REGEX_ANCHORED |
-         DSTR_REGEX_DOLLAR_ENDONLY |
-         DSTR_REGEX_EXTRA |
-         DSTR_REGEX_UNGREEDY |
-         DSTR_REGEX_UTF8 |
-         DSTR_REGEX_NO_AUTO_CAPTURE);
+    return std::unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...));
+}
+}
+#endif
+/*-------------------------------------------------------------------------------*/
 
-    int match_opts = options &
-        (DSTR_REGEX_ANCHORED |
-         DSTR_REGEX_NOTBOL |
-         DSTR_REGEX_NOTEOL |
-         DSTR_REGEX_NOTEMPTY |
-         DSTR_REGEX_NO_AUTO_CAPTURE |
-         DSTR_REGEX_NO_UTF8_CHECK);
+namespace {
 
-    DStringRegex re(pattern, ctor_opts);
-    return re.match(subject, 0, match_opts);
+struct DStringRegexCache
+{
+    struct RegexKey {
+        RegexKey(const DString& rhs, int opts) : pattern(rhs),
+                                                 hash_value(rhs.hash(opts))
+        {
+        }
+
+        bool operator==(const RegexKey& rhs) const {
+            return pattern == rhs.pattern && hash_value == rhs.hash_value;
+        }
+
+        DString pattern;
+        size_t hash_value;
+    };
+
+    struct RegexHash {
+        size_t operator()(const RegexKey& key) const {
+            return key.hash_value;
+        }
+    };
+
+    DStringRegex& get_RE(const DString& pattern, int options) {
+        RegexKey key(pattern, options);
+        auto it = the_map.find(key);
+        if (it == the_map.end()) {
+            auto p_re = std::make_unique<DStringRegex>(pattern, options);
+            it = the_map.emplace(key, std::move(p_re)).first;
+        }
+        return *it->second;
+    }
+
+    // Single data member
+    //
+    std::unordered_map<RegexKey, std::unique_ptr<DStringRegex>, RegexHash>  the_map;
+};
+
+thread_local static DStringRegexCache re_cache;
+
+}  // unnamed ns
+/*-------------------------------------------------------------------------------*/
+
+
+// DString Regex API
+//
+bool DString::re_match(const DString& pattern, size_t offset) const
+{
+    int ctor_opts = (DSTR_REGEX_CASELESS |
+                     DSTR_REGEX_MULTILINE |
+                     DSTR_REGEX_DOTALL |
+                     DSTR_REGEX_EXTENDED |
+                     DSTR_REGEX_ANCHORED |
+                     DSTR_REGEX_DOLLAR_ENDONLY |
+                     DSTR_REGEX_EXTRA |
+                     DSTR_REGEX_UTF8 |
+                     DSTR_REGEX_NO_AUTO_CAPTURE);
+
+    int match_opts = (DSTR_REGEX_ANCHORED |
+                      DSTR_REGEX_NOTBOL |
+                      DSTR_REGEX_NOTEOL |
+                      DSTR_REGEX_NOTEMPTY |
+                      DSTR_REGEX_NO_AUTO_CAPTURE |
+                      DSTR_REGEX_NO_UTF8_CHECK);
+
+    auto& re = re_cache.get_RE(pattern, ctor_opts);
+    return re.match(*this, offset, match_opts);
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t DString::re_search(const DString& pattern, size_t offset) const
+{
+    int ctor_opts = (DSTR_REGEX_CASELESS |
+                     DSTR_REGEX_MULTILINE |
+                     DSTR_REGEX_DOTALL |
+                     DSTR_REGEX_EXTENDED |
+                     DSTR_REGEX_DOLLAR_ENDONLY |
+                     DSTR_REGEX_EXTRA |
+                     DSTR_REGEX_UTF8);
+
+    int match_opts = (DSTR_REGEX_NOTBOL |
+                      DSTR_REGEX_NOTEOL |
+                      DSTR_REGEX_NOTEMPTY |
+                      DSTR_REGEX_NO_UTF8_CHECK);
+
+    auto& re = re_cache.get_RE(pattern, ctor_opts);
+
+    RE_Match mtch;
+    re.match(*this, offset, mtch, match_opts);
+    return mtch.offset;
+}
+/*-------------------------------------------------------------------------------*/
+
+DString DString::re_capture(const DString& pattern,
+                            size_t offset,
+                            int options) const
+{
+    auto& re = re_cache.get_RE(pattern, options);
+    return re.capture(*this, offset, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+
+int DString::re_capture(const DString& pattern,
+                        size_t offset,
+                        std::vector<DString>& vec,
+                        int options) const
+{
+    auto& re = re_cache.get_RE(pattern, options);
+    return re.capture(*this, offset, vec, options);
 }
 /*-------------------------------------------------------------------------------*/

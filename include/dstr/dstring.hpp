@@ -2,6 +2,7 @@
 #define DSTRING_H_INCLUDED
 
 #include <iosfwd>
+#include <vector>
 #include <dstr/dstr.h>
 
 // A thin wrapper around C DSTR_TYPE
@@ -1012,6 +1013,36 @@ public:
     const_iterator begin() const { return m_imp.data; }
     iterator       end()         { return &m_imp.data[m_imp.length]; }
     const_iterator end()   const { return &m_imp.data[m_imp.length]; }
+
+    // *this is an exact match
+    //
+    bool re_match(const DString& pattern, size_t offset = 0) const;
+
+    // pattern appears somewhere in *this. Returns position of NPOS
+    //
+    size_t re_search(const DString& pattern, size_t offset = 0) const;
+
+    // capture - returns matches as strings or vector of strings
+    //
+    DString re_capture(const DString& pattern, size_t offset,
+                       int options = 0) const;
+
+    DString re_capture(const DString& pattern, int options = 0) const
+    {
+        return re_capture(pattern, 0, options);
+    }
+
+    int re_capture(const DString& pattern, size_t offset,
+                   std::vector<DString>& strings,
+                   int options = 0) const;
+
+    int re_capture(const DString& pattern,
+                   std::vector<DString>& strings,
+                   int options = 0) const
+    {
+        return re_capture(pattern, 0, strings, options);
+    }
+
 
 private:
     // Single data member.
