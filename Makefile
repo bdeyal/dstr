@@ -48,7 +48,7 @@ PROGRAMS = \
 	./test/test_regex
 
 DEPS = ./include/dstr/dstr.h
-DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h ./include/dstr/dstring_regex.hpp
+DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
 LIB=./lib64/libdstr.a
 
 all: $(PROGRAMS)

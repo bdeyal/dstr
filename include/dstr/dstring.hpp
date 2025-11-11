@@ -1,8 +1,15 @@
+/*
+ * Copyright (c) 2025 Eyal Ben-David
+ *
+ * This file is part of DString C and C++ dynamic string library,
+ * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
+ */
 #ifndef DSTRING_H_INCLUDED
 #define DSTRING_H_INCLUDED
 
 #include <iosfwd>
 #include <vector>
+
 #include <dstr/dstr.h>
 #include <dstr/dstr_regex_fwd.h>
 
@@ -1020,6 +1027,19 @@ public:
     //   Regexp Support
     //
     ///////////////////////////////////////////////////
+    struct Match
+    {
+        // zero based offset (std::string::npos if subexpr does not match)
+        size_t offset;
+
+        // length of substring
+        size_t length;
+
+        // name of group
+        char name[64];
+    };
+
+    typedef std::vector<Match> MatchVector;
 
     // *this is an exact match
     //
@@ -1029,11 +1049,11 @@ public:
     //
     size_t match_within(const DString& pattern, size_t offset = 0) const;
 
-    // store match info in RE_Match parameter
+    // store match info in Match parameter
     //
-    int match(const DString& ptrn, size_t offset, RE_Match& m, int opts = 0) const;
+    int match(const DString& ptrn, size_t offset, Match& m, int opts = 0) const;
 
-    int match(const DString& pattern, RE_Match& mtch, int options = 0) const
+    int match(const DString& pattern, Match& mtch, int options = 0) const
     {
         return match(pattern, 0, mtch, options);
     }
@@ -1041,11 +1061,11 @@ public:
     // match groups into a vector of matches
     //
     int match_groups(const DString& pattern, size_t offset,
-                     std::vector<RE_Match>& matches,
+                     MatchVector& matches,
                      int options = 0) const;
 
     int match_groups(const DString& pattern,
-                     std::vector<RE_Match>& matches,
+                     MatchVector& matches,
                      int options = 0) const
     {
         return match_groups(pattern, 0, matches, options);

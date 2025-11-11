@@ -1,5 +1,8 @@
 /*
- * dstr.h
+ * Copyright (c) 2025 Eyal Ben-David
+ *
+ * This file is part of DString C and C++ dynamic string library,
+ * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #ifndef DSTR_H_INCLUDED
 #define DSTR_H_INCLUDED

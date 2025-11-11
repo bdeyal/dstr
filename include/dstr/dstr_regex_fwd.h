@@ -1,3 +1,14 @@
+/*
+ * Part of this file is based on POCO C++ Libraries
+ * Original work Copyright (c) 2006-2023, Applied Informatics Software Engineering GmbH.
+ * Licensed under the Boost Software License, Version 1.0.
+ *
+ * Modifications and additional code:
+ * Copyright (c) 2025 Eyal Ben-David
+ *
+ * This file is part of DString C and C++ dynamic string library,
+ * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
+ */
 #ifndef DSTR_REGEX_FWD_H
 #define DSTR_REGEX_FWD_H
 
@@ -27,18 +38,6 @@ enum {
     DSTR_REGEX_NEWLINE_ANYCRLF = 0x00500000, /// assume newline is any of CR, LF, CRLF [ctor]
     DSTR_REGEX_GLOBAL          = 0x10000000, /// replace all occurences (/g) [subst]
     DSTR_REGEX_NO_VARS         = 0x20000000  /// treat dollar in replacement string as ordinary character [subst]
-};
-
-struct RE_Match
-{
-    // zero based offset (std::string::npos if subexpr does not match)
-    size_t offset;
-
-    // length of substring
-    size_t length;
-
-    // name of group
-    char name[64];
 };
 
 #endif
