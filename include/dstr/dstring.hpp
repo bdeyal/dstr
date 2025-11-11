@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <vector>
 #include <dstr/dstr.h>
+#include <dstr/dstr_regex_fwd.h>
 
 // A thin wrapper around C DSTR_TYPE
 //
@@ -1014,33 +1015,86 @@ public:
     iterator       end()         { return &m_imp.data[m_imp.length]; }
     const_iterator end()   const { return &m_imp.data[m_imp.length]; }
 
+    ///////////////////////////////////////////////////
+    //
+    //   Regexp Support
+    //
+    ///////////////////////////////////////////////////
+
     // *this is an exact match
     //
-    bool re_match(const DString& pattern, size_t offset = 0) const;
+    bool match(const DString& pattern, size_t offset = 0) const;
 
     // pattern appears somewhere in *this. Returns position of NPOS
     //
-    size_t re_search(const DString& pattern, size_t offset = 0) const;
+    size_t match_within(const DString& pattern, size_t offset = 0) const;
+
+    // store match info in RE_Match parameter
+    //
+    int match(const DString& ptrn, size_t offset, RE_Match& m, int opts = 0) const;
+
+    int match(const DString& pattern, RE_Match& mtch, int options = 0) const
+    {
+        return match(pattern, 0, mtch, options);
+    }
+
+    // match groups into a vector of matches
+    //
+    int match_groups(const DString& pattern, size_t offset,
+                     std::vector<RE_Match>& matches,
+                     int options = 0) const;
+
+    int match_groups(const DString& pattern,
+                     std::vector<RE_Match>& matches,
+                     int options = 0) const
+    {
+        return match_groups(pattern, 0, matches, options);
+    }
 
     // capture - returns matches as strings or vector of strings
     //
-    DString re_capture(const DString& pattern, size_t offset,
-                       int options = 0) const;
+    DString capture(const DString& pattern, size_t offset,
+                    int options = 0) const;
 
-    DString re_capture(const DString& pattern, int options = 0) const
+    DString capture(const DString& pattern, int options = 0) const
     {
-        return re_capture(pattern, 0, options);
+        return capture(pattern, 0, options);
     }
 
-    int re_capture(const DString& pattern, size_t offset,
-                   std::vector<DString>& strings,
-                   int options = 0) const;
+    int capture(const DString& pattern, size_t offset,
+                std::vector<DString>& strings,
+                int options = 0) const;
 
-    int re_capture(const DString& pattern,
-                   std::vector<DString>& strings,
-                   int options = 0) const
+    int capture(const DString& pattern,
+                std::vector<DString>& strings,
+                int options = 0) const
     {
-        return re_capture(pattern, 0, strings, options);
+        return capture(pattern, 0, strings, options);
+    }
+
+    // substitute
+    //
+    int subst_inplace(const DString& pattern, size_t offset,
+                      const DString& replacement,
+                      int options = 0);
+
+    int subst_inplace(const DString& pattern, const DString& r, int options = 0)
+    {
+        return subst_inplace(pattern, 0, r, options);
+    }
+
+    DString subst(const DString& pattern, size_t offset,
+                       const DString& replacement,
+                       int options = 0) const
+    {
+        DString result(*this);
+        result.subst_inplace(pattern, offset, replacement, options);
+        return result;
+    }
+
+    DString subst(const DString& pattern, const DString& r, int options = 0) const
+    {
+        return subst(pattern, 0, r, options);
     }
 
 

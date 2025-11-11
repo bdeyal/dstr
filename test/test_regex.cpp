@@ -247,14 +247,14 @@ void test_dstring_re_match()
     TRACE_FN();
 
     DString s = "123";
-    assert(s.re_match("[0-9]+"));
+    assert(s.match("[0-9]+"));
 
     s = "abc";
-    assert(!s.re_match("[0-9]+"));
+    assert(!s.match("[0-9]+"));
 
     s = "abc123";
-    assert(!s.re_match("[0-9]+"));
-    assert(s.re_match("[0-9]+", 3));
+    assert(!s.match("[0-9]+"));
+    assert(s.match("[0-9]+", 3));
 
     cout << "***********************************************************" << endl;
     cout << "***********************************************************" << endl;
@@ -262,31 +262,31 @@ void test_dstring_re_match()
 
     //s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
     s = "alice@foo.com";
-    assert(s.re_match(R"(([\w\.-]+)@([\w\.-]+\.\w+))"));
+    assert(s.match(R"(([\w\.-]+)@([\w\.-]+\.\w+))"));
 }
 //--------------------------------------------------------------------------------
 
-void test_dstring_re_search()
+void test_dstring_match_within()
 {
     TRACE_FN();
 
     DString s = "123";
-    assert(s.re_search("[0-9]+") <= s.length());
+    assert(s.match_within("[0-9]+") <= s.length());
 
     s = "abc";
-    assert(s.re_search("[0-9]+") == DString::NPOS);
+    assert(s.match_within("[0-9]+") == DString::NPOS);
 
     s = "abc123";
-    assert(s.re_search("[0-9]+") <= s.length());
-    assert(!s.re_match("[0-9]+"));
-    assert(s.re_match("[0-9]+", 3));
+    assert(s.match_within("[0-9]+") <= s.length());
+    assert(!s.match("[0-9]+"));
+    assert(s.match("[0-9]+", 3));
 
     cout << "***********************************************************" << endl;
     cout << "***********************************************************" << endl;
     cout << "***********************************************************" << endl;
 
     s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
-    assert(s.re_search(R"(([\w\.-]+)@([\w\.-]+\.\w+))") <= s.length());
+    assert(s.match_within(R"(([\w\.-]+)@([\w\.-]+\.\w+))") <= s.length());
 }
 //--------------------------------------------------------------------------------
 
@@ -300,7 +300,7 @@ void test_dstring_re_capture()
     // Extract with groups into a vector
     //
     std::vector<DString> parts;
-    subject.re_capture(pattern, parts);
+    subject.capture(pattern, parts);
     assert(parts.size() == 4);
     size_t index = 0;
     assert(parts[index++] == "2025-10-29");
@@ -309,16 +309,119 @@ void test_dstring_re_capture()
     assert(parts[index++] == "29");
 
     subject = "123";
-    DString s = subject.re_capture("[0-9]+");
+    DString s = subject.capture("[0-9]+");
     assert(s == "123");
 
     subject = "ab12de";
-    s = subject.re_capture("[0-9]+");
+    s = subject.capture("[0-9]+");
     assert(s == "12");
 
     subject = "abcd";
-    s = subject.re_capture("[0-9]+");
+    s = subject.capture("[0-9]+");
     assert(s == "");
+}
+//--------------------------------------------------------------------------------
+
+void test_dstring_re_match_struct()
+{
+    TRACE_FN();
+
+    RE_Match m;
+    DString s = "123";
+    s.match("[0-9]+", m);
+    assert(m.offset == 0 && m.length == 3);
+
+    s = "ab12de";
+    s.match("[0-9]+", m);
+    assert(m.offset == 2 && m.length == 2);
+
+    s = "abcd";
+    s.match("[0-9]+", m);
+    assert(m.offset == DString::NPOS);
+}
+//--------------------------------------------------------------------------------
+
+
+DString dstring_replace_all(const DString& data,
+                            const DString& pattern,
+                            const std::function<DString(const DString&, const RE_MatchVector&)>& cb)
+{
+    DString result = data;
+    RE_MatchVector matches;
+    int offset = 0;
+
+    while (result.match_groups(pattern, offset, matches)) {
+        DString repl = cb(result, matches);
+        result.replace(matches[0].offset, matches[0].length, repl);
+        offset = matches[0].offset + repl.size();
+    }
+
+    return result;
+}
+//--------------------------------------------------------------------------------
+
+void test_dstring_replace_all()
+{
+    TRACE_FN();
+
+    DString tmplt = "Hello ${USER}! Your IP: ${IP}. Balance: ${BALANCE}";
+
+    std::unordered_map<DString, DString, DStringHasher> env = {
+        {"USER",    "alice"},
+        {"IP",      "1.2.3.4"},
+        {"BALANCE", "42.00"}
+    };
+
+    auto rendered = dstring_replace_all(
+        tmplt,
+        R"(\$\{([^}]+)\})",
+        [&env](const DString& subject, const RE_MatchVector& mvec)->DString {
+            assert(mvec.size() == 2);
+            DString key = subject.substr(mvec[1].offset, mvec[1].length);
+            auto it = env.find(key);
+            return it == env.end() ? "N/A" : it->second;
+        });
+
+    cout << rendered.c_str() << endl;
+
+    tmplt = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
+    rendered = replace_all(
+        tmplt,
+        R"(([\w\.-]+)@([\w\.-]+\.\w+))",
+        [] (const DString& subject, const RE_MatchVector& mvec)->DString {
+            assert(mvec.size() == 3);
+            DString domain = subject.substr(mvec[2].offset, mvec[2].length);
+            return "***@" + domain;
+        });
+
+    cout << rendered.c_str() << endl;
+}
+//--------------------------------------------------------------------------------
+
+void test_dstring_subst()
+{
+    TRACE_FN();
+
+    DString s = "123";
+    cout << s.subst("[0-9]+", "ABC") << endl;
+    assert(s.subst("[0-9]+", "ABC") == "ABC");
+
+    s = "123 456";
+    assert(s.subst("([0-9]+) ([0-9]+)", "$2 $1 $2") == "456 123 456");
+
+    const char* pattern = R"(([\w\.-]+)@([\w\.-]+\.\w+))";
+    DString emails = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
+    emails.subst_inplace(pattern, "***@$2", DSTR_REGEX_GLOBAL);
+    cout << emails << endl;
+
+    DString hello = "hello";
+
+    assert(hello.subst("[aeiou]", "*") == "h*llo");
+    assert(hello.subst("[aeiou]", "*", DSTR_REGEX_GLOBAL) == "h*ll*");
+    assert(hello.subst("[aeiou]", "",  DSTR_REGEX_GLOBAL) == "hll");
+    assert(hello.subst("ell", "al") == "halo");
+    assert(hello.subst("xyzzy", "*") == "hello");
+    assert(DString("THX1138").subst("\\d+", "00") == "THX00");
 }
 //--------------------------------------------------------------------------------
 
@@ -331,8 +434,11 @@ int main()
         test_various();
         test_replace_all();
         test_dstring_re_match();
-        test_dstring_re_search();
+        test_dstring_match_within();
         test_dstring_re_capture();
+        test_dstring_re_match_struct();
+        test_dstring_replace_all();
+        test_dstring_subst();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;

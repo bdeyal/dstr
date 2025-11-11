@@ -33,13 +33,13 @@ ifeq ($(COMP),clang)
 endif
 
 CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-#CFLAGS += -Iinclude $(shell rpm --eval '%{optflags}') -O3
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS += -L./lib64 -s
 
 PROGRAMS = \
 	./test/dstrtest \
 	./test/dstrtest_pp \
+	./test/test_hash \
 	./test/test_dgets \
 	./test/test_map \
 	./test/test_vector \
@@ -74,6 +74,9 @@ all: $(PROGRAMS)
 ./test/test_algs: ./test/test_algs.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
+./test/test_hash: ./test/test_hash.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+
 ./test/test_regex: ./test/test_regex.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
 
@@ -97,6 +100,7 @@ test: $(PROGRAMS) ./test/test_file.txt
 	./test/test_tokens
 	./test/test_algs
 	./test/test_regex
+	./test/test_hash
 
 .PHONY: testvg
 testvg: $(PROGRAMS) ./test/test_file.txt
@@ -108,6 +112,7 @@ testvg: $(PROGRAMS) ./test/test_file.txt
 	valgrind ./test/test_tokens
 	valgrind ./test/test_algs
 	valgrind ./test/test_regex
+	valgrind ./test/test_hash
 
 
 ./test/test_file.txt:
