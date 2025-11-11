@@ -1025,7 +1025,7 @@ public:
     //
     bool match(const DString& pattern, size_t offset = 0) const;
 
-    // pattern appears somewhere in *this. Returns position of NPOS
+    // pattern appears somewhere in *this. Returns position or NPOS
     //
     size_t match_within(const DString& pattern, size_t offset = 0) const;
 
@@ -1151,7 +1151,7 @@ struct DStringHasher {
 //
 struct DString_NoCase {
     bool operator()(const DString& s1, const DString& s2) const {
-        return s1.icompare(s2);
+        return s1.icompare(s2) < 0;
     }
 };
 //----------------------------------------------------------------
