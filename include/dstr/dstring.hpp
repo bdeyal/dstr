@@ -17,8 +17,40 @@
 //
 class DString {
 public:
+    // Types, constants and typedefs
+    //
     static const size_t NPOS = DSTR_NPOS;
 
+    // Regexp support
+    //
+    struct Match
+    {
+        // zero based offset (NPOS if subexpr does not match)
+        size_t offset;
+
+        // length of substring
+        size_t length;
+
+        // name of group
+        char name[64];
+    };
+
+    // Container types for matches and DString itself
+    //
+    typedef std::vector<Match>   MatchVector;
+
+    // typedefs C++ algorithms support
+    //
+    typedef char value_type;
+    typedef char& reference;
+    typedef const char& const_reference;
+    typedef char* iterator;
+    typedef const char* const_iterator;
+    typedef ptrdiff_t difference_type;
+    typedef size_t size_type;
+
+
+public:
     DString()
     {
         dstr_init_data(pImp());
@@ -450,11 +482,8 @@ public:
 
     // Join inplace
     //
-    template <class Container>
-    DString& join_inplace(const char* sep, const Container& v);
-
-    template <class Container>
-    DString& join_inplace(const DString& sep, const Container& v)
+    DString& join_inplace(const char* sep, const std::vector<DString>& v);
+    DString& join_inplace(const DString& sep, const std::vector<DString>& v)
     {
         return join_inplace(sep.c_str(), v);
     }
@@ -478,8 +507,7 @@ public:
 
     // join
     //
-    template <class Container>
-    DString join(const Container& v) const
+    DString join(const std::vector<DString>& v) const
     {
         DString result;
         result.join_inplace(this->c_str(), v);
@@ -571,29 +599,21 @@ public:
 
     // split: empty string between separator character or string
     //
-    template <class Container>
-    void split(char c, Container& dest) const;
+    void split(char c, std::vector<DString>& dest) const;
+    void split(const char* sep, std::vector<DString>& dest) const;
 
-    template <class Container>
-    void split(const char* sep, Container& dest) const;
-
-    template <class Container>
-    void split(const DString& sep, Container& dest)  const
+    void split(const DString& sep, std::vector<DString>& dest)  const
     {
         split(sep.c_str(), dest);
     }
 
-    template <class Container>
-    void splitlines(Container& dest) const
+    void splitlines(std::vector<DString>& dest) const
     {
         split('\n', dest);
     }
 
-    template <class Container>
-    void tokenize(const char* separators, Container& dest) const;
-
-    template <class Container>
-    void tokenize(const DString& separators, Container& dest)  const
+    void tokenize(const char* separators, std::vector<DString>& dest) const;
+    void tokenize(const DString& separators, std::vector<DString>& dest) const
     {
         tokenize(separators.c_str(), dest);
     }
@@ -602,26 +622,20 @@ public:
     // character (including \n \r \t \f and spaces) and will discard
     // empty strings from the result
     //
-    template <class Container>
-    void split(Container& dest) const
+    void split(std::vector<DString>& dest) const
     {
         tokenize("\n\r\t\f ", dest);
     }
 
-    template <class Container>
-    void partition(const char* s, Container& dest) const;
+    void partition(const char* s, std::vector<DString>& dest) const;
+    void rpartition(const char* s, std::vector<DString>& dest) const;
 
-    template <class Container>
-    void rpartition(const char* s, Container& dest) const;
-
-    template <class Container>
-    void partition(const DString& s, Container& dest) const
+    void partition(const DString& s, std::vector<DString>& dest) const
     {
         partition(s.c_str(), dest);
     }
 
-    template <class Container>
-    void rpartition(const DString& s, Container& dest) const
+    void rpartition(const DString& s, std::vector<DString>& dest) const
     {
         rpartition(s.c_str(), dest);
     }
@@ -1004,16 +1018,6 @@ public:
         return dstr_to_ldouble(pImp(), index);
     }
 
-    // C++ algorithms support : typedefs
-    //
-    typedef char value_type;
-    typedef char& reference;
-    typedef const char& const_reference;
-    typedef char* iterator;
-    typedef const char* const_iterator;
-    typedef ptrdiff_t difference_type;
-    typedef size_t size_type;
-
     // C++ algorithms support : functions
     //
     size_type      size()  const { return length(); }
@@ -1027,19 +1031,6 @@ public:
     //   Regexp Support
     //
     ///////////////////////////////////////////////////
-    struct Match
-    {
-        // zero based offset (std::string::npos if subexpr does not match)
-        size_t offset;
-
-        // length of substring
-        size_t length;
-
-        // name of group
-        char name[64];
-    };
-
-    typedef std::vector<Match> MatchVector;
 
     // *this is an exact match
     //
@@ -1153,11 +1144,6 @@ private:
         m_imp.length = count;
         m_imp.data[count] = '\0';
     }
-
-    // C++98-like compile time assert for container value type
-    //
-    template <typename T>
-    const DString* chk_vtype(const T* t) const { return t; }
 };
 //----------------------------------------------------------------
 
@@ -1289,153 +1275,7 @@ inline DString to_dstring(long double val)
 #undef NUMBER_TO_DSTRING
 //----------------------------------------------------------------
 
-// C++98-like compile time assert for container value type
+
+// Include guard
 //
-#define CHECK_VALUE_TYPE(Cnt) ((void)chk_vtype((typename Cnt::value_type*) 0))
-
-template <class Container>
-void DString::split(char sep, Container& dest) const
-{
-    CHECK_VALUE_TYPE(Container);
-
-    Container v;
-    DString str;
-
-    for (size_t i = 0; i < size(); ++i) {
-        char c = get(i);
-        if (c == sep) {
-            v.push_back(str);
-            str.clear();
-        }
-        else {
-            str.append(c);
-        }
-    }
-
-    if (!str.empty()) {
-        v.push_back(str);
-    }
-
-    dest.swap(v);
-}
-//-----------------------------------------------------------
-
-template <class Container>
-void DString::split(const char* sep, Container& dest) const
-{
-    CHECK_VALUE_TYPE(Container);
-
-    if (!sep)
-        return;
-
-    size_t start = 0;
-    size_t sep_len = strlen(sep);
-    Container v;
-
-    for (;;) {
-        size_t pos = find(sep, start);
-        v.push_back(substr(start, pos - start));
-        if (pos == NPOS)
-            break;
-        start = pos + sep_len;;
-    }
-
-    dest.swap(v);
-}
-//-----------------------------------------------------------
-
-template <class Container>
-void DString::tokenize(const char* pattern, Container& dest) const
-{
-    CHECK_VALUE_TYPE(Container);
-
-    Container tmp;
-
-    // Find the first location which does not belong to
-    // the separator characters
-    //
-    size_t first = this->ffno(pattern, 0);
-
-    // Check if we are at the end
-    //
-    while (first != DString::NPOS)
-    {
-        // Find the first location (> first) with a character
-        // that belongs to the separator group
-        //
-        size_t last = this->ffo(pattern, first);
-
-        // Create a substring to print
-        //
-        DString token = this->substr(first, last - first);
-        tmp.push_back(token);
-
-        // Prepare for next iteration.
-        // Again find the first char not in separator but now
-        // not from the start
-        //
-        first = this->ffno(pattern, last);
-    }
-
-    dest.swap(tmp);
-}
-//-----------------------------------------------------------
-
-template <class Container>
-DString& DString::join_inplace(const char* sep, const Container& v)
-{
-    CHECK_VALUE_TYPE(Container);
-
-    if (v.empty())
-        return *this;
-
-    if (!sep)
-        sep = "";
-
-    typename Container::const_iterator p = v.begin();
-
-    for (;;) {
-        this->append(*p);
-        if (++p == v.end()) break;
-        this->append(sep);
-    }
-
-    return *this;
-}
-//-----------------------------------------------------------
-
-template <class Container>
-void DString::partition(const char* s, Container& dest) const
-{
-    CHECK_VALUE_TYPE(Container);
-
-    struct DSTR_PartInfo pinfo;
-    dstr_partition(pImp(), s, &pinfo);
-
-    Container tmp;
-    tmp.push_back(substr(pinfo.l_pos, pinfo.l_len));
-    tmp.push_back(substr(pinfo.m_pos, pinfo.m_len));
-    tmp.push_back(substr(pinfo.r_pos, pinfo.r_len));
-    tmp.swap(dest);
-}
-//-----------------------------------------------------------
-
-template <class Container>
-void DString::rpartition(const char* s, Container& dest) const
-{
-    CHECK_VALUE_TYPE(Container);
-
-    struct DSTR_PartInfo pinfo;
-    dstr_rpartition(pImp(), s, &pinfo);
-
-    Container tmp;
-    tmp.push_back(substr(pinfo.l_pos, pinfo.l_len));
-    tmp.push_back(substr(pinfo.m_pos, pinfo.m_len));
-    tmp.push_back(substr(pinfo.r_pos, pinfo.r_len));
-    tmp.swap(dest);
-}
-//-----------------------------------------------------------
-
-
-
 #endif

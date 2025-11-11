@@ -72,11 +72,9 @@ public:
     int subst(DString& s, const DString& r, int options = 0) const {
         return subst(s, 0, r, options);
     }
-
 private:
     // Actual type is pcre2_code_8*
     pcre2_code* _pRE;
-
     typedef std::unordered_map<int, DString> GroupDict;
     GroupDict m_groups;
 
@@ -120,9 +118,8 @@ struct MatchData {
     ~MatchData()  {
         if (_match) pcre2_match_data_free(_match);
     }
-    // uint32_t count()         const { return pcre2_get_ovector_count(_match);   }
     const PCRE2_SIZE* data() const { return pcre2_get_ovector_pointer(_match); }
-    operator pcre2_match_data*()   { return _match; }
+    pcre2_match_data* pointer()    { return _match; }
 
     PCRE2_SIZE operator[](size_t index) const {
         if (!ovec) ovec = data();
@@ -269,7 +266,7 @@ int DStringRegex::match(const DString& subject, size_t offset,
                          subject.size(),
                          offset,
                          match_options(options),
-                         mdata, nullptr);
+                         mdata.pointer(), nullptr);
 
     // Success
     //
@@ -330,7 +327,7 @@ int DStringRegex::match_groups(const DString& subject, size_t offset,
                          offset,
                          // match_options(options) & 0xFFFF,
                          options & 0xFFFF,
-                         mdata,
+                         mdata.pointer(),
                          nullptr);
 
     if (rc <= 0)
@@ -459,7 +456,7 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
                          subject.size(),
                          offset,
                          match_options(options),
-                         mdata,
+                         mdata.pointer(),
                          nullptr);
 
     // Handle error
@@ -506,8 +503,7 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
                             {
                                 size_t o = mdata[c*2];
                                 size_t l = mdata[c*2 + 1] - o;
-                                DString tmp = subject.substr(o, l);
-                                result.append(tmp);
+                                result.append(&subject[o], l);
                             }
                         }
                         else
@@ -531,20 +527,22 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
+// Hash for both string and its option (seed for DString::hash)
+//
 struct RegexKey {
     RegexKey(const DString& rhs, int opts)
         :
         pattern(rhs),
         hash_value(rhs.hash(opts))
-        {
-        }
+    {
+    }
 
     RegexKey(const RegexKey& rhs)
         :
         pattern(rhs.pattern),
         hash_value(rhs.hash_value)
-        {
-        }
+    {
+    }
 
     bool operator==(const RegexKey& rhs) const {
         return pattern == rhs.pattern && hash_value == rhs.hash_value;

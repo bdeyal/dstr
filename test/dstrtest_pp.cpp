@@ -1394,12 +1394,14 @@ DString rvo_move_ctor()
 
 void test_move_ctor_assign()
 {
+    using namespace std;
 #if __cplusplus >= 201103L
     TRACE_FN();
 
     DString src("hello");
     DString dest(std::move(src));
 
+    cout << "SRC: " << src << ", DEST: " << dest << endl;
     assert(dest == "hello");
     assert(src.empty());
 
@@ -1468,6 +1470,22 @@ void test_operator_plus()
     assert(sz + s1 + s2 == "ghiabcdef");
     assert(sz + s1 + c == "ghiabcX");
     assert(c + s1 + sz == "Xabcghi");
+}
+//-------------------------------------------------
+
+void test_operator_square_braces()
+{
+    TRACE_FN();
+
+    DString s1("abc");
+    s1[2] = toupper(s1[2]);
+    assert(s1 == "abC");
+
+    DString s2("Hello World Today is WED at midnight");
+    for (size_t i = 0; i < s2.length(); ++i) {
+        assert(s2[i] == s2.get(i));
+        assert(&s2[i] == s2.data() + i);
+    }
 }
 //-------------------------------------------------
 
@@ -1729,9 +1747,7 @@ void test_join()
     assert(sep.join(v) == "hello+++world+++good+++morning");
 
 #if __cplusplus >= 201103L
-    assert(sep.join(std::list<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
     assert(sep.join(std::vector<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
-    assert(sep.join(std::deque<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
 #endif
 }
 //-------------------------------------------------
@@ -2027,5 +2043,6 @@ int main()
     test_is_identifier();
     test_partition();
     test_rpartition();
+    test_operator_square_braces();
     // last test
 }
