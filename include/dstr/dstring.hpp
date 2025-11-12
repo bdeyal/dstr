@@ -11,7 +11,10 @@
 #include <vector>
 
 #include <dstr/dstr.h>
+
+#if !defined(NO_DSTRING_REGEX)
 #include <dstr/dstr_regex_fwd.h>
+#endif
 
 // A thin wrapper around C DSTR_TYPE
 //
