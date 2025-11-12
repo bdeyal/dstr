@@ -580,10 +580,25 @@ struct DStringRegexCache
         RegexKey key(pattern, options);
         auto iter = the_map.find(key);
         if (iter == the_map.end()) {
-            fifo.push_back(key);
-            auto upRE = make_unique<DStringRegex>(pattern, options);
-            iter = the_map.emplace(key, std::move(upRE)).first;
+            // Just before insert we remove the oldest cached compiled
+            // Regex.
+            //
             remove_oldest_if_limit();
+
+            // DstringRegex compiles pattern
+            //
+            auto upRE = make_unique<DStringRegex>(pattern, options);
+            fifo.push_back(key);
+
+            // if `emplace` below fails we must undo the push_back line above
+            //
+            try {
+                iter = the_map.emplace(key, std::move(upRE)).first;
+            }
+            catch (...) {
+                fifo.pop_back();
+                throw;
+            }
         }
         return *iter->second;
     }
@@ -591,8 +606,9 @@ struct DStringRegexCache
     void remove_oldest_if_limit()
     {
         assert(fifo.size() == the_map.size());
-        while (fifo.size() > LIMIT) {
+        while (fifo.size() >= LIMIT) {
             const auto& oldest = fifo.front();
+            printf("Remove key for: %s\n:", oldest.pattern.c_str());
             the_map.erase(oldest);
             fifo.pop_front();
         }
