@@ -118,7 +118,6 @@ int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 /* join ARGV into DEST with separator SEP */
 int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n);
 
-
 int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
 int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
 int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
