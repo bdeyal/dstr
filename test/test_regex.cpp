@@ -20,7 +20,7 @@
 #define TRACE_FN() printf("\nFUNCTION: %s()\n", __FUNCTION__)
 #endif
 
-inline std::ostream& operator<<(std::ostream& out, const DString::Match& m)
+std::ostream& operator<<(std::ostream& out, const DString::Match& m)
 {
     out << "Match: \"" << m.name << "\", pos=" << m.offset << ", len=" << m.length;
     return out;

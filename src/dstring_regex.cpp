@@ -24,19 +24,6 @@
 
 namespace {
 
-// Borrowed std::make_unique from C++14 code
-//
-#if __cplusplus <= 201103L
-template<typename _Tp, typename... _Args>
-inline std::unique_ptr<_Tp> make_unique(_Args&&... __args)
-{
-    return std::unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...));
-}
-#else
-using std::make_unique;
-#endif
-/*-------------------------------------------------------------------------------*/
-
 // Encapsulates a PCRE2 regular expression object
 //
 class DStringRegex
@@ -47,36 +34,47 @@ public:
 
     // Implemented below
     //
-    bool match(const DString& subject, size_t offset = 0,
-               int options = DSTR_REGEX_ANCHORED | DSTR_REGEX_NOTEMPTY) const;
-    int match(const DString& s, size_t off, DString::Match& m, int opts = 0) const;
-    int match_groups(const DString& s, size_t off, DString::MatchVector& m,  int opts = 0) const;
-    DString capture(const DString& subject, size_t offset, int options = 0) const;
-    int capture(const DString& subject, size_t offset, std::vector<DString>& strings, int options = 0) const;
-    int subst(DString& subject, size_t offset, const DString& replacement, int options = 0) const;
+    bool match(const DString& subject, size_t offset, int options) const;
+    int match(const DString& s, size_t off, DString::Match& m, int opts) const;
+    int match_groups(const DString& s, size_t off, DString::MatchVector& m,  int opts) const;
+    DString capture(const DString& subject, size_t offset, int options) const;
+    int capture(const DString& subject, size_t offset, std::vector<DString>& strings, int options) const;
+    int subst(DString& subject, size_t offset, const DString& replacement, int options) const;
 
     // Inlines using the above
     //
-    int match(const DString& s, DString::Match& m, int opts = 0) const {
+    int match(const DString& s, DString::Match& m, int opts) const {
         return match(s, 0, m, opts);
     }
-    int match_groups(const DString& s, DString::MatchVector& m, int opts = 0) const {
+    int match_groups(const DString& s, DString::MatchVector& m, int opts) const {
         return match_groups(s, 0, m, opts);
     }
-    DString capture(const DString& subject, int options = 0) const {
+    DString capture(const DString& subject, int options) const {
         return capture(subject, 0, options);
     }
-    int capture(const DString& subject, std::vector<DString>& strings, int options = 0) const {
+    int capture(const DString& subject, std::vector<DString>& strings, int options) const {
         return capture(subject, 0, strings, options);
     }
-    int subst(DString& s, const DString& r, int options = 0) const {
+    int subst(DString& s, const DString& r, int options) const {
         return subst(s, 0, r, options);
     }
 private:
     // Actual type is pcre2_code_8*
     pcre2_code* _pRE;
-    typedef std::unordered_map<int, DString> GroupDict;
-    GroupDict m_groups;
+
+    struct GroupInfo {
+        long        group_number;
+        const char* group_name;
+    };
+    std::vector<GroupInfo> m_groups;
+
+    const char* find_group_name(int n) const {
+        for (const auto& grp : m_groups) {
+            if (grp.group_number == n)
+                return grp.group_name;
+        }
+        return NULL;
+    }
 
 private:
     size_t subst_single(DString& subject, size_t offset, const DString& repl, int options) const;
@@ -118,15 +116,14 @@ struct MatchData {
     ~MatchData()  {
         if (_match) pcre2_match_data_free(_match);
     }
-    const PCRE2_SIZE* data() const { return pcre2_get_ovector_pointer(_match); }
-    pcre2_match_data* pointer()    { return _match; }
-
+    pcre2_match_data* pointer() { return _match; }
     PCRE2_SIZE operator[](size_t index) const {
         if (!ovec) ovec = data();
         return ovec[index];
     }
 
 private:
+    const PCRE2_SIZE* data() const { return pcre2_get_ovector_pointer(_match); }
     mutable const PCRE2_SIZE* ovec = nullptr;
     pcre2_match_data* _match;  // actual pointer
 };
@@ -224,20 +221,23 @@ DStringRegex::DStringRegex(const DString& pattern, int options)
         throw DStringError(std::move(msg));
     }
 
-    unsigned int name_count;
+    unsigned int name_count = 0;
     pcre2_pattern_info(_pRE, PCRE2_INFO_NAMECOUNT, &name_count);
 
-    unsigned int name_entry_size;
+    unsigned int name_entry_size = 0;
     pcre2_pattern_info(_pRE, PCRE2_INFO_NAMEENTRYSIZE, &name_entry_size);
 
-    unsigned char* name_table;
+    unsigned char* name_table = nullptr;
     pcre2_pattern_info(_pRE, PCRE2_INFO_NAMETABLE, &name_table);
+
+    if (name_count)
+        m_groups.reserve(name_count);
 
     for (uint32_t i = 0; i < name_count; i++)
     {
         unsigned char* group = name_table + 2 + (name_entry_size * i);
         int n = pcre2_substring_number_from_name(_pRE, group);
-        m_groups[n] = DString((char*)group);
+        m_groups.push_back({n, (const char*)group});
     }
 }
 /*-------------------------------------------------------------------------------*/
@@ -351,9 +351,8 @@ int DStringRegex::match_groups(const DString& subject, size_t offset,
 
         // Set group name of match
         //
-        GroupDict::const_iterator it = m_groups.find(i);
-        if (it != m_groups.end()) {
-            strncpy(m.name, it->second.c_str(), sizeof(m.name) - 1);
+        if (const char* name = find_group_name(i)) {
+            strncpy(m.name, name, sizeof(m.name) - 1);
         }
         else {
             m.name[0] = '\0';
@@ -365,8 +364,6 @@ int DStringRegex::match_groups(const DString& subject, size_t offset,
     mvec.swap(matches);
     return rc;
 
-    // Error
-    //
 handle_error:
     switch (rc) {
     case 0:
@@ -432,14 +429,9 @@ int DStringRegex::subst(DString& subject, size_t offset,
         }
         return rc;
     }
-    else
-    {
-        size_t n = subst_single(subject, offset, replacement, options);
-        if (n == DString::NPOS)
-            return 0;
 
-        return 1;
-    }
+    size_t n = subst_single(subject, offset, replacement, options);
+    return (n == DString::NPOS) ? 0 : 1;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -560,6 +552,19 @@ struct RegexHash {
     }
 };
 /*-------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------*/
+
+// Borrowed std::make_unique from C++14 code
+//
+#if __cplusplus <= 201103L
+template<typename _Tp, typename... _Args>
+inline std::unique_ptr<_Tp> make_unique(_Args&&... __args)
+{
+    return std::unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...));
+}
+#else
+using std::make_unique;
+#endif
 /*-------------------------------------------------------------------------------*/
 
 template <size_t LIMIT>
