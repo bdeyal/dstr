@@ -21,24 +21,6 @@ public:
     //
     static const size_t NPOS = DSTR_NPOS;
 
-    // Regexp support
-    //
-    struct Match
-    {
-        // zero based offset (NPOS if subexpr does not match)
-        size_t offset;
-
-        // length of substring
-        size_t length;
-
-        // name of group
-        char name[64];
-    };
-
-    // Container types for matches and DString itself
-    //
-    typedef std::vector<Match>   MatchVector;
-
     // typedefs C++ algorithms support
     //
     typedef char value_type;
@@ -1026,11 +1008,30 @@ public:
     iterator       end()         { return &m_imp.data[m_imp.length]; }
     const_iterator end()   const { return &m_imp.data[m_imp.length]; }
 
+#if !defined(NO_DSTRING_REGEX)
     ///////////////////////////////////////////////////
     //
     //   Regexp Support
     //
     ///////////////////////////////////////////////////
+
+    // Regexp support
+    //
+    struct Match
+    {
+        // zero based offset (NPOS if subexpr does not match)
+        size_t offset;
+
+        // length of substring
+        size_t length;
+
+        // name of group
+        char name[64];
+    };
+
+    // Container types for matches and DString itself
+    //
+    typedef std::vector<Match>   MatchVector;
 
     // *this is an exact match
     //
@@ -1107,7 +1108,7 @@ public:
     {
         return subst(pattern, 0, r, options);
     }
-
+#endif // NO_DSTRING_REGEX
 
 private:
     // Single data member.
