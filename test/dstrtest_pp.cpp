@@ -2026,10 +2026,11 @@ void test_times()
     assert(s.times(2).times(2) == s.times(4));
     assert(s.times(0) == "");
     assert(s.times(1) == s);
+    assert(DString('=', 50) == DString("=").times(50));
 
-    cout << DString("=").times(70) << endl;
+    cout << DString('=', 50) << endl;
     cout << "H E L L O   W O R L D" << endl;
-    cout << DString("=").times(70) << endl;
+    cout << DString("=").times(50) << endl;
 }
 //-------------------------------------------------
 
