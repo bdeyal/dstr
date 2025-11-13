@@ -104,11 +104,11 @@ static inline char* dstr_address(DSTR p, size_t pos) {
 static inline const char* dstr_address_c(CDSTR p, size_t pos) {
     return (DBUF(p) + pos);
 }
-/*-------------------------------------------------------------------------------*/
-
-static inline char* dstr_tail(DSTR p)
-{
+static inline char* dstr_tail(DSTR p) {
     return dstr_address(p, DLEN(p));
+}
+static inline const char* dstr_end_of_storage(CDSTR p) {
+    return dstr_address_c(p, DCAP(p));
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -245,17 +245,22 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
+static inline DSTR_BOOL is_overlap(CDSTR p, const char* value)
+{
+    return (DBUF(p) <= value && value < dstr_end_of_storage(p));
+}
+/*-------------------------------------------------------------------------------*/
+
 static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
     size_t bytes_to_move;
     char* first = DBUF(p);
-    char* last = first + DLEN(p);
     ptrdiff_t overlap = -1;
 
     // different handling if source data within the DSTR allocated
     // buffer
     //
-    if (first <= buff && buff <= last) {
+    if (is_overlap(p, buff)) {
         overlap = buff - first;
     }
 
@@ -351,17 +356,14 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
 
 /*  For cases we are SURE that 'value' is not in 'dest' buffer range
  */
-static int dstr_assign_unsafe(DSTR dest, const char* value, size_t len)
+static int dstr_append_no_overlap(DSTR dest, const char* value, size_t len)
 {
-    if (DLEN(dest) > 0)
-        dstr_clear(dest);
-
-    if (!dstr_grow(dest, len))
+    if (!dstr_grow_by(dest, len))
         return DSTR_FAIL;
 
-    memcpy(DBUF(dest), value, len);
-    DLEN(dest) = len;
-    DVAL(dest, len) = '\0';
+    memcpy(dstr_tail(dest), value, len);
+    DLEN(dest) += len;
+    DVAL(dest, DLEN(dest)) = '\0';
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
@@ -382,17 +384,13 @@ static int dstr_replace_imp(DSTR p,
         return DSTR_SUCCESS;
     }
 
-    // Check for overlap, must copy src if so
-    //
-    char* first = DBUF(p);
-    char* last = first + DLEN(p);
     int result = DSTR_FAIL;
 
     // in case of overlap we copy to a tmp DSTR
     //
-    if (first <= buff && buff <= last) {
+    if (is_overlap(p, buff)) {
         INIT_DSTR(tmp);
-        if (dstr_assign_unsafe(&tmp, buff, buflen))
+        if (dstr_append_no_overlap(&tmp, buff, buflen))
         {
             dstr_remove_imp(p, pos, count);
             buff = DBUF(&tmp);
@@ -423,13 +421,18 @@ static inline int dstr_replace_cc_imp(DSTR p,
 
 static inline int dstr_append_imp(DSTR p, const char* value, size_t len)
 {
-    return dstr_insert_imp(p, DLEN(p), value, len);
+    if (is_overlap(p, value))
+        return dstr_insert_imp(p, DLEN(p), value, len);
+
+    return dstr_append_no_overlap(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
 
 static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
 {
-    dstr_clear(p);
+    if (DLEN(p) > 0)
+        dstr_clear(p);
+
     return dstr_append_imp(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -859,7 +862,7 @@ DSTR dstr_slurp_stream(DSTR p, FILE* fp)
         }
 
         if (len) {
-            if (!dstr_append_imp(p, chunk, len)) {
+            if (!dstr_append_no_overlap(p, chunk, len)) {
                 dstr_clear(p);
                 return NULL;
             }
@@ -1007,7 +1010,7 @@ int dstr_assign_ds(DSTR dest, CDSTR src)
     return
         (dest == src) ?
         DSTR_SUCCESS :
-        dstr_assign_unsafe(dest, DBUF(src), DLEN(src));
+        dstr_assign_imp(dest, DBUF(src), DLEN(src));
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1020,7 +1023,8 @@ int dstr_assign_sz(DSTR p, const char* value)
         return DSTR_SUCCESS;
     }
 
-    return dstr_assign_imp(p, value, strlen(value));
+    size_t len = strlen(value);
+    return dstr_assign_imp(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1064,9 +1068,9 @@ int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count)
     if (count == 0)
         return DSTR_SUCCESS;
 
-    return dstr_assign_imp( dest,
-                            DBUF(p) + pos,
-                            min_2(count, DLEN(p)-pos) );
+    const char* buff = DBUF(p) + pos;
+    size_t len = min_2(count, DLEN(p)-pos);
+    return dstr_assign_imp( dest, buff, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1337,7 +1341,7 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
     // formatting was successful on tmp buffer
     //
     if ((size_t)len < sizeof(buff)) {
-        dstr_append_imp(p, buff, (size_t) len);
+        dstr_append_no_overlap(p, buff, (size_t) len);
     }
     else {
         // Second pass with enough buffer size
@@ -1741,7 +1745,7 @@ int dstr_fgets(DSTR p, FILE* fp)
     for (;;) {
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
-            if (!dstr_append_imp(p, buf, bindex))
+            if (!dstr_append_no_overlap(p, buf, bindex))
                 goto clear_eof;
             bindex = 0;
         }
@@ -1756,7 +1760,7 @@ int dstr_fgets(DSTR p, FILE* fp)
     }
 
     if (bindex) {
-        if (!dstr_append_imp(p, buf, bindex))
+        if (!dstr_append_no_overlap(p, buf, bindex))
             goto clear_eof;
     }
 
@@ -1784,7 +1788,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
     while ((c = fgetc(fp)) != EOF && c != '\n') {
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
-            if (!dstr_append_imp(p, buf, bindex)) {
+            if (!dstr_append_no_overlap(p, buf, bindex)) {
                 dstr_clear(p);
                 return EOF;
             }
@@ -1793,7 +1797,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
     }
 
     if (bindex) {
-        if (!dstr_append_imp(p, buf, bindex)) {
+        if (!dstr_append_no_overlap(p, buf, bindex)) {
             dstr_clear(p);
             return EOF;
         }
@@ -1880,7 +1884,8 @@ int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base)
     char* last = buf + sizeof buf;
     char* first = itos_aux(last, n, base);
     size_t len = last - first;
-    return dstr_assign_unsafe(dest, first, len);
+    if (DLEN(dest)) dstr_clear(dest);
+    return dstr_append_no_overlap(dest, first, len);
 
 }
 //---------------------------------------------------------
@@ -1902,7 +1907,11 @@ int dstr_itos(DSTR dest, long long n)
         *--first = '-';
 
     size_t len = last - first;
-    return dstr_assign_unsafe(dest, first, len);
+
+    if (DLEN(dest))
+        dstr_clear(dest);
+
+    return dstr_append_no_overlap(dest, first, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -2655,7 +2664,7 @@ int dstr_multiply(DSTR dest, size_t n)
         return DSTR_FAIL;
 
     for (size_t i = 0; i < n; ++i) {
-        if (!dstr_append_imp(&tmp, DBUF(dest), DLEN(dest)))
+        if (!dstr_append_no_overlap(&tmp, DBUF(dest), DLEN(dest)))
             return DSTR_FAIL;
     }
 
