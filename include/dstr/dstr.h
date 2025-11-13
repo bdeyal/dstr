@@ -118,6 +118,9 @@ int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 /* join ARGV into DEST with separator SEP */
 int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n);
 
+/* duplicate self n times like $s x 5 in perl */
+int dstr_multiply(DSTR dest, size_t n);
+
 int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
 int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
 int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
@@ -157,6 +160,19 @@ void dstr_trim_left(DSTR p);
 void dstr_trim_both(DSTR p);
 //void dstr_truncate(DSTR p);
 void dstr_remove(DSTR p, size_t pos, size_t count);
+
+/*
+ *  Like trim but strip a special char from edges
+ */
+void dstr_lstrip_c(DSTR p, char c);
+void dstr_rstrip_c(DSTR p, char c);
+
+/*
+ *  Like above but strip any of sz from edges
+ */
+void dstr_lstrip_sz(DSTR p, const char* sz);
+void dstr_rstrip_sz(DSTR p, const char* sz);
+
 
 /* hash for use in hash table */
 unsigned long dstr_hash(CDSTR src, int seed /*=0*/);
@@ -542,6 +558,9 @@ static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count)
 #define dstrcat_sprintf     dstr_append_sprintf
 #define dstrcat_vsprintf    dstr_append_vsprintf
 
+#define dstrjoin            dstr_join_sz
+#define dstrmult            dstr_multiply
+
 #define dreplace_cc         dstr_replace_cc
 #define dreplace_sz         dstr_replace_sz
 #define dreplace_ds         dstr_replace_ds
@@ -560,6 +579,10 @@ static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count)
 #define dstrtrim            dstr_trim_both
 #define dstrtrim_r          dstr_trim_right
 #define dstrtrim_l          dstr_trim_left
+#define dstrlstrip_c        dstr_lstrip_c
+#define dstrrstrip_c        dstr_rstrip_c
+#define dstrlstrip_sz       dstr_lstrip_sz
+#define dstrlstrip_sz       dstr_lstrip_sz
 #define dstrupper           dstr_ascii_upper
 #define dstrlower           dstr_ascii_lower
 #define dstrswapcase        dstr_ascii_swapcase

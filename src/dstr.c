@@ -1551,6 +1551,77 @@ void dstr_trim_both(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
+void dstr_rstrip_c(DSTR p, char c)
+{
+    size_t len;
+    dstr_assert_valid(p);
+
+    if ((len = DLEN(p)) == 0)
+        return;
+
+    while (len > 0 && (DVAL(p,len - 1) == c))
+        --len;
+
+    if (len < DLEN(p)) {
+        DVAL(p, len) = '\0';
+        DLEN(p) = len;
+    }
+
+    dstr_assert_valid(p);
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_lstrip_c(DSTR p, char c)
+{
+    size_t pos = 0;
+    dstr_assert_valid(p);
+
+    while (pos < DLEN(p) && (DVAL(p, pos) == c))
+        ++pos;
+
+    if (pos > 0) {
+        if (pos == DLEN(p))
+            dstr_clear(p);
+        else
+            dstr_remove_imp(p, 0, pos);
+    }
+    dstr_assert_valid(p);
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_rstrip_sz(DSTR p, const char* sz)
+{
+    dstr_assert_valid(p);
+
+    size_t pos = dstr_flno_sz(p, DLEN(p), sz);
+    if (pos == DSTR_NPOS) {
+        dstr_clear(p);
+    }
+    else if (pos < DLEN(p)) {
+        DVAL(p, pos + 1) = '\0';
+        DLEN(p) = pos + 1;
+    }
+
+    dstr_assert_valid(p);
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_lstrip_sz(DSTR p, const char* sz)
+{
+    dstr_assert_valid(p);
+
+    size_t pos = dstr_ffno_sz(p, 0, sz);
+    if (pos == DSTR_NPOS) {
+        dstr_clear(p);
+    }
+    else {
+        dstr_remove_imp(p, 0, pos);
+    }
+
+    dstr_assert_valid(p);
+}
+/*-------------------------------------------------------------------------------*/
+
 void dstr_ascii_upper(DSTR p)
 {
     char* s;
@@ -2566,6 +2637,34 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
     return DSTR_SUCCESS;
 }
 /*--------------------------------------------------------------------------*/
+
+int dstr_multiply(DSTR dest, size_t n)
+{
+    dstr_assert_valid(dest);
+
+    if (n == 0) {
+        dstr_clear(dest);
+        return DSTR_SUCCESS;
+    }
+    else if (n == 1) {
+        return DSTR_SUCCESS;
+    }
+
+    INIT_DSTR(tmp);
+    if (!dstr_reserve(&tmp, n * DLEN(dest)))
+        return DSTR_FAIL;
+
+    for (size_t i = 0; i < n; ++i) {
+        if (!dstr_append_imp(&tmp, DBUF(dest), DLEN(dest)))
+            return DSTR_FAIL;
+    }
+
+    dstr_swap(&tmp, dest);
+    dstr_assert_valid(dest);
+    return DSTR_SUCCESS;
+}
+/*--------------------------------------------------------------------------*/
+
 
 static inline bool is_tr_range(const char* s)
 {

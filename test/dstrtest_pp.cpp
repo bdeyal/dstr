@@ -31,6 +31,8 @@
 #define TRACE_LN() printf("%d\n", __LINE__)
 //-------------------------------------------------
 
+using namespace std;
+
 void test_ctor()
 {
     TRACE_FN();
@@ -627,8 +629,6 @@ void test_replace()
 //
 void test_fgets()
 {
-    using namespace std;
-
     const char* fname = __FILE__;
     FILE* fp = fopen(fname, "r");
     if (!fp) {
@@ -668,8 +668,6 @@ void test_fgets()
 //
 void test_getline()
 {
-    using namespace std;
-
     const char* fname = __FILE__;
     FILE* fp = fopen(fname, "r");
     if (!fp) {
@@ -708,8 +706,6 @@ void test_getline()
 //
 std::string file_slurp(const char* fname)
 {
-    using namespace std;
-
     ifstream in(fname);
     if (!in) {
         cerr << "couldn't open "<< fname << ": " << strerror(errno) << endl;
@@ -724,8 +720,6 @@ std::string file_slurp(const char* fname)
 
 void test_fromfile()
 {
-    using namespace std;
-
     const char* fname = __FILE__;
 
     DString d1;
@@ -934,8 +928,6 @@ void test_rfind()
     assert(DString("he@@@XXX@@@llo").rfind("@@@", 9) == 8);
     assert(DString("hello").irfind("HeLlO") == 0);
     assert(DString('C', 1).irfind('c') == 0);
-
-    using namespace std;
 
     assert(std::string("he@@@XXX@@@llo").rfind("@@@") == 8);
     assert(std::string("he@@@XXX@@@llo").rfind("@@@", 9) == 8);
@@ -1394,7 +1386,6 @@ DString rvo_move_ctor()
 
 void test_move_ctor_assign()
 {
-    using namespace std;
 #if __cplusplus >= 201103L
     TRACE_FN();
 
@@ -1493,8 +1484,6 @@ void test_center()
 {
     TRACE_FN();
 
-    using namespace std;
-
     DString s1("Hello");
 
     DString s2 = s1.make_center(30, '@');
@@ -1522,8 +1511,6 @@ void test_center()
 void test_align()
 {
     TRACE_FN();
-
-    using namespace std;
 
     DString s1("Hello");
 
@@ -1587,8 +1574,6 @@ void test_conversion()
 void test_replace_all()
 {
     TRACE_FN();
-
-    using namespace std;
 
     const char* origstr = "I love apple apple apple apple apple";
     DString orig(origstr);
@@ -1673,7 +1658,6 @@ void test_expandtabs()
 void test_title()
 {
     TRACE_FN();
-    using namespace std;
 
     const char* s = "hello world today 33 is SAT";
     DString d1(s);
@@ -1707,7 +1691,6 @@ void test_title()
 void test_join()
 {
     TRACE_FN();
-    using namespace std;
 
     const char* argv[] = {"hello", "world", "good", "morning", NULL};
     size_t argc = 4;
@@ -1755,7 +1738,6 @@ void test_join()
 void test_split()
 {
     TRACE_FN();
-    using namespace std;
 
     std::vector<DString> dest;
 
@@ -1987,6 +1969,70 @@ void test_rpartition()
 }
 //-------------------------------------------------
 
+void test_strip()
+{
+    TRACE_FN();
+
+    DString s("####Hello####");
+    s.strip('#');
+    assert(s == "Hello");
+
+    s = "#####################";
+    s.rstrip('#');
+    assert(s == "");
+
+    s = "#####################";
+    s.rstrip("#");
+    assert(s == "");
+
+    s = " ###Hello###";
+    s.strip('#');
+    assert(s == " ###Hello");
+
+    s = " \n \t hello\n";
+    s.strip('\n');
+    assert(s == " \n \t hello");
+
+    s = "\n\n \t hello\n";
+    s.strip('\n');
+    assert(s == " \t hello");
+
+    s = "www.example.com";
+    s.strip("cmow.");
+    std::cout << s << "\n";
+    assert(s == "example");
+
+    s = " www.example.com";
+    s.strip("cmow.");
+    assert(s == " www.example");
+
+    s = "www.example.com ";
+    s.strip("cmow.");
+    std::cout << "\"" << s << "\"\n";
+    assert(s == "example.com ");
+
+    s = "Arthur: three!";
+    s.lstrip("Arthur: ");
+    assert(s == "ee!");
+}
+//-------------------------------------------------
+
+void test_times()
+{
+    TRACE_FN();
+
+    DString s("A");
+    assert(s.times(5) == "AAAAA");
+    assert(s.times(2).times(2) == s.times(4));
+    assert(s.times(0) == "");
+    assert(s.times(1) == s);
+
+    cout << DString("=").times(70) << endl;
+    cout << "H E L L O   W O R L D" << endl;
+    cout << DString("=").times(70) << endl;
+}
+//-------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -2044,5 +2090,7 @@ int main()
     test_partition();
     test_rpartition();
     test_operator_square_braces();
+    test_strip();
+    test_times();
     // last test
 }

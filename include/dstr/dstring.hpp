@@ -34,7 +34,6 @@ public:
     typedef ptrdiff_t difference_type;
     typedef size_t size_type;
 
-
 public:
     DString()
     {
@@ -506,6 +505,19 @@ public:
         return result;
     }
 
+    DString& times_inplace(size_t n) {
+        dstr_multiply(pImp(), n);
+        return *this;
+    }
+
+    // duplicate *this n times
+    //
+    DString times(size_t n) const {
+        DString result(*this);
+        result.times_inplace(n);
+        return result;
+    }
+
     // Replace functions
     //
     DString& replace(size_t pos, size_t len, char c, size_t count)
@@ -672,6 +684,38 @@ public:
     void trim()
     {
         dstr_trim_both(pImp());
+    }
+
+    void lstrip(char c)
+    {
+        dstr_lstrip_c(pImp(), c);
+    }
+
+    void lstrip(const char* sz)
+    {
+        dstr_lstrip_sz(pImp(), sz);
+    }
+
+    void rstrip(char c)
+    {
+        dstr_rstrip_c(pImp(), c);
+    }
+
+    void rstrip(const char* sz)
+    {
+        dstr_rstrip_sz(pImp(), sz);
+    }
+
+    void strip(char c)
+    {
+        rstrip(c);
+        lstrip(c);
+    }
+
+    void strip(const char* sz)
+    {
+        rstrip(sz);
+        lstrip(sz);
     }
 
     void clear()
