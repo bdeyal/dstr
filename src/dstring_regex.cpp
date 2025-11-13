@@ -10,12 +10,11 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <memory>
-#include <stdexcept>
+#include <exception>
 #include <cstdint>
 #include <cassert>
-#include <unordered_map>
+#include <deque>
 #include <vector>
-#include <list>
 
 #include <dstr/dstring.hpp>
 
@@ -519,41 +518,6 @@ size_t DStringRegex::subst_single(DString& subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-// Hash for both string and its option (seed for DString::hash)
-//
-struct RegexKey {
-    RegexKey(const DString& rhs, int opts)
-        :
-        pattern(rhs),
-        hash_value(rhs.hash(opts))
-    {
-    }
-
-    RegexKey(const RegexKey& rhs)
-        :
-        pattern(rhs.pattern),
-        hash_value(rhs.hash_value)
-    {
-    }
-
-    bool operator==(const RegexKey& rhs) const {
-        return pattern == rhs.pattern && hash_value == rhs.hash_value;
-    }
-
-    DString pattern;
-    size_t hash_value;
-};
-/*-------------------------------------------------------------------------------*/
-/*-------------------------------------------------------------------------------*/
-
-struct RegexHash {
-    size_t operator()(const RegexKey& key) const {
-        return key.hash_value;
-    }
-};
-/*-------------------------------------------------------------------------------*/
-/*-------------------------------------------------------------------------------*/
-
 // Borrowed std::make_unique from C++14 code
 //
 #if __cplusplus <= 201103L
@@ -567,55 +531,45 @@ using std::make_unique;
 #endif
 /*-------------------------------------------------------------------------------*/
 
+/*-------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------*/
+
 template <size_t LIMIT>
 struct DStringRegexCache
 {
-    // Data member
-    //
-    std::unordered_map<RegexKey, std::unique_ptr<DStringRegex>, RegexHash> the_map;
-    std::list<RegexKey> fifo;
+    struct RegexCacheEntry {
+        RegexCacheEntry(const DString& rhs, int opts)
+            :
+            pattern(rhs),
+            options(opts),
+            pRE(make_unique<DStringRegex>(pattern, options))
+        {}
 
-    const DStringRegex& get_RE(const DString& pattern, int options)
-    {
-        RegexKey key(pattern, options);
-        auto iter = the_map.find(key);
-        if (iter == the_map.end()) {
-            // Just before insert we remove the oldest cached compiled
-            // Regex.
-            //
-            remove_oldest_if_limit();
+        DString pattern;
+        int options;
+        std::unique_ptr<DStringRegex> pRE;
+    };
 
-            // DstringRegex compiles pattern
-            //
-            auto upRE = make_unique<DStringRegex>(pattern, options);
-            fifo.push_back(key);
-
-            // if `emplace` below fails we must undo the push_back line above
-            //
-            try {
-                iter = the_map.emplace(key, std::move(upRE)).first;
-            }
-            catch (...) {
-                fifo.pop_back();
-                throw;
+    const DStringRegex& get_RE(const DString& pattern, int options) {
+        for (const auto& entry : fifo) {
+            if (pattern == entry.pattern && options == entry.options) {
+                return *entry.pRE;
             }
         }
-        return *iter->second;
+
+        remove_oldest_if_full();
+        fifo.emplace_back(pattern, options);
+        return *(fifo.back().pRE);
     }
 
-    void remove_oldest_if_limit()
-    {
-        assert(fifo.size() == the_map.size());
+    void remove_oldest_if_full() {
         while (fifo.size() >= LIMIT) {
-            const auto& oldest = fifo.front();
-            printf("Remove key for: %s\n:", oldest.pattern.c_str());
-            the_map.erase(oldest);
             fifo.pop_front();
         }
     }
+
+    std::deque<RegexCacheEntry> fifo;
 };
-/*-------------------------------------------------------------------------------*/
-/*-------------------------------------------------------------------------------*/
 
 static thread_local DStringRegexCache<30> re_cache;
 

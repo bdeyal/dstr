@@ -27,6 +27,15 @@ std::ostream& operator<<(std::ostream& out, const DString::Match& m)
 }
 //--------------------------------------------------------------------------------
 
+std::ostream& operator<<(std::ostream& out, const std::vector<DString>& v)
+{
+    out << "[\"" << DString("\", \"").join(v) << "\"]";
+    return out;
+}
+//--------------------------------------------------------------------------------
+
+
+
 using namespace std;
 
 void test_dstring_extract_numbers()
@@ -60,6 +69,11 @@ void test_dstring_extract_numbers()
 
         offset = matches[0].offset + matches[0].length;
     }
+
+    // Extract with groups into a vector
+    std::vector<DString> v;
+    DString("This is some string").capture("\\w+", v, DSTR_REGEX_GLOBAL);
+    cout << v << endl;
 }
 //--------------------------------------------------------------------------------
 
@@ -312,8 +326,26 @@ void test_dstring_subst()
     assert(hello.subst("ell", "al") == "halo");
     assert(hello.subst("xyzzy", "*") == "hello");
     assert(DString("THX1138").subst("\\d+", "00") == "THX00");
+
+    assert(DString("string    methods in C++").subst("\\s+", "-", DSTR_REGEX_GLOBAL) == "string-methods-in-C++");
 }
 //--------------------------------------------------------------------------------
+
+bool isIP(const DString& s)
+{
+    return s.match(R"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})");
+}
+//--------------------------------------------------------------------------------
+
+void test_ip_address()
+{
+    assert(isIP("1.2.3.4"));
+    assert(isIP("192.168.1.26"));
+    assert(!isIP("1922.168.1.26"));
+    assert(!isIP("192.1681.1.26"));
+    assert(!isIP("192.168.1111.26"));
+    assert(!isIP("192.168.1.2611"));
+}
 
 int main()
 {
@@ -327,6 +359,7 @@ int main()
         test_dstring_group_extract();
         test_dstring_group_patterns();
         test_dstring_extract_numbers();
+        test_ip_address();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;
