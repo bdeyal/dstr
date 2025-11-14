@@ -155,8 +155,7 @@ static DSTR dstr_alloc_empty(void)
 //
 DSTR dstr_grow_ctor(DSTR p, size_t len)
 {
-    if (len < DSTR_INITIAL_CAPACITY)
-        return p;
+    assert(len >= DSTR_INITIAL_CAPACITY);
 
     size_t new_capacity = DSTR_INITIAL_CAPACITY;
     while (new_capacity <= len)
@@ -245,7 +244,7 @@ static inline void dstr_truncate_imp(DSTR p, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline DSTR_BOOL is_overlap(CDSTR p, const char* value)
+static inline DSTR_BOOL is_overlap(DSTR p, const char* value)
 {
     return (DBUF(p) <= value && value < dstr_end_of_storage(p));
 }
@@ -253,32 +252,28 @@ static inline DSTR_BOOL is_overlap(CDSTR p, const char* value)
 
 static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
-    size_t bytes_to_move;
-    char* first = DBUF(p);
-    ptrdiff_t overlap = -1;
+    if (len == 0)
+        return DSTR_SUCCESS;
 
     // different handling if source data within the DSTR allocated
     // buffer
     //
-    if (is_overlap(p, buff)) {
+    ptrdiff_t overlap = -1;
+    char* first = DBUF(p);
+
+    if (is_overlap(p, buff))
         overlap = buff - first;
-    }
 
-    if (len == 0)
-        return DSTR_SUCCESS;
-
-    if (!dstr_grow_by(p, len)) {
+    if (!dstr_grow_by(p, len))
         return DSTR_FAIL;
-    }
 
     // in case of overlap, check if realloc() moved the buffer
     //
-    if (overlap >= 0 && (DBUF(p) != first)) {
+    if (overlap >= 0 && (DBUF(p) != first))
         buff = DBUF(p) + overlap;
-    }
 
     index = min_2(index, DLEN(p));
-    bytes_to_move = DLEN(p) - index;
+    size_t bytes_to_move = DLEN(p) - index;
 
     if (bytes_to_move > 0) {
         assert(index + len + bytes_to_move < DCAP(p));
@@ -297,15 +292,52 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
+/*  For cases we are SURE that 'buff' is not in 'dest' buffer range
+ */
+static int dstr_append_no_overlap(DSTR dest, const char* buff, size_t len)
+{
+    if (!dstr_grow_by(dest, len))
+        return DSTR_FAIL;
+
+    memcpy(dstr_tail(dest), buff, len);
+    DLEN(dest) += len;
+    DVAL(dest, DLEN(dest)) = '\0';
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
+static inline int dstr_append_imp(DSTR p, const char* buff, size_t len)
+{
+    if (len == 0)
+        return DSTR_SUCCESS;
+
+    if (is_overlap(p, buff)) {
+        const char* first = DBUF(p);
+        ptrdiff_t overlap = buff - first;
+
+        if (!dstr_grow_by(p, len))
+            return DSTR_FAIL;
+
+        if (DBUF(p) != first)
+            buff = DBUF(p) + overlap;
+    }
+    else {
+        if (!dstr_grow_by(p, len)) {
+            return DSTR_FAIL; }}
+
+    memcpy(dstr_tail(p), buff, len);
+    DLEN(p) += len;
+    DVAL(p, DLEN(p)) = '\0';
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
 static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 {
-    size_t bytes_to_move;
-
     if (count == 0)
         return DSTR_SUCCESS;
 
     index = min_2(index, DLEN(p));
-    bytes_to_move = DLEN(p) - index;
 
     if (c == '\0') {
         dstr_truncate_imp(p, index);
@@ -316,6 +348,7 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
         return DSTR_FAIL;
     }
 
+    size_t bytes_to_move = DLEN(p) - index;
     if (bytes_to_move > 0) {
         memmove(dstr_address(p, index + count),
                 dstr_address(p, index),
@@ -333,8 +366,6 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 
 static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
 {
-    size_t bytes_to_move;
-
     if (count == 0)
         return;
 
@@ -342,7 +373,7 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
         return;
 
     count = min_2(count, DLEN(p) - pos);
-    bytes_to_move = DLEN(p) - pos - count;
+    size_t bytes_to_move = DLEN(p) - pos - count;
 
     if (bytes_to_move > 0)
         memmove(dstr_address(p, pos), dstr_address(p, pos + count), bytes_to_move);
@@ -351,20 +382,6 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
     DVAL(p,DLEN(p)) = '\0';
 
     dstr_assert_valid(p);
-}
-/*-------------------------------------------------------------------------------*/
-
-/*  For cases we are SURE that 'value' is not in 'dest' buffer range
- */
-static int dstr_append_no_overlap(DSTR dest, const char* value, size_t len)
-{
-    if (!dstr_grow_by(dest, len))
-        return DSTR_FAIL;
-
-    memcpy(dstr_tail(dest), value, len);
-    DLEN(dest) += len;
-    DVAL(dest, DLEN(dest)) = '\0';
-    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -419,15 +436,6 @@ static inline int dstr_replace_cc_imp(DSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline int dstr_append_imp(DSTR p, const char* value, size_t len)
-{
-    if (is_overlap(p, value))
-        return dstr_insert_imp(p, DLEN(p), value, len);
-
-    return dstr_append_no_overlap(p, value, len);
-}
-/*-------------------------------------------------------------------------------*/
-
 static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
 {
     if (DLEN(p) > 0)
@@ -442,6 +450,9 @@ static inline DSTR dstr_create_len_imp(size_t len)
     DSTR p = dstr_alloc_empty();
     if (!p)
         return NULL;
+
+    if (len < DSTR_INITIAL_CAPACITY)
+        return p;
 
     return dstr_grow_ctor(p, len);
 }
@@ -1130,7 +1141,8 @@ int dstr_append_sz(DSTR p, const char* value)
     if (value == NULL)
         return DSTR_SUCCESS;
 
-    return dstr_append_imp(p, value, strlen(value));
+    size_t len = strlen(value);
+    return dstr_append_imp(p, value, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1141,9 +1153,7 @@ int dstr_append_bl(DSTR p, const char* buff, size_t len)
     if (buff == NULL)
         return DSTR_SUCCESS;
 
-    if ((len = strnlen(buff, len)) == 0)
-        return DSTR_SUCCESS;
-
+    len = strnlen(buff, len);
     return dstr_append_imp(p, buff, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -1155,10 +1165,7 @@ int dstr_append_range(DSTR p, const char* first, const char* last)
     if (first == NULL)
         return DSTR_SUCCESS;
 
-    size_t len;
-    if ((len = strnlen(first, (last - first))) == 0)
-        return DSTR_SUCCESS;
-
+    size_t len = strnlen(first, (last - first));
     return dstr_append_imp(p, first, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -2632,13 +2639,11 @@ int dstr_multiply(DSTR dest, size_t n)
         if (!dstr_append_no_overlap(&tmp, DBUF(dest), DLEN(dest)))
             return DSTR_FAIL;
     }
-
     dstr_swap(&tmp, dest);
     dstr_assert_valid(dest);
     return DSTR_SUCCESS;
 }
 /*--------------------------------------------------------------------------*/
-
 
 static inline bool is_tr_range(const char* s)
 {
