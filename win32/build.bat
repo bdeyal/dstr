@@ -1,4 +1,8 @@
 
+REM To find PCRE2 DLL files
+REM
+PATH=C:\PCRE2\BIN;%PATH%
+
 REM  MSVC build and test
 REM
 nmake -f NMakefile clean

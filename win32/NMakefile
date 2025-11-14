@@ -3,13 +3,13 @@
 !IF "$(COMP)" == "clang"
 CC = clang-cl.exe
 CXX = clang-cl.exe
-CFLAGS = -O2 /D_CRT_SECURE_NO_WARNINGS /I..\include
-CXXFLAGS = $(CFLAGS) /DNO_DSTRING_REGEX
+CFLAGS = /std:c11 /O2 /nologo /D_CRT_SECURE_NO_WARNINGS /I..\include
+CXXFLAGS = /EHsc $(CFLAGS)
 !ELSE
 CC = cl.exe
 CXX = cl.exe
 CFLAGS = /std:c11 /O2 /nologo /I..\include
-CXXFLAGS = /EHsc /O2 /nologo /I..\include /DNO_DSTRING_REGEX
+CXXFLAGS = /EHsc /O2 /nologo /I..\include
 !ENDIF
 
 PROGRAMS = \
@@ -19,7 +19,8 @@ PROGRAMS = \
 	test_map.exe \
 	test_vector.exe \
 	test_tokens.exe \
-	test_algs.exe
+	test_algs.exe \
+	test_regex.exe
 
 DEPS = ..\include\dstr\dstr.h
 DEPS_PP = ..\include\dstr\dstring.hpp ..\include\dstr\dstr.h
@@ -47,6 +48,13 @@ test_tokens.exe: ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj
 test_algs.exe: ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj
 	$(CXX) $(CXXFLAGS) /nologo ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
+test_regex.exe: ..\test\test_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo -IC:\PCRE2\INCLUDE \
+	..\src\dstring_regex.cpp \
+	..\test\test_regex.cpp \
+	..\src\dstring.cpp \
+	dstr.obj /Fe"$@" C:\PCRE2\LIB\libpcre2-8.lib
+
 clean:
 	del *~ *.obj
 	del $(PROGRAMS)
@@ -59,6 +67,7 @@ test: $(PROGRAMS)
 	.\test_map.exe
 	.\test_tokens.exe
 	.\test_algs.exe
+	.\test_regex.exe
 
 dstr.obj: ..\src\dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c
