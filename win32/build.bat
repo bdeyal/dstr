@@ -1,7 +1,7 @@
 
 REM To find PCRE2 DLL files
 REM
-PATH=C:\PCRE2\BIN;%PATH%
+@PATH=C:\PCRE2\bin\%Platform%;%PATH%
 
 REM  MSVC build and test
 REM
