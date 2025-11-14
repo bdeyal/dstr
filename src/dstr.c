@@ -1810,57 +1810,22 @@ int dstr_fgetline(DSTR p, FILE* fp)
 }
 /*-------------------------------------------------------------------------------*/
 
-
-// tested on /usr/share/dict/words (479826 words, 0 collisions)
-// https://github.com/aappleby/smhasher/blob/master/src/MurmurHash2.cpp
+// FNV-1 hash algorithm
 //
+// See: https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 unsigned long dstr_hash(CDSTR src, int seed)
 {
-    dstr_assert_valid(src);
-
-    const unsigned long m = 0x5bd1e995;
-    const int r = 24;
+    unsigned long h = seed;
 
     size_t len = DLEN(src);
     const char* data = DBUF(src);
 
-    // the hash result
-    //
-    unsigned long h = (unsigned long) seed;
-    h ^= len;
+    h ^= 2166136261;
 
-    while (len >= 4) {
-        unsigned long k = *(unsigned int*)data;
-
-        k *= m;
-        k ^= (k >> r);
-        k *= m;
-
-        h *= m;
-        h ^= k;
-
-        data += 4;
-        len -= 4;
+    for (unsigned int i = 0; i < len; i++) {
+        h ^= data[i];
+        h *= 16777619;
     }
-
-    switch(len)
-    {
-    case 3:
-        h ^= (data[2] << 16);
-        /* fall through */
-    case 2:
-        h ^= (data[1] << 8);
-        /* fall through */
-    case 1:
-        h ^= (data[0]);
-        h *= m;
-    };
-
-    // A few final mixes of the hash to ensure the last few
-    // bytes are well-incorporated.
-    h ^= (h >> 13);
-    h *= m;
-    h ^= (h >> 15);
 
     return h;
 }
