@@ -28,5 +28,6 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 static inline int isblank(int c) { return isspace(c); }
 
 #define nullptr ((void*)0)
+#define noexcept
 
 #endif

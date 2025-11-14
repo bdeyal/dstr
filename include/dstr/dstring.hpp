@@ -10,6 +10,10 @@
 #include <iosfwd>
 #include <vector>
 
+#if __cplusplus >= 201703L
+#include <string_view>
+#endif
+
 #include <dstr/dstr.h>
 
 #if !defined(NO_DSTRING_REGEX)
@@ -152,6 +156,16 @@ public:
         init_data(first, len);
         init_length(len);
     }
+
+#if __cplusplus >= 201703L
+    // Support std::string_view
+    //
+    operator std::string_view() const noexcept {
+        return std::string_view(data(), size());
+    }
+    // delegate to other ctor
+    explicit DString(const std::string_view& sv) : DString(sv.data(), sv.size()) {}
+#endif
 
     // substr returns a new string constructed by the 'substr constructor'
     //
@@ -740,11 +754,11 @@ public:
 
     // Inline queries
     //
-    const char* c_str()    const { return m_imp.data;     }
-    const char* data()     const { return m_imp.data;     }
-    size_t      length()   const { return m_imp.length;   }
-    size_t      capacity() const { return m_imp.capacity; }
-    bool        empty()    const { return length() == 0;  }
+    const char* c_str()    const noexcept { return m_imp.data;     }
+    const char* data()     const noexcept { return m_imp.data;     }
+    size_t      length()   const noexcept { return m_imp.length;   }
+    size_t      capacity() const noexcept { return m_imp.capacity; }
+    bool        empty()    const noexcept { return length() == 0;  }
 
     bool index_ok(size_t pos) const
     {

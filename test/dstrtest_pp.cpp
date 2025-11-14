@@ -2034,6 +2034,28 @@ void test_times()
 }
 //-------------------------------------------------
 
+void test_std_string_view()
+{
+    TRACE_FN();
+#if __cplusplus >= 201703L
+    DString s1("Hello world today is Friday");
+    string_view sv = s1;
+
+    cout << s1 << endl;
+    cout << sv << endl;
+
+    assert(sv == s1);
+    assert(sv.data() == s1.data());
+
+    DString s2(sv);
+    assert(s2 == s1);
+    assert(s2 == sv);
+    assert(s1.data() != s2.data());
+#endif
+}
+//-------------------------------------------------
+
+
 int main()
 {
     test_ctor();
@@ -2093,5 +2115,6 @@ int main()
     test_operator_square_braces();
     test_strip();
     test_times();
+    test_std_string_view();
     // last test
 }

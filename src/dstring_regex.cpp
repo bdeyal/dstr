@@ -11,10 +11,10 @@
  */
 #include <memory>
 #include <exception>
-#include <cstdint>
 #include <cassert>
 #include <deque>
 #include <vector>
+#include <cstdint>
 
 #include <dstr/dstring.hpp>
 
@@ -93,6 +93,7 @@ class DStringError : public std::exception
 {
 public:
     DStringError(DString&& s) : m_s(s) {}
+    DStringError(const DString& s) : m_s(s) {}
     DStringError(const char* s) : m_s(s) {}
     const char* what() const noexcept { return m_s.c_str(); }
 private:
