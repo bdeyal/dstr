@@ -218,3 +218,9 @@ std::ostream& operator<<(std::ostream& out, DStringView sv)
     return out;
 }
 //----------------------------------------------------------------
+
+DString DStringView::substr(size_t pos, size_t len) const
+{
+    return DString(*this, pos, len);
+}
+//----------------------------------------------------------------

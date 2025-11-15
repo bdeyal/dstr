@@ -10,6 +10,10 @@
 #include <iosfwd>
 #include <dstr/dstr.h>
 
+// Forward declaraton
+//
+class DString;
+
 class DStringView {
 public:
     friend class DString;
@@ -72,6 +76,11 @@ public:
         m_imp = rhs.m_imp;
         rhs.m_imp = tmp;
     }
+
+    // We (currently) return a copied object since we require DStringView
+    // to be null terminated without null bytes in range
+    //
+    DString substr(size_t pos, size_t count = NPOS) const;
 
     size_t copy_substr(size_t pos, size_t numbytes, char dest[], size_t destsize)
     {
@@ -404,7 +413,6 @@ private:
     }
 };
 //----------------------------------------------------------------
-
 
 // Include guard
 //
