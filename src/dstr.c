@@ -161,11 +161,6 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
     while (new_capacity <= len)
         new_capacity *= 2;
 
-    if (new_capacity >= UINT32_MAX) {
-        dstr_out_of_memory();
-        return NULL;
-    }
-
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
         dstr_out_of_memory();
@@ -193,11 +188,6 @@ static DSTR dstr_grow(DSTR p, size_t len)
     new_capacity = p->capacity;
     while (new_capacity <= len)
         new_capacity *= 2;
-
-    if (new_capacity >= UINT32_MAX) {
-        errno = ERANGE;
-        return NULL;
-    }
 
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
         assert(D_IS_SSO(p));
@@ -1460,8 +1450,8 @@ int dstr_insert_bl(DSTR p, size_t index, const char* buff, size_t len)
     if (buff == NULL || len == 0)
         return DSTR_SUCCESS;
 
+    if (len > PTRDIFF_MAX) len = PTRDIFF_MAX;
     len = strnlen(buff, len);
-
     return dstr_insert_imp(p, index, buff, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -2029,23 +2019,6 @@ DSTR_BOOL dstr_isidentifier(CDSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR_BOOL dstr_islower(CDSTR p)
-{
-    dstr_assert_valid(p);
-
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
-
-    for (size_t n = 0; n < DLEN(p); ++n) {
-        char ch = DVAL(p, n);
-        if (isalpha(ch) && !islower(ch))
-            return DSTR_FALSE;
-    }
-
-    return DSTR_TRUE;
-}
-/*-------------------------------------------------------------------------------*/
-
 DSTR_BOOL dstr_isnumeric(CDSTR p)
 {
     return dstr_isdigits(p);
@@ -2106,6 +2079,9 @@ DSTR_BOOL dstr_istitle(CDSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
+//  01234   -> false
+//  01234AB -> true
+//
 DSTR_BOOL dstr_isupper(CDSTR p)
 {
     dstr_assert_valid(p);
@@ -2113,13 +2089,43 @@ DSTR_BOOL dstr_isupper(CDSTR p)
     if (DLEN(p) == 0)
         return DSTR_FALSE;
 
+    size_t upper_count = 0;
     for (size_t n = 0; n < DLEN(p); ++n) {
         char c = DVAL(p, n);
-        if (isalpha(c) && !isupper(c))
-            return DSTR_FALSE;
+        if (isalpha(c)) {
+            if (!isupper(c)) {
+                return DSTR_FALSE; }
+            else {
+                ++upper_count; }
+        }
     }
 
-    return DSTR_TRUE;
+    return upper_count > 0;
+}
+/*-------------------------------------------------------------------------------*/
+
+//  01234   -> false
+//  01234ab -> true
+//
+DSTR_BOOL dstr_islower(CDSTR p)
+{
+    dstr_assert_valid(p);
+
+    if (DLEN(p) == 0)
+        return DSTR_FALSE;
+
+    size_t lower_count = 0;
+    for (size_t n = 0; n < DLEN(p); ++n) {
+        char ch = DVAL(p, n);
+        if (isalpha(ch)) {
+            if (!islower(ch)) {
+                return DSTR_FALSE; }
+            else {
+                ++lower_count; }
+        }
+    }
+
+    return lower_count > 0;
 }
 /*-------------------------------------------------------------------------------*/
 

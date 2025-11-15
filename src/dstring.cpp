@@ -7,6 +7,7 @@
 #include <iostream>
 #include <ctype.h>
 #include <dstr/dstring.hpp>
+#include <dstr/dstring_view.hpp>
 
 DString& DString::sprintf(const char* fmt, ...)
 {
@@ -215,3 +216,12 @@ void DString::rpartition(const char* s, std::vector<DString>& dest) const
     tmp.swap(dest);
 }
 //-----------------------------------------------------------
+
+// DStringView and iostream
+//
+std::ostream& operator<<(std::ostream& out, DStringView sv)
+{
+    out.write(sv.data(), sv.size());
+    return out;
+}
+//----------------------------------------------------------------

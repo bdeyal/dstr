@@ -20,10 +20,14 @@ PROGRAMS = \
 	test_vector.exe \
 	test_tokens.exe \
 	test_algs.exe \
-	test_regex.exe
+	test_regex.exe \
+	test_view.exe
 
 DEPS = ..\include\dstr\dstr.h
-DEPS_PP = ..\include\dstr\dstring.hpp ..\include\dstr\dstr.h
+DEPS_PP = \
+	..\include\dstr\dstring.hpp \
+	..\include\dstr\dstring_view.hpp \
+	..\include\dstr\dstr.h
 
 all: $(PROGRAMS)
 
@@ -56,6 +60,9 @@ test_regex.exe: ..\test\test_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.c
 	..\test\test_regex.cpp \
 	..\src\dstring.cpp \
 	dstr.obj /Fe"$@" C:\PCRE2\lib\%%Platform%%\libpcre2-8.lib
+
+test_view.exe: ..\test\test_view.cpp ..\src\dstring.cpp dstr.obj
+	$(CXX) $(CXXFLAGS) /nologo ..\test\test_view.cpp ..\src\dstring.cpp dstr.obj /Fe"$@"
 
 clean:
 	del *~ *.obj

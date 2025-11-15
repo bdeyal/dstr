@@ -4,8 +4,8 @@
  * This file is part of DString C and C++ dynamic string library,
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
-#ifndef DSTRING_H_INCLUDED
-#define DSTRING_H_INCLUDED
+#ifndef DSTRING_HPP_INCLUDED
+#define DSTRING_HPP_INCLUDED
 
 #include <iosfwd>
 #include <vector>
@@ -15,12 +15,13 @@
 #endif
 
 #include <dstr/dstr.h>
+#include <dstr/dstring_view.hpp>
 
 #if !defined(NO_DSTRING_REGEX)
 #include <dstr/dstr_regex_fwd.h>
 #endif
 
-// A thin wrapper around C DSTR_TYPE
+// A C++ wrapper around C DSTR_TYPE
 //
 class DString {
 public:
@@ -128,6 +129,23 @@ public:
         init_length(count);
     }
 
+    // DString sub_string(other_dstr, 5, 5);
+    //
+    DString(DStringView sv, size_t pos, size_t count)
+    {
+        if (pos >= sv.size() || count == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
+
+        if (count > sv.size() - pos)
+            count = sv.size() - pos;
+
+        init_capacity(count);
+        init_data(sv.data() + pos, count);
+        init_length(count);
+    }
+
     // DString s("abcdefg", 3) -> "abc"
     //
     DString(const char* buffer, size_t len)
@@ -157,14 +175,39 @@ public:
         init_length(len);
     }
 
+    // Support DStringView
+    //
+    explicit DString(DStringView sv)
+        :
+        DString(sv.data(), sv.size())
+    {
+    }
+
+    DStringView view() const noexcept
+    {
+        return DStringView(data(), size());
+    }
+
+    operator DStringView() const noexcept
+    {
+        return view();
+    }
+
 #if __cplusplus >= 201703L
     // Support std::string_view
     //
-    operator std::string_view() const noexcept {
+    operator std::string_view() const noexcept
+    {
         return std::string_view(data(), size());
     }
+
     // delegate to other ctor
-    explicit DString(const std::string_view& sv) : DString(sv.data(), sv.size()) {}
+    //
+    explicit DString(std::string_view sv)
+        :
+        DString(sv.data(), sv.size())
+    {
+    }
 #endif
 
     // substr returns a new string constructed by the 'substr constructor'
@@ -275,6 +318,12 @@ public:
         return *this;
     }
 
+    DString& assign(DStringView sv)
+    {
+        return assign(sv.data(), sv.length());
+    }
+
+
 #if __cplusplus >= 201103L
     DString& assign(DString&& rhs) noexcept
     {
@@ -311,16 +360,21 @@ public:
         return *this;
     }
 
+    DString& insert(size_t pos, const char* buff, size_t len)
+    {
+        dstr_insert_bl(pImp(), pos, buff, len);
+        return *this;
+    }
+
     DString& insert(size_t pos, const DString& rhs)
     {
         dstr_insert_ds(pImp(), pos, rhs.pImp());
         return *this;
     }
 
-    DString& insert(size_t pos, const char* buff, size_t len)
+    DString& insert(size_t pos, DStringView sv)
     {
-        dstr_insert_bl(pImp(), pos, buff, len);
-        return *this;
+        return insert(pos, sv.data(), sv.size());
     }
 
     DString& insert(size_t pos, const char* first, const char* last)
@@ -440,15 +494,20 @@ public:
         return *this;
     }
 
-    DString& append(const DString& rhs)
-    {
-        dstr_append_ds(pImp(), rhs.pImp());
-        return *this;
-    }
-
     DString& append(const char* buff, size_t len)
     {
         dstr_append_bl(pImp(), buff, len);
+        return *this;
+    }
+
+    DString& append(DStringView sv)
+    {
+        return append(sv.data(), sv.size());
+    }
+
+    DString& append(const DString& rhs)
+    {
+        dstr_append_ds(pImp(), rhs.pImp());
         return *this;
     }
 
@@ -546,16 +605,21 @@ public:
         return *this;
     }
 
+    DString& replace(size_t pos, size_t len, const char* buff, size_t bufflen)
+    {
+        dstr_replace_bl(pImp(), pos, len, buff, bufflen);
+        return *this;
+    }
+
     DString& replace(size_t pos, size_t len, const DString& rhs)
     {
         dstr_replace_ds(pImp(), pos, len, rhs.pImp());
         return *this;
     }
 
-    DString& replace(size_t pos, size_t len, const char* buff, size_t bufflen)
+    DString& replace(size_t pos, size_t len, DStringView sv)
     {
-        dstr_replace_bl(pImp(), pos, len, buff, bufflen);
-        return *this;
+        return replace(pos, len, sv.data(), sv.size());
     }
 
     DString& replace(size_t pos, size_t len, const char* first, const char* last)
@@ -1021,42 +1085,42 @@ public:
         return dstr_fgetline(pImp(), fp);
     }
 
-    int stoi(size_t* index = nullptr, int base = 10)
+    int stoi(size_t* index = nullptr, int base = 10) const
     {
         return dstr_to_int(pImp(), index, base);
     }
 
-    long stol(size_t* index = nullptr, int base = 10)
+    long stol(size_t* index = nullptr, int base = 10) const
     {
         return dstr_to_long(pImp(), index, base);
     }
 
-    unsigned long stoul(size_t* index = nullptr, int base = 10)
+    unsigned long stoul(size_t* index = nullptr, int base = 10) const
     {
         return dstr_to_ulong(pImp(), index, base);
     }
 
-    long long stoll(size_t* index = nullptr, int base = 10)
+    long long stoll(size_t* index = nullptr, int base = 10) const
     {
         return dstr_to_llong(pImp(), index, base);
     }
 
-    unsigned long long stoull(size_t* index = nullptr, int base = 10)
+    unsigned long long stoull(size_t* index = nullptr, int base = 10) const
     {
         return dstr_to_ullong(pImp(), index, base);
     }
 
-    float stof(size_t* index = nullptr)
+    float stof(size_t* index = nullptr) const
     {
         return dstr_to_float(pImp(), index);
     }
 
-    double stod(size_t* index = nullptr)
+    double stod(size_t* index = nullptr) const
     {
         return dstr_to_double(pImp(), index);
     }
 
-    long double stold(size_t* index = nullptr)
+    long double stold(size_t* index = nullptr) const
     {
         return dstr_to_ldouble(pImp(), index);
     }
@@ -1092,32 +1156,32 @@ public:
 
     // Container types for matches and DString itself
     //
-    typedef std::vector<Match>   MatchVector;
+    typedef std::vector<Match> MatchVector;
 
     // *this is an exact match
     //
-    bool match(const DString& pattern, size_t offset = 0) const;
+    bool match(DStringView pattern, size_t offset = 0) const;
 
     // pattern appears somewhere in *this. Returns position or NPOS
     //
-    size_t match_within(const DString& pattern, size_t offset = 0) const;
+    size_t match_within(DStringView pattern, size_t offset = 0) const;
 
     // store match info in Match parameter
     //
-    int match(const DString& ptrn, size_t offset, Match& m, int opts = 0) const;
+    int match(DStringView ptrn, size_t offset, Match& m, int opts = 0) const;
 
-    int match(const DString& pattern, Match& mtch, int options = 0) const
+    int match(DStringView pattern, Match& mtch, int options = 0) const
     {
         return match(pattern, 0, mtch, options);
     }
 
     // match groups into a vector of matches
     //
-    int match_groups(const DString& pattern, size_t offset,
+    int match_groups(DStringView pattern, size_t offset,
                      MatchVector& matches,
                      int options = 0) const;
 
-    int match_groups(const DString& pattern,
+    int match_groups(DStringView pattern,
                      MatchVector& matches,
                      int options = 0) const
     {
@@ -1126,19 +1190,19 @@ public:
 
     // capture - returns matches as strings or vector of strings
     //
-    DString capture(const DString& pattern, size_t offset,
+    DString capture(DStringView pattern, size_t offset,
                     int options = 0) const;
 
-    DString capture(const DString& pattern, int options = 0) const
+    DString capture(DStringView pattern, int options = 0) const
     {
         return capture(pattern, 0, options);
     }
 
-    int capture(const DString& pattern, size_t offset,
+    int capture(DStringView pattern, size_t offset,
                 std::vector<DString>& strings,
                 int options = 0) const;
 
-    int capture(const DString& pattern,
+    int capture(DStringView pattern,
                 std::vector<DString>& strings,
                 int options = 0) const
     {
@@ -1147,25 +1211,25 @@ public:
 
     // substitute
     //
-    int subst_inplace(const DString& pattern, size_t offset,
-                      const DString& replacement,
+    int subst_inplace(DStringView pattern, size_t offset,
+                      DStringView replacement,
                       int options = 0);
 
-    int subst_inplace(const DString& pattern, const DString& r, int options = 0)
+    int subst_inplace(DStringView pattern, DStringView r, int options = 0)
     {
         return subst_inplace(pattern, 0, r, options);
     }
 
-    DString subst(const DString& pattern, size_t offset,
-                       const DString& replacement,
-                       int options = 0) const
+    DString subst(DStringView pattern, size_t offset,
+                  DStringView replacement,
+                  int options = 0) const
     {
         DString result(*this);
         result.subst_inplace(pattern, offset, replacement, options);
         return result;
     }
 
-    DString subst(const DString& pattern, const DString& r, int options = 0) const
+    DString subst(DStringView pattern, DStringView r, int options = 0) const
     {
         return subst(pattern, 0, r, options);
     }

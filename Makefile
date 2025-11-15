@@ -50,10 +50,11 @@ PROGRAMS = \
 	./test/test_vector \
 	./test/test_tokens \
 	./test/test_algs \
-	./test/test_regex
+	./test/test_regex \
+	./test/test_view
 
 DEPS = ./include/dstr/dstr.h
-DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstr.h
+DEPS_PP = ./include/dstr/dstring.hpp ./include/dstr/dstring_view.hpp ./include/dstr/dstr.h
 LIB=./lib64/libdstr.a
 
 all: $(PROGRAMS)
@@ -85,6 +86,9 @@ all: $(PROGRAMS)
 ./test/test_regex: ./test/test_regex.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
 
+./test/test_view: ./test/test_view.cpp $(LIB) $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
+
 $(LIB): ./src/dstring_regex.cpp ./src/dstring.cpp ./src/dstr.c $(DEPS_PP) Makefile
 	mkdir -p ./lib64
 	$(CC) -c $(CFLAGS) -DNDEBUG ./src/dstr.c -o ./src/dstr.o
@@ -106,6 +110,7 @@ test: $(PROGRAMS) ./test/test_file.txt
 	./test/test_algs
 	./test/test_regex
 	./test/test_hash
+	./test/test_view
 
 .PHONY: testvg
 testvg: $(PROGRAMS) ./test/test_file.txt
@@ -118,6 +123,7 @@ testvg: $(PROGRAMS) ./test/test_file.txt
 	valgrind ./test/test_algs
 	valgrind ./test/test_regex
 	valgrind ./test/test_hash
+	valgrind ./test/test_view
 
 
 ./test/test_file.txt:
@@ -142,6 +148,7 @@ install: $(LIB)
 	/usr/bin/mkdir -p $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr.h $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring.hpp $(PREFIX_INCLUDE)
+	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring_view.hpp $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr_regex_fwd.h $(PREFIX_INCLUDE)
 	/usr/bin/mkdir -p $(PREFIX_LIB)
 	/usr/bin/install -m 0644 -o root -g root $(LIB) -t $(PREFIX_LIB)
@@ -149,6 +156,7 @@ install: $(LIB)
 uninstall:
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring.hpp
+	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring_view.hpp
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr_regex_fwd.h
 	/usr/bin/rmdir $(PREFIX_INCLUDE)
 	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.a

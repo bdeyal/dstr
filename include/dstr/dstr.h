@@ -19,18 +19,29 @@
 #define strncasecmp _strnicmp
 #endif
 
+#if UINTPTR_MAX == 0xffffffff
 #define DSTR_INITIAL_CAPACITY (16U)
+#else
+#define DSTR_INITIAL_CAPACITY (32U)
+#endif
 
 typedef struct DSTR_TYPE
 {
-    uint32_t length;
-    uint32_t capacity;
     char*  data;
+    size_t length;
+    size_t capacity;
+    size_t lasterr; /*unused*/
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
 
-typedef       struct DSTR_TYPE*  DSTR;
-typedef const struct DSTR_TYPE*  CDSTR;
+typedef struct DSTR_VIEW
+{
+    const char* data;
+    size_t      length;
+} DSTR_VIEW;
+
+typedef       struct DSTR_TYPE*       DSTR;
+typedef const struct DSTR_TYPE*       CDSTR;
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))

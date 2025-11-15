@@ -17,6 +17,7 @@
 #include <cstdint>
 
 #include <dstr/dstring.hpp>
+#include <dstr/dstring_view.hpp>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -28,7 +29,7 @@ namespace {
 class DStringRegex
 {
 public:
-    DStringRegex(const DString& pattern, int options = 0);
+    DStringRegex(DStringView pattern, int options = 0);
     ~DStringRegex();
 
     // Implemented below
@@ -38,7 +39,7 @@ public:
     int match_groups(const DString& s, size_t off, DString::MatchVector& m,  int opts) const;
     DString capture(const DString& subject, size_t offset, int options) const;
     int capture(const DString& subject, size_t offset, std::vector<DString>& strings, int options) const;
-    int subst(DString& subject, size_t offset, const DString& replacement, int options) const;
+    int subst(DString& subject, size_t offset, DStringView repl, int options) const;
 
     // Inlines using the above
     //
@@ -54,7 +55,7 @@ public:
     int capture(const DString& subject, std::vector<DString>& strings, int options) const {
         return capture(subject, 0, strings, options);
     }
-    int subst(DString& s, const DString& r, int options) const {
+    int subst(DString& s, DStringView r, int options) const {
         return subst(s, 0, r, options);
     }
 private:
@@ -76,7 +77,7 @@ private:
     }
 
 private:
-    size_t subst_single(DString& subject, size_t offset, const DString& repl, int options) const;
+    size_t subst_single(DString& subject, size_t offset, DStringView repl, int options) const;
 
     // Prevent default, copy and assignment
     //
@@ -182,7 +183,7 @@ static int match_options(int options)
 }
 /*-------------------------------------------------------------------------------*/
 
-DStringRegex::DStringRegex(const DString& pattern, int options)
+DStringRegex::DStringRegex(DStringView pattern, int options)
     :
     _pRE(nullptr)
 {
@@ -415,7 +416,7 @@ int DStringRegex::capture(const DString& subject, size_t offset,
 /*-------------------------------------------------------------------------------*/
 
 int DStringRegex::subst(DString& subject, size_t offset,
-                        const DString& replacement,
+                        DStringView replacement,
                         int options) const
 {
     if (options & DSTR_REGEX_GLOBAL)
@@ -436,7 +437,7 @@ int DStringRegex::subst(DString& subject, size_t offset,
 /*-------------------------------------------------------------------------------*/
 
 size_t DStringRegex::subst_single(DString& subject, size_t offset,
-                                  const DString& replacement,
+                                  DStringView replacement,
                                   int options) const
 {
     if (offset >= subject.length()) return DString::NPOS;
@@ -539,7 +540,7 @@ template <size_t LIMIT>
 struct DStringRegexCache
 {
     struct RegexCacheEntry {
-        RegexCacheEntry(const DString& rhs, int opts)
+        RegexCacheEntry(DStringView rhs, int opts)
             :
             pattern(rhs),
             options(opts),
@@ -551,7 +552,7 @@ struct DStringRegexCache
         std::unique_ptr<DStringRegex> pRE;
     };
 
-    const DStringRegex& get_RE(const DString& pattern, int options) {
+    const DStringRegex& get_RE(DStringView pattern, int options) {
         for (const auto& entry : fifo) {
             if (pattern == entry.pattern && options == entry.options) {
                 return *entry.pRE;
@@ -581,7 +582,7 @@ static thread_local DStringRegexCache<30> re_cache;
 //
 //  DSTRING REGEX API
 //
-bool DString::match(const DString& pattern, size_t offset) const
+bool DString::match(DStringView pattern, size_t offset) const
 {
     int ctor_opts = (DSTR_REGEX_CASELESS |
                      DSTR_REGEX_MULTILINE |
@@ -605,7 +606,7 @@ bool DString::match(const DString& pattern, size_t offset) const
 }
 /*-------------------------------------------------------------------------------*/
 
-size_t DString::match_within(const DString& pattern, size_t offset) const
+size_t DString::match_within(DStringView pattern, size_t offset) const
 {
     int ctor_opts = (DSTR_REGEX_CASELESS |
                      DSTR_REGEX_MULTILINE |
@@ -628,7 +629,7 @@ size_t DString::match_within(const DString& pattern, size_t offset) const
 }
 /*-------------------------------------------------------------------------------*/
 
-DString DString::capture(const DString& pattern,
+DString DString::capture(DStringView pattern,
                          size_t offset,
                          int options) const
 {
@@ -638,7 +639,7 @@ DString DString::capture(const DString& pattern,
 /*-------------------------------------------------------------------------------*/
 
 
-int DString::capture(const DString& pattern,
+int DString::capture(DStringView pattern,
                      size_t offset,
                      std::vector<DString>& vec,
                      int options) const
@@ -648,14 +649,14 @@ int DString::capture(const DString& pattern,
 }
 /*-------------------------------------------------------------------------------*/
 
-int DString::match(const DString& pattern, size_t offset, DString::Match& m, int opts) const
+int DString::match(DStringView pattern, size_t offset, DString::Match& m, int opts) const
 {
     const auto& re = re_cache.get_RE(pattern, opts);
     return re.match(*this, offset, m, opts);
 }
 /*-------------------------------------------------------------------------------*/
 
-int DString::match_groups(const DString& pattern, size_t offset,
+int DString::match_groups(DStringView pattern, size_t offset,
                           DString::MatchVector& matches,
                           int options) const
 {
@@ -664,8 +665,8 @@ int DString::match_groups(const DString& pattern, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-int DString::subst_inplace(const DString& pattern, size_t offset,
-                           const DString& replacement,
+int DString::subst_inplace(DStringView pattern, size_t offset,
+                           DStringView replacement,
                            int options)
 {
     const auto& re = re_cache.get_RE(pattern, options);
