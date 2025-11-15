@@ -19,32 +19,40 @@
 #define strncasecmp _strnicmp
 #endif
 
-#if UINTPTR_MAX == 0xffffffff
-#define DSTR_INITIAL_CAPACITY (16U)
+#if UINTPTR_MAX == UINT32_MAX
+#define DSTR_PTRSIZE 4
+#elif UINTPTR_MAX == UINT64_MAX
+#define DSTR_PTRSIZE 8
 #else
-#define DSTR_INITIAL_CAPACITY (32U)
+#error Cannot detect pointer size
 #endif
 
+#define DSTR_INITIAL_CAPACITY (16U)
+
 // First two members in DSTR_VIEW and DSTR_TYPE must be identical
-// in type and order
+// in type and order. In 64 bit a 4 byte size added for padding
 //
 typedef struct DSTR_VIEW
 {
     const char* data;
-    size_t      length;
+    uint32_t    length;
+#if DSTR_PTRSIZE == 8
+    uint32_t    capacity; // padding, unused
+#endif
 } DSTR_VIEW;
+/*--------------------------------------------------------------------------*/
 
 typedef struct DSTR_TYPE
 {
-    char*  data;
-    size_t length;
-    size_t capacity;
-    size_t lasterr; /*unused*/
-    char   sso_buffer[DSTR_INITIAL_CAPACITY];
+    char*    data;
+    uint32_t length;
+    uint32_t capacity;
+    char     sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
+/*--------------------------------------------------------------------------*/
 
-typedef       struct DSTR_TYPE*       DSTR;
-typedef const struct DSTR_TYPE*       CDSTR;
+typedef       struct DSTR_TYPE* DSTR;
+typedef const struct DSTR_TYPE* CDSTR;
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))

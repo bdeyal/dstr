@@ -169,6 +169,12 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
     while (new_capacity <= len)
         new_capacity *= 2;
 
+    if (new_capacity > UINT32_MAX) {
+        errno = ENOMEM;
+        dstr_out_of_memory();
+        return NULL;
+    }
+
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
         dstr_out_of_memory();
@@ -196,6 +202,12 @@ static DSTR dstr_grow(DSTR p, size_t len)
     new_capacity = p->capacity;
     while (new_capacity <= len)
         new_capacity *= 2;
+
+    if (new_capacity > UINT32_MAX) {
+        errno = ENOMEM;
+        dstr_out_of_memory();
+        return NULL;
+    }
 
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
         assert(D_IS_SSO(p));
