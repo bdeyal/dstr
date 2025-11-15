@@ -38,8 +38,8 @@
 #define BASE(p)       (p)
 #define DBUF(p)       (BASE(p)->data)
 #define DLEN(p)       (BASE(p)->length)
-#define DCAP(p)       (BASE(p)->capacity)
 #define DVAL(p, i)    DBUF(p)[(i)]
+#define DCAP(p)       (BASE(p)->capacity)
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
 
@@ -49,16 +49,24 @@
     dstr_init_data(&identifier)
 /*--------------------------------------------------------------------------*/
 
-#define dstr_assert_valid(p) do {                               \
-    assert((p) != NULL);                                        \
-    assert(DBUF(p) != NULL);                                    \
-    assert(DCAP(p) > 0);                                        \
-    assert(DLEN(p) < DCAP(p));                                  \
-    assert(DVAL(p, DLEN(p)) == '\0');                           \
-    assert(DLEN(p) == strlen(DBUF(p)));                         \
-    assert((DCAP(p) % DSTR_INITIAL_CAPACITY) == 0);             \
+// Checks for CDSTR type (a.k.s const DSTR_TYPE*)
+//
+#define dstr_assert_view(p) do {                                \
+        assert((p) != NULL);                                    \
+        assert(DBUF(p) != NULL);                                \
+        assert(DVAL(p, DLEN(p)) == '\0');                       \
+        assert(DLEN(p) == strlen(DBUF(p)));                     \
 } while(0)
+
+// Checks for DSTR type (a.k.s DSTR_TYPE*)
+//
+#define dstr_assert_valid(p) do {                               \
+        dstr_assert_view(p);                                    \
+        assert(DLEN(p) < DCAP(p));                              \
+        assert((DCAP(p) % DSTR_INITIAL_CAPACITY) == 0);         \
+    } while(0)
 /*--------------------------------------------------------------------------*/
+
 
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
@@ -107,7 +115,7 @@ static inline const char* dstr_address_c(CDSTR p, size_t pos) {
 static inline char* dstr_tail(DSTR p) {
     return dstr_address(p, DLEN(p));
 }
-static inline const char* dstr_end_of_storage(CDSTR p) {
+static inline const char* dstr_end_of_storage(DSTR p) {
     return dstr_address_c(p, DCAP(p));
 }
 /*-------------------------------------------------------------------------------*/
@@ -215,7 +223,6 @@ static DSTR dstr_grow(DSTR p, size_t len)
     p->data = newbuff;
 
     dstr_assert_valid(p);
-    assert(len < DCAP(p));
     return p;
 }
 /*-------------------------------------------------------------------------------*/
@@ -296,7 +303,7 @@ static int dstr_append_no_overlap(DSTR dest, const char* buff, size_t len)
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline int dstr_append_imp(DSTR p, const char* buff, size_t len)
+static int dstr_append_imp(DSTR p, const char* buff, size_t len)
 {
     if (len == 0)
         return DSTR_SUCCESS;
@@ -476,7 +483,7 @@ static size_t dstr_find_sz_imp(CDSTR p,
     const char* search_loc;
     const char* found_loc;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (pos >= DLEN(p))
         return DSTR_NPOS;
@@ -502,7 +509,7 @@ static size_t dstr_rfind_sz_imp(CDSTR p,
 {
     const char* found_loc = NULL;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     size_t slen = strlen(s);
     if (slen > DLEN(p))
@@ -547,7 +554,7 @@ static DSTR_BOOL dstr_suffix_sz_imp(CDSTR p,
     size_t compare_len;
     const char* compare_addr;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     assert(s != NULL);
 
     if (DSTR_IS_NULL(p) || s == NULL)
@@ -573,7 +580,7 @@ static DSTR_BOOL dstr_prefix_sz_imp(CDSTR p,
 {
     const char* pbuf;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     assert(s != NULL);
 
     pbuf = DBUF(p);
@@ -601,7 +608,7 @@ static size_t dstr_find_c_imp(CDSTR p,
     const char* search_loc;
     const char* found_loc;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (pos >= DLEN(p))
         return DSTR_NPOS;
@@ -627,7 +634,7 @@ static size_t dstr_rfind_c_imp(CDSTR p,
 {
     const char* found_loc = NULL;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_NPOS;
@@ -666,7 +673,7 @@ static size_t dstr_ffo_imp(CDSTR p,
 {
     size_t result = pos;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     assert(pattern != NULL);
 
     if (pattern == NULL)
@@ -692,7 +699,7 @@ static size_t dstr_flo_imp(CDSTR p,
                            const char* pattern,
                            int not_off)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (pattern == NULL || *pattern == '\0' || DLEN(p) == 0)
         return DSTR_NPOS;
@@ -731,7 +738,7 @@ static DSTR_BOOL dstr_isdigits_imp(CDSTR src, DSTR_BOOL is_hex)
 {
     size_t n;
 
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
 
     if (DLEN(src) == 0)
         return DSTR_FALSE;
@@ -806,14 +813,14 @@ DSTR dstr_create_sz(const char* sz)
 
 DSTR dstr_create_ds(CDSTR rhs)
 {
-    dstr_assert_valid(rhs);
+    dstr_assert_view(rhs);
     return dstr_create_buff_imp(DBUF(rhs), DLEN(rhs));
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR dstr_create_substr(CDSTR p, size_t pos, size_t count)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) > pos) {
         count = min_2(count, DLEN(p) - pos);
@@ -1006,7 +1013,7 @@ void dstr_remove(DSTR p, size_t pos, size_t count)
 int dstr_assign_ds(DSTR dest, CDSTR src)
 {
     dstr_assert_valid(dest);
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
 
     return
         (dest == src) ?
@@ -1061,7 +1068,7 @@ int dstr_assign_range(DSTR p, const char* first, const char* last)
 
 int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (pos >= DLEN(p))
         return DSTR_SUCCESS;
@@ -1071,7 +1078,7 @@ int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count)
 
     const char* buff = DBUF(p) + pos;
     size_t len = min_2(count, DLEN(p)-pos);
-    return dstr_assign_imp( dest, buff, len);
+    return dstr_assign_imp(dest, buff, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1118,7 +1125,7 @@ int dstr_append_c(DSTR p, char c)
 int dstr_append_ds(DSTR dest, CDSTR src)
 {
     dstr_assert_valid(dest);
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
 
     return dstr_append_imp(dest, DBUF(src), DLEN(src));
 }
@@ -1300,7 +1307,7 @@ size_t dstr_substr(CDSTR p,
                    char dest[],
                    size_t destsize)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (pos >= DLEN(p))
         return 0;
@@ -1437,7 +1444,7 @@ int dstr_insert_sz(DSTR p, size_t index, const char* value)
 int dstr_insert_ds(DSTR dest, size_t index, CDSTR src)
 {
     dstr_assert_valid(dest);
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
     return dstr_insert_imp(dest, index, DBUF(src), DLEN(src));
 }
 /*-------------------------------------------------------------------------------*/
@@ -1487,7 +1494,7 @@ int dstr_replace_sz(DSTR p, size_t pos, size_t len, const char* value)
 int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src)
 {
     dstr_assert_valid(dest);
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
     return dstr_replace_imp(dest, pos, len, DBUF(src), DLEN(src));
 }
 /*-------------------------------------------------------------------------------*/
@@ -1812,6 +1819,8 @@ int dstr_fgetline(DSTR p, FILE* fp)
 // See: https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 unsigned long dstr_hash(CDSTR src, int seed)
 {
+    dstr_assert_view(src);
+
     unsigned long h = seed;
 
     size_t len = DLEN(src);
@@ -1882,7 +1891,7 @@ long dstr_atoi(CDSTR src)
     const char* p;
     int base = 10;
 
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
 
     p = DBUF(src);
 
@@ -1911,7 +1920,7 @@ long dstr_atoi(CDSTR src)
 
 double dstr_atof(CDSTR src)
 {
-    dstr_assert_valid(src);
+    dstr_assert_view(src);
     return atof(DBUF(src));
 }
 /*-------------------------------------------------------------------------------*/
@@ -1930,7 +1939,7 @@ DSTR_BOOL dstr_isxdigits(CDSTR src)
 
 DSTR_BOOL dstr_isalnum(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -1946,7 +1955,7 @@ DSTR_BOOL dstr_isalnum(CDSTR p)
 
 DSTR_BOOL dstr_isalpha(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -1962,7 +1971,7 @@ DSTR_BOOL dstr_isalpha(CDSTR p)
 
 DSTR_BOOL dstr_isascii(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -1978,7 +1987,7 @@ DSTR_BOOL dstr_isascii(CDSTR p)
 
 DSTR_BOOL dstr_isblank(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -2002,7 +2011,7 @@ static inline bool is_ident_(char c) { return isalnum(c) || c == '_'; }
 
 DSTR_BOOL dstr_isidentifier(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -2027,7 +2036,7 @@ DSTR_BOOL dstr_isnumeric(CDSTR p)
 
 DSTR_BOOL dstr_isprintable(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -2043,7 +2052,7 @@ DSTR_BOOL dstr_isprintable(CDSTR p)
 
 DSTR_BOOL dstr_isspace(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -2084,7 +2093,7 @@ DSTR_BOOL dstr_istitle(CDSTR p)
 //
 DSTR_BOOL dstr_isupper(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -2109,7 +2118,7 @@ DSTR_BOOL dstr_isupper(CDSTR p)
 //
 DSTR_BOOL dstr_islower(CDSTR p)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (DLEN(p) == 0)
         return DSTR_FALSE;
@@ -2134,7 +2143,7 @@ int dstr_to_int(CDSTR p, size_t* index, int base)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2159,7 +2168,7 @@ long dstr_to_long(CDSTR p, size_t* index, int base)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2184,7 +2193,7 @@ unsigned long dstr_to_ulong(CDSTR p, size_t* index, int base)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2209,7 +2218,7 @@ long long dstr_to_llong(CDSTR p, size_t* index, int base)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2234,7 +2243,7 @@ unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2259,7 +2268,7 @@ float dstr_to_float(CDSTR p, size_t* index)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2284,7 +2293,7 @@ double dstr_to_double(CDSTR p, size_t* index)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2309,7 +2318,7 @@ long double dstr_to_ldouble(CDSTR p, size_t* index)
     int errsave = errno;
     errno = 0;
 
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
     const char* str = dstr_cstring(p);
 
     char* endp;
@@ -2837,7 +2846,7 @@ void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2)
 
 size_t dstr_partition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (!s)
         s = "";
@@ -2872,7 +2881,7 @@ size_t dstr_partition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 
 size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 {
-    dstr_assert_valid(p);
+    dstr_assert_view(p);
 
     if (!s)
         s = "";

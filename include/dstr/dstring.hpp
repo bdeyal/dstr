@@ -83,13 +83,13 @@ public:
     //
     DString(const DString& rhs)
     {
-        if (rhs.length() == 0) {
+        if (rhs.size() == 0) {
             dstr_init_data(pImp());
             return;
         }
-        init_capacity(rhs.length());
-        init_data(rhs.data(), rhs.length());
-        init_length(rhs.length());
+        init_capacity(rhs.size());
+        init_data(rhs.data(), rhs.size());
+        init_length(rhs.size());
     }
 
 #if __cplusplus >= 201103L
@@ -97,7 +97,7 @@ public:
     {
         // shallow copy data from rhs (+ sso_buffer fix if needed)
         //
-        m_imp.length   = rhs.length();
+        m_imp.length   = rhs.size();
         m_imp.capacity = rhs.capacity();
         if (rhs.capacity() == DSTR_INITIAL_CAPACITY) {
             memcpy(m_imp.sso_buffer, rhs.m_imp.sso_buffer, DSTR_INITIAL_CAPACITY);
@@ -114,7 +114,7 @@ public:
 
     // DString sub_string(other_dstr, 5, 5);
     //
-    DString(const DString& rhs, size_t pos, size_t count)
+    DString(DStringView rhs, size_t pos, size_t count)
     {
         if (pos >= rhs.size() || count == 0) {
             dstr_init_data(pImp());
@@ -126,23 +126,6 @@ public:
 
         init_capacity(count);
         init_data(rhs.data() + pos, count);
-        init_length(count);
-    }
-
-    // DString sub_string(other_dstr, 5, 5);
-    //
-    DString(DStringView sv, size_t pos, size_t count)
-    {
-        if (pos >= sv.size() || count == 0) {
-            dstr_init_data(pImp());
-            return;
-        }
-
-        if (count > sv.size() - pos)
-            count = sv.size() - pos;
-
-        init_capacity(count);
-        init_data(sv.data() + pos, count);
         init_length(count);
     }
 
@@ -175,12 +158,17 @@ public:
         init_length(len);
     }
 
-    // Support DStringView
+    // Support DStringView (same code as copy ctor)
     //
     explicit DString(DStringView sv)
-        :
-        DString(sv.data(), sv.size())
     {
+        if (sv.size() == 0) {
+            dstr_init_data(pImp());
+            return;
+        }
+        init_capacity(sv.size());
+        init_data(sv.data(), sv.size());
+        init_length(sv.size());
     }
 
     DStringView view() const noexcept
@@ -267,8 +255,17 @@ public:
 
     DString& operator=(const DString& rhs)
     {
+        // no op on s = s
         if (&rhs != this)
             assign(rhs);
+        return *this;
+    }
+
+    DString& operator=(DStringView sv)
+    {
+        // do nothing if sv originated from *this
+        if (sv.data() != data())
+            assign(sv);
         return *this;
     }
 
@@ -294,12 +291,6 @@ public:
         return *this;
     }
 
-    DString& assign(const char* sz)
-    {
-        dstr_assign_sz(pImp(), sz);
-        return *this;
-    }
-
     DString& assign(const char* buff, size_t len)
     {
         dstr_assign_bl(pImp(), buff, len);
@@ -312,17 +303,17 @@ public:
         return *this;
     }
 
-    DString& assign(const DString& rhs)
+    DString& assign(const char* sz)
     {
-        dstr_assign_ds(pImp(), rhs.pImp());
+        dstr_assign_sz(pImp(), sz);
         return *this;
     }
 
     DString& assign(DStringView sv)
     {
-        return assign(sv.data(), sv.length());
+        dstr_assign_ds(pImp(), sv.pImp());
+        return *this;
     }
-
 
 #if __cplusplus >= 201103L
     DString& assign(DString&& rhs) noexcept
@@ -333,7 +324,7 @@ public:
     }
 #endif
 
-    DString& assign(const DString& rhs, size_t pos, size_t count)
+    DString& assign(DStringView rhs, size_t pos, size_t count)
     {
         dstr_assign_substr(pImp(), rhs.pImp(), pos, count);
         return *this;
@@ -366,15 +357,10 @@ public:
         return *this;
     }
 
-    DString& insert(size_t pos, const DString& rhs)
+    DString& insert(size_t pos, DStringView rhs)
     {
         dstr_insert_ds(pImp(), pos, rhs.pImp());
         return *this;
-    }
-
-    DString& insert(size_t pos, DStringView sv)
-    {
-        return insert(pos, sv.data(), sv.size());
     }
 
     DString& insert(size_t pos, const char* first, const char* last)
@@ -494,20 +480,15 @@ public:
         return *this;
     }
 
-    DString& append(const char* buff, size_t len)
+    DString& append(DStringView rhs)
     {
-        dstr_append_bl(pImp(), buff, len);
+        dstr_append_ds(pImp(), rhs.pImp());
         return *this;
     }
 
-    DString& append(DStringView sv)
+    DString& append(const char* buff, size_t len)
     {
-        return append(sv.data(), sv.size());
-    }
-
-    DString& append(const DString& rhs)
-    {
-        dstr_append_ds(pImp(), rhs.pImp());
+        dstr_append_bl(pImp(), buff, len);
         return *this;
     }
 
@@ -533,16 +514,16 @@ public:
         return append(sz);
     }
 
-    DString& operator+=(const DString& ds) {
+    DString& operator+=(DStringView ds) {
         return append(ds);
     }
 
     // Join inplace
     //
     DString& join_inplace(const char* sep, const std::vector<DString>& v);
-    DString& join_inplace(const DString& sep, const std::vector<DString>& v)
+    DString& join_inplace(DStringView sep, const std::vector<DString>& v)
     {
-        return join_inplace(sep.c_str(), v);
+        return join_inplace(sep.data(), v);
     }
 
     DString& join_inplace(const char* sep, const char* argv[], size_t argc)
@@ -557,9 +538,9 @@ public:
         return *this;
     }
 
-    DString& join_inplace(const DString& sep, const char* argv[], size_t argc)
+    DString& join_inplace(DStringView sv, const char* argv[], size_t argc)
     {
-        return join_inplace(sep.c_str(), argv, argc);
+        return join_inplace(sv.data(), argv, argc);
     }
 
     // join
@@ -611,15 +592,10 @@ public:
         return *this;
     }
 
-    DString& replace(size_t pos, size_t len, const DString& rhs)
+    DString& replace(size_t pos, size_t len, DStringView rhs)
     {
         dstr_replace_ds(pImp(), pos, len, rhs.pImp());
         return *this;
-    }
-
-    DString& replace(size_t pos, size_t len, DStringView sv)
-    {
-        return replace(pos, len, sv.data(), sv.size());
     }
 
     DString& replace(size_t pos, size_t len, const char* first, const char* last)
@@ -636,8 +612,8 @@ public:
         return *this;
     }
 
-    DString& replace_all(const DString& oldstr,
-                         const DString& newstr,
+    DString& replace_all(DStringView oldstr,
+                         DStringView newstr,
                          size_t count = DSTR_REPLACE_ALL)
     {
         dstr_replace_all_ds(pImp(), oldstr.pImp(), newstr.pImp(), count);
@@ -677,9 +653,9 @@ public:
     void split(char c, std::vector<DString>& dest) const;
     void split(const char* sep, std::vector<DString>& dest) const;
 
-    void split(const DString& sep, std::vector<DString>& dest)  const
+    void split(DStringView sep, std::vector<DString>& dest)  const
     {
-        split(sep.c_str(), dest);
+        split(sep.data(), dest);
     }
 
     void splitlines(std::vector<DString>& dest) const
@@ -688,9 +664,9 @@ public:
     }
 
     void tokenize(const char* separators, std::vector<DString>& dest) const;
-    void tokenize(const DString& separators, std::vector<DString>& dest) const
+    void tokenize(DStringView separators, std::vector<DString>& dest) const
     {
-        tokenize(separators.c_str(), dest);
+        tokenize(separators.data(), dest);
     }
 
     // split() without any separator will split on any whitespace
@@ -705,12 +681,12 @@ public:
     void partition(const char* s, std::vector<DString>& dest) const;
     void rpartition(const char* s, std::vector<DString>& dest) const;
 
-    void partition(const DString& s, std::vector<DString>& dest) const
+    void partition(DStringView s, std::vector<DString>& dest) const
     {
         partition(s.c_str(), dest);
     }
 
-    void rpartition(const DString& s, std::vector<DString>& dest) const
+    void rpartition(DStringView s, std::vector<DString>& dest) const
     {
         rpartition(s.c_str(), dest);
     }
@@ -924,7 +900,7 @@ public:
         return dstr_count_sz(pImp(), sz);
     }
 
-    size_t count(const DString& ds) const
+    size_t count(DStringView ds) const
     {
         return dstr_count_ds(pImp(), ds.pImp());
     }
@@ -934,7 +910,7 @@ public:
         return dstr_icount_sz(pImp(), sz);
     }
 
-    size_t icount(const DString& ds) const
+    size_t icount(DStringView ds) const
     {
         return dstr_icount_ds(pImp(), ds.pImp());
     }
@@ -994,7 +970,7 @@ public:
         return dstr_ffo_sz(pImp(), pos, s);
     }
 
-    size_t ffo(const DString& rhs, size_t pos = 0) const
+    size_t ffo(DStringView rhs, size_t pos = 0) const
     {
         return dstr_ffo_ds(pImp(), pos, rhs.pImp());
     }
@@ -1006,7 +982,7 @@ public:
         return dstr_ffno_sz(pImp(), pos, s);
     }
 
-    size_t ffno(const DString& rhs, size_t pos = 0) const
+    size_t ffno(DStringView rhs, size_t pos = 0) const
     {
         return dstr_ffno_ds(pImp(), pos, rhs.pImp());
     }
@@ -1018,7 +994,7 @@ public:
         return dstr_flo_sz(pImp(), pos, s);
     }
 
-    size_t flo(const DString& rhs, size_t pos = DSTR_NPOS) const
+    size_t flo(DStringView rhs, size_t pos = DSTR_NPOS) const
     {
         return dstr_flo_ds(pImp(), pos, rhs.pImp());
     }
@@ -1030,7 +1006,7 @@ public:
         return dstr_flno_sz(pImp(), pos, s);
     }
 
-    size_t flno(const DString& rhs, size_t pos = DSTR_NPOS) const
+    size_t flno(DStringView rhs, size_t pos = DSTR_NPOS) const
     {
         return dstr_flno_ds(pImp(), pos, rhs.pImp());
     }
@@ -1041,22 +1017,22 @@ public:
     //
     int compare(const char* sz)      const { return strcmp(data(), sz ? sz : ""); }
     int icompare(const char* sz)     const { return strcasecmp(data(), sz ? sz : ""); }
-    int compare(const DString& rhs)  const { return strcmp(data(), rhs.data()); }
-    int icompare(const DString& rhs) const { return strcasecmp(data(), rhs.data()); }
+    int compare(DStringView rhs)     const { return strcmp(data(), rhs.data()); }
+    int icompare(DStringView rhs)    const { return strcasecmp(data(), rhs.data()); }
 
-    bool iequal(const char* sz)     const { return (icompare(sz) == 0);  }
-    bool iequal(const DString& rhs) const { return (icompare(rhs) == 0); }
+    bool iequal(const char* sz)      const { return (icompare(sz) == 0);  }
+    bool iequal(DStringView rhs)     const { return (icompare(rhs) == 0); }
 
-    bool operator!=(const char* sz) const { return (compare(sz) != 0);  }
-    bool operator<(const char* sz) const  { return (compare(sz) < 0);   }
-    bool operator>(const char* sz) const  { return (compare(sz) > 0);   }
-    bool operator<=(const char* sz) const { return (compare(sz) <= 0);  }
-    bool operator>=(const char* sz) const { return (compare(sz) >= 0);  }
+    bool operator!=(const char* sz)  const { return (compare(sz) != 0);  }
+    bool operator<(const char* sz)   const { return (compare(sz) < 0);   }
+    bool operator>(const char* sz)   const { return (compare(sz) > 0);   }
+    bool operator<=(const char* sz)  const { return (compare(sz) <= 0);  }
+    bool operator>=(const char* sz)  const { return (compare(sz) >= 0);  }
 
-    bool operator<(const DString& rhs) const  { return (compare(rhs) < 0);  }
-    bool operator>(const DString& rhs) const  { return (compare(rhs) > 0);  }
-    bool operator<=(const DString& rhs) const { return (compare(rhs) <= 0); }
-    bool operator>=(const DString& rhs) const { return (compare(rhs) >= 0); }
+    bool operator<(DStringView rhs)  const { return (compare(rhs) < 0);  }
+    bool operator>(DStringView rhs)  const { return (compare(rhs) > 0);  }
+    bool operator<=(DStringView rhs) const { return (compare(rhs) <= 0); }
+    bool operator>=(DStringView rhs) const { return (compare(rhs) >= 0); }
 
     // micro optimization - check length before buffer
     //
@@ -1065,12 +1041,12 @@ public:
         return (compare(sz) == 0);
     }
 
-    bool operator==(const DString& rhs) const
+    bool operator==(DStringView rhs) const
     {
         return (size() == rhs.size()) && (compare(rhs) == 0);
     }
 
-    bool operator!=(const DString& rhs) const
+    bool operator!=(DStringView rhs) const
     {
         return (size() != rhs.size()) || (compare(rhs) != 0);
     }
@@ -1276,13 +1252,13 @@ private:
 // For use with std::unordered_map
 //
 struct DStringHasher {
-    size_t operator()(const DString& d) const { return d.hash(); }
+    size_t operator()(DStringView d) const { return d.hash(); }
 };
 
 // for use with std::map + no case comparisons
 //
 struct DString_NoCase {
-    bool operator()(const DString& s1, const DString& s2) const {
+    bool operator()(DStringView s1, DStringView s2) const {
         return s1.icompare(s2) < 0;
     }
 };
@@ -1290,35 +1266,35 @@ struct DString_NoCase {
 
 // various operator+()
 //
-inline DString operator+(const DString& lhs, const DString& rhs)
+inline DString operator+(DStringView lhs, DStringView rhs)
 {
     DString result(lhs);
     result.append(rhs);
     return result;
 }
 
-inline DString operator+(const DString& lhs, char ch)
+inline DString operator+(DStringView lhs, char ch)
 {
     DString result(lhs);
     result.append(ch);
     return result;
 }
 
-inline DString operator+(char ch, const DString& rhs)
+inline DString operator+(char ch, DStringView rhs)
 {
     DString result(ch, 1);
     result.append(rhs);
     return result;
 }
 
-inline DString operator+(const DString& lhs, const char* sz)
+inline DString operator+(DStringView lhs, const char* sz)
 {
     DString result(lhs);
     result.append(sz);
     return result;
 }
 
-inline DString operator+(const char* sz, const DString& rhs)
+inline DString operator+(const char* sz, DStringView rhs)
 {
     DString result(sz);
     result.append(rhs);
@@ -1328,7 +1304,7 @@ inline DString operator+(const char* sz, const DString& rhs)
 
 // DString and iostream
 //
-std::ostream& operator<<(std::ostream& out, const DString& s);
+std::ostream& operator<<(std::ostream& out, DStringView s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
 //----------------------------------------------------------------

@@ -34,25 +34,25 @@ public:
 
     // Implemented below
     //
-    bool match(const DString& subject, size_t offset, int options) const;
-    int match(const DString& s, size_t off, DString::Match& m, int opts) const;
-    int match_groups(const DString& s, size_t off, DString::MatchVector& m,  int opts) const;
-    DString capture(const DString& subject, size_t offset, int options) const;
-    int capture(const DString& subject, size_t offset, std::vector<DString>& strings, int options) const;
+    bool match(DStringView subject, size_t offset, int options) const;
+    int match(DStringView s, size_t off, DString::Match& m, int opts) const;
+    int match_groups(DStringView s, size_t off, DString::MatchVector& m,  int opts) const;
+    DString capture(DStringView subject, size_t offset, int options) const;
+    int capture(DStringView subject, size_t offset, std::vector<DString>& strings, int options) const;
     int subst(DString& subject, size_t offset, DStringView repl, int options) const;
 
     // Inlines using the above
     //
-    int match(const DString& s, DString::Match& m, int opts) const {
+    int match(DStringView s, DString::Match& m, int opts) const {
         return match(s, 0, m, opts);
     }
-    int match_groups(const DString& s, DString::MatchVector& m, int opts) const {
+    int match_groups(DStringView s, DString::MatchVector& m, int opts) const {
         return match_groups(s, 0, m, opts);
     }
-    DString capture(const DString& subject, int options) const {
+    DString capture(DStringView subject, int options) const {
         return capture(subject, 0, options);
     }
-    int capture(const DString& subject, std::vector<DString>& strings, int options) const {
+    int capture(DStringView subject, std::vector<DString>& strings, int options) const {
         return capture(subject, 0, strings, options);
     }
     int subst(DString& s, DStringView r, int options) const {
@@ -250,7 +250,7 @@ DStringRegex::~DStringRegex()
 }
 /*-------------------------------------------------------------------------------*/
 
-int DStringRegex::match(const DString& subject, size_t offset,
+int DStringRegex::match(DStringView subject, size_t offset,
                         DString::Match& mtch,
                         int options) const
 {
@@ -302,7 +302,7 @@ int DStringRegex::match(const DString& subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-bool DStringRegex::match(const DString& subject, size_t offset, int options) const
+bool DStringRegex::match(DStringView subject, size_t offset, int options) const
 {
     DString::Match mtch;
     match(subject, offset, mtch, options);
@@ -313,7 +313,7 @@ bool DStringRegex::match(const DString& subject, size_t offset, int options) con
 }
 /*-------------------------------------------------------------------------------*/
 
-int DStringRegex::match_groups(const DString& subject, size_t offset,
+int DStringRegex::match_groups(DStringView subject, size_t offset,
                                DString::MatchVector& matches,
                                int options) const
 {
@@ -381,7 +381,7 @@ handle_error:
 }
 /*-------------------------------------------------------------------------------*/
 
-DString DStringRegex::capture(const DString& subject, size_t offset,
+DString DStringRegex::capture(DStringView subject, size_t offset,
                               int options) const
 {
     DString::Match mtch;
@@ -393,7 +393,7 @@ DString DStringRegex::capture(const DString& subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-int DStringRegex::capture(const DString& subject, size_t offset,
+int DStringRegex::capture(DStringView subject, size_t offset,
                           std::vector<DString>& strings,
                           int options) const
 {
@@ -405,7 +405,7 @@ int DStringRegex::capture(const DString& subject, size_t offset,
     for (const auto& m: matches)
     {
         if (m.offset != DString::NPOS)
-            tmp.push_back(subject.substr(m.offset, m.length));
+            tmp.push_back({subject, m.offset, m.length});
         else
             tmp.push_back("");
     }

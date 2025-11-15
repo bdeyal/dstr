@@ -12,6 +12,8 @@
 
 class DStringView {
 public:
+    friend class DString;
+
     // Types, constants and typedefs
     //
     static const size_t NPOS = DSTR_NPOS;
@@ -66,7 +68,7 @@ public:
 
     void swap(DStringView& rhs)
     {
-        auto tmp = m_imp;
+        DSTR_VIEW tmp = m_imp;
         m_imp = rhs.m_imp;
         rhs.m_imp = tmp;
     }
@@ -298,27 +300,25 @@ public:
     //
     // Note: NULL C string is considered empty string ""
     //
-    int compare(const char* sz)      const { return strcmp(data(), sz ? sz : ""); }
-    int icompare(const char* sz)     const { return strcasecmp(data(), sz ? sz : ""); }
+    int compare(const char* sz)   const { return strcmp(data(), sz ? sz : ""); }
+    int icompare(const char* sz)  const { return strcasecmp(data(), sz ? sz : ""); }
     int compare(DStringView rhs)  const { return strcmp(data(), rhs.data()); }
     int icompare(DStringView rhs) const { return strcasecmp(data(), rhs.data()); }
 
-    bool iequal(const char* sz)     const { return (icompare(sz) == 0);  }
-    bool iequal(DStringView rhs) const { return (icompare(rhs) == 0); }
+    bool iequal(const char* sz)   const { return (icompare(sz) == 0);  }
+    bool iequal(DStringView rhs)  const { return (icompare(rhs) == 0); }
 
     bool operator!=(const char* sz) const { return (compare(sz) != 0);  }
-    bool operator<(const char* sz) const  { return (compare(sz) < 0);   }
-    bool operator>(const char* sz) const  { return (compare(sz) > 0);   }
+    bool operator<(const char* sz)  const { return (compare(sz) <  0);  }
+    bool operator>(const char* sz)  const { return (compare(sz) >  0);  }
     bool operator<=(const char* sz) const { return (compare(sz) <= 0);  }
     bool operator>=(const char* sz) const { return (compare(sz) >= 0);  }
 
-    bool operator<(DStringView rhs) const  { return (compare(rhs) < 0);  }
-    bool operator>(DStringView rhs) const  { return (compare(rhs) > 0);  }
+    bool operator<(DStringView rhs)  const { return (compare(rhs) < 0);  }
+    bool operator>(DStringView rhs)  const { return (compare(rhs) > 0);  }
     bool operator<=(DStringView rhs) const { return (compare(rhs) <= 0); }
     bool operator>=(DStringView rhs) const { return (compare(rhs) >= 0); }
 
-    // micro optimization - check length before buffer
-    //
     bool operator==(const char* sz) const
     {
         return (compare(sz) == 0);
@@ -404,25 +404,6 @@ private:
     }
 };
 //----------------------------------------------------------------
-
-// For use with std::unordered_map
-//
-struct DStringViewHasher {
-    size_t operator()(DStringView d) const { return d.hash(); }
-};
-
-// for use with std::map + no case comparisons
-//
-struct DStringView_NoCase {
-    bool operator()(DStringView s1, DStringView s2) const {
-        return s1.icompare(s2) < 0;
-    }
-};
-//----------------------------------------------------------------
-
-// IO
-//
-std::ostream& operator<<(std::ostream& out, DStringView sv);
 
 
 // Include guard

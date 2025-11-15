@@ -25,6 +25,15 @@
 #define DSTR_INITIAL_CAPACITY (32U)
 #endif
 
+// First two members in DSTR_VIEW and DSTR_TYPE must be identical
+// in type and order
+//
+typedef struct DSTR_VIEW
+{
+    const char* data;
+    size_t      length;
+} DSTR_VIEW;
+
 typedef struct DSTR_TYPE
 {
     char*  data;
@@ -33,12 +42,6 @@ typedef struct DSTR_TYPE
     size_t lasterr; /*unused*/
     char   sso_buffer[DSTR_INITIAL_CAPACITY];
 } DSTR_TYPE;
-
-typedef struct DSTR_VIEW
-{
-    const char* data;
-    size_t      length;
-} DSTR_VIEW;
 
 typedef       struct DSTR_TYPE*       DSTR;
 typedef const struct DSTR_TYPE*       CDSTR;

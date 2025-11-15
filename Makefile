@@ -37,8 +37,8 @@ ifeq ($(COMP),clang)
 	CXX=clang++
 endif
 
-CFLAGS +=-O3 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++17
+CFLAGS +=-O2 -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
 LDFLAGS += -L./lib64 -s
 
 PROGRAMS = \

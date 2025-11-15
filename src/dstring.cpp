@@ -29,13 +29,6 @@ DString& DString::append_sprintf(const char* fmt, ...)
 }
 //-----------------------------------------------------------
 
-std::ostream& operator<<(std::ostream& out, const DString& s)
-{
-    out.write(s.c_str(), s.size());
-    return out;
-}
-//-----------------------------------------------------------
-
 std::istream& operator>>(std::istream& in, DString& s)
 {
     char c;
@@ -217,7 +210,7 @@ void DString::rpartition(const char* s, std::vector<DString>& dest) const
 }
 //-----------------------------------------------------------
 
-// DStringView and iostream
+// DStringView and iostream (covers DString operator << too)
 //
 std::ostream& operator<<(std::ostream& out, DStringView sv)
 {
