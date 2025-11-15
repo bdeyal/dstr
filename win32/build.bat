@@ -6,13 +6,13 @@ REM
 REM  MSVC build and test
 REM
 nmake -f NMakefile clean
-nmake -f NMakefile
+nmake -f NMakefile /maxcpucount:8
 nmake -f NMakefile test
 
 REM  clang build and test
 REM
 nmake -f NMakefile clean
-nmake -f NMakefile COMP=clang
+nmake -f NMakefile COMP=clang /maxcpucount:8
 nmake -f NMakefile COMP=clang test
 
 REM  Clean all
