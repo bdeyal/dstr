@@ -28,7 +28,9 @@ typedef struct DSTR_VIEW
 {
     const char* data;
     uint32_t    length;
-    uint32_t    capacity; // unused
+#if UINTPTR_MAX > UINT32_MAX
+    uint32_t    capacity; // unused padding
+#endif
 } DSTR_VIEW;
 /*--------------------------------------------------------------------------*/
 
