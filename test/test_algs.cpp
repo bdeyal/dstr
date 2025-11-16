@@ -15,7 +15,7 @@ using namespace std;
 
 void test_back_inserter()
 {
-    DString s1("Hello World");
+    DStringView s1("Hello World");
     DString s2;
     assert(s1 != s2);
 
@@ -26,6 +26,8 @@ void test_back_inserter()
     s2 = "";
     std::copy(s1.begin(), s1.end(), back_inserter<DString>(s2));
     assert(s1 == s2);
+
+    cout << s1 << endl;
 }
 //--------------------------------------------------------------
 

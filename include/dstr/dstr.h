@@ -19,14 +19,6 @@
 #define strncasecmp _strnicmp
 #endif
 
-#if UINTPTR_MAX == UINT32_MAX
-#define DSTR_PTRSIZE 4
-#elif UINTPTR_MAX == UINT64_MAX
-#define DSTR_PTRSIZE 8
-#else
-#error Cannot detect pointer size
-#endif
-
 #define DSTR_INITIAL_CAPACITY (16U)
 
 // First two members in DSTR_VIEW and DSTR_TYPE must be identical
@@ -36,9 +28,7 @@ typedef struct DSTR_VIEW
 {
     const char* data;
     uint32_t    length;
-#if DSTR_PTRSIZE == 8
-    uint32_t    capacity; // padding, unused
-#endif
+    uint32_t    capacity; // unused
 } DSTR_VIEW;
 /*--------------------------------------------------------------------------*/
 

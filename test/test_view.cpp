@@ -139,12 +139,12 @@ void test_flo()
     DStringView emp("");
     assert( comment.flo("X") == DSTR_NPOS );
 
-#if 0
+#if 1
     DStringView path = "/path/to/a/directory/with/file.txt";
-    DStringView ext(path.substr(1 + path.flo(".")));
+    DString ext(path.substr(1 + path.flo(".")));
     assert(ext == "txt");
 
-    DStringView fname(path.substr(1+path.flo("/")));
+    DString fname(path.substr(1+path.flo("/")));
     assert(fname == "file.txt");
 #endif
 }

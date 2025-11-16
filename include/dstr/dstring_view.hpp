@@ -70,6 +70,16 @@ public:
             init_data(buffer, len); }
     }
 
+    DStringView& operator=(const char* sz)
+    {
+        if (!sz)
+            init_data("", 0);
+        else
+            init_data(sz, strlen(sz));
+
+        return *this;
+    }
+
     void swap(DStringView& rhs)
     {
         DSTR_VIEW tmp = m_imp;
