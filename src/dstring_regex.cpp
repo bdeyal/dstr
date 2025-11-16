@@ -326,8 +326,7 @@ int DStringRegex::match_groups(DStringView subject, size_t offset,
                          (PCRE2_SPTR)(subject.c_str()),
                          subject.size(),
                          offset,
-                         // match_options(options) & 0xFFFF,
-                         options & 0xFFFF,
+                         match_options(options) & 0xFFFF,
                          mdata.pointer(),
                          nullptr);
 
