@@ -86,8 +86,8 @@ DSTR dstr_create_range(const char* first, const char* last);
 
 /* create by slurp a textfile*/
 DSTR dstr_create_fromfile(const char* fname);
-DSTR dstr_assign_fromfile(DSTR p, const char* fname);
-DSTR dstr_slurp_stream(DSTR p, FILE* fp);
+int dstr_assign_fromfile(DSTR p, const char* fname);
+int dstr_slurp_stream(DSTR p, FILE* fp);
 
 /* create from a [v]sprintf like call*/
 DSTR dstr_create_sprintf(const char* fmt, ...);
@@ -131,6 +131,7 @@ int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
 /* join ARGV into DEST with separator SEP */
 int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n);
+int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n);
 
 /* duplicate self n times like $s x 5 in perl */
 int dstr_multiply(DSTR dest, size_t n);

@@ -261,7 +261,7 @@ static inline DSTR_BOOL is_overlap(DSTR p, const char* value)
 
 static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 {
-    if (len == 0)
+    if (buff == NULL || len == 0)
         return DSTR_SUCCESS;
 
     // different handling if source data within the DSTR allocated
@@ -292,7 +292,6 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
     }
 
     memcpy(dstr_address(p, index), buff, len);
-
     DLEN(p) += len;
     DVAL(p, DLEN(p)) = '\0';
 
@@ -327,6 +326,9 @@ static int dstr_append_imp(DSTR p, const char* buff, size_t len)
         if (!dstr_grow_by(p, len))
             return DSTR_FAIL;
 
+        // realloc in dstr_grow_by might change the base pointer.
+        // In case of overlap we must update
+        //
         if (DBUF(p) != first)
             buff = DBUF(p) + overlap;
     }
@@ -868,23 +870,37 @@ DSTR dstr_create_cc(char ch, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_slurp_stream(DSTR p, FILE* fp)
+int dstr_slurp_stream(DSTR p, FILE* fp)
 {
-    char chunk[4096];
+    dstr_assert_valid(p);
 
+    if (!fp) {
+        errno = EBADF;
+        return DSTR_FAIL;
+    }
+
+    char chunk[4096];
     for (;;) {
         size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
         if (len < sizeof(chunk)) {
             if (ferror(fp)) {
                 dstr_clear(p);
-                return NULL;
+                return DSTR_FAIL;
             }
         }
 
         if (len) {
+            // We don't allow null bytes in DSTR
+            //
+            if (memchr(chunk, '\0', len)) {
+                errno = EINVAL;
+                dstr_clear(p);
+                return DSTR_FAIL;
+            }
+
             if (!dstr_append_no_overlap(p, chunk, len)) {
                 dstr_clear(p);
-                return NULL;
+                return DSTR_FAIL;
             }
         }
 
@@ -894,58 +910,47 @@ DSTR dstr_slurp_stream(DSTR p, FILE* fp)
     }
 
     dstr_assert_valid(p);
-    return p;
+    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
 
-DSTR dstr_assign_fromfile(DSTR p, const char* fname)
+int dstr_assign_fromfile(DSTR p, const char* fname)
 {
     FILE* fp;
-    int original_errno = 0;
-    bool create_new = (p == NULL);
 
     if ((fp = fopen(fname, "r")) == NULL) {
-        return NULL;
+        return DSTR_FAIL;
     }
 
-    if (create_new) {
-        p = dstr_alloc_empty();
-        if (!p) goto err_close_fp;
-    }
-    else
-        dstr_clear(p);
-
-    if (dstr_slurp_stream(p, fp) == NULL)
-        goto err_clean_result;
-
+    dstr_clear(p);
+    int rc = dstr_slurp_stream(p, fp);
     fclose(fp);
     dstr_assert_valid(p);
-    return p;
-
-err_clean_result:
-    original_errno = errno;
-    if (create_new)
-        dstr_destroy(p);
-    /* fall through */
-
-err_close_fp:
-    if (!original_errno)
-        original_errno = errno;
-    fclose(fp);
-    errno = original_errno;
-    return NULL;
+    return rc;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR dstr_create_fromfile(const char* fname)
 {
-    return dstr_assign_fromfile(NULL, fname);
+    DSTR p = dstr_alloc_empty();
+
+    // if (!p) errno is already set
+    //
+    if (!p)
+        return NULL;
+
+    if (dstr_assign_fromfile(p, fname) == DSTR_FAIL) {
+        dstr_destroy(p);
+        return NULL;
+    }
+
+    return p;
 }
 /*-------------------------------------------------------------------------------*/
 
 void dstr_clean_data(DSTR p)
 {
-    if (!D_IS_SSO(p)) {
+    if (p && !D_IS_SSO(p)) {
         free(p->data);
     }
 }
@@ -1417,7 +1422,11 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr)
     if (!result)
         return NULL;
 
-    dstr_append_vsprintf(result, fmt, argptr);
+    if (dstr_append_vsprintf(result, fmt, argptr) == DSTR_FAIL) {
+        dstr_destroy(result);
+        return NULL;
+    }
+
     return result;
 }
 /*-------------------------------------------------------------------------------*/
@@ -1511,17 +1520,21 @@ int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_replace_bl(DSTR p, size_t pos, size_t count, const char* buff, size_t buflen)
+int dstr_replace_bl(DSTR p, size_t pos, size_t count, const char* buff, size_t len)
 {
     dstr_assert_valid(p);
-    return dstr_replace_imp(p, pos, count, buff, buflen);
+
+    /* check for null inside */
+    return dstr_replace_imp(p, pos, count, buff, len);
 }
 /*-------------------------------------------------------------------------------*/
 
 int dstr_replace_range(DSTR p, size_t pos, size_t count, const char* first, const char* last)
 {
     dstr_assert_valid(p);
-    return dstr_replace_imp(p, pos, count, first, last - first);
+
+    /* check for null inside */
+    return dstr_replace_imp(p, pos, count, first, (last -first));
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1755,21 +1768,21 @@ int dstr_fgets(DSTR p, FILE* fp)
     do {
         if ((c = fgetc(fp)) == EOF)
             return EOF;
-    } while (isspace(c));
+    } while (isspace(c) || c == '\0');
 
     /* read until next blank characters */
     for (;;) {
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
             if (!dstr_append_no_overlap(p, buf, bindex))
-                goto clear_eof;
+                goto clear_fail;
             bindex = 0;
         }
 
         if ((c = fgetc(fp)) == EOF)
             break;
 
-        if (isspace(c)) {
+        if (isspace(c) || c == '\0') {
             ungetc(c, fp);
             break;
         }
@@ -1777,12 +1790,12 @@ int dstr_fgets(DSTR p, FILE* fp)
 
     if (bindex) {
         if (!dstr_append_no_overlap(p, buf, bindex))
-            goto clear_eof;
+            goto clear_fail;
     }
 
     return DSTR_SUCCESS;
 
-clear_eof:
+clear_fail:
     dstr_clear(p);
     return EOF;
 }
@@ -1801,7 +1814,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
     char buf[128];
     size_t bindex = 0;
 
-    while ((c = fgetc(fp)) != EOF && c != '\n') {
+    while ((c = fgetc(fp)) != EOF && c != '\n' && c != '\0') {
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
             if (!dstr_append_no_overlap(p, buf, bindex)) {
@@ -1819,7 +1832,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
         }
     }
 
-    if (DLEN(p) > 0 || (c == '\n'))
+    if (DLEN(p) > 0 || (c == '\n') || (c == '\0'))
         return DSTR_SUCCESS;
 
     return EOF;
@@ -2630,7 +2643,9 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
     if (!sep)
         sep = "";
 
+    size_t len = strlen(sep);
     size_t index = 0;
+
     for (;;) {
         if (!dstr_append_sz(dest, argv[index]))
             return DSTR_FAIL;
@@ -2638,7 +2653,31 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
         if ((++index == n) || (argv[index] == NULL))
             break;
 
-        if (!dstr_append_sz(dest, sep))
+        if (!dstr_append_imp(dest, sep, len))
+            return DSTR_FAIL;
+    }
+
+    return DSTR_SUCCESS;
+}
+/*--------------------------------------------------------------------------*/
+
+int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n)
+{
+    // Nothing to join
+    //
+    if (!argv || !argv[0] || n == 0)
+        return DSTR_SUCCESS;;
+
+    size_t index = 0;
+
+    for (;;) {
+        if (!dstr_append_sz(dest, argv[index]))
+            return DSTR_FAIL;
+
+        if ((++index == n) || (argv[index] == NULL))
+            break;
+
+        if (!dstr_append_imp(dest, DBUF(sep), DLEN(sep)))
             return DSTR_FAIL;
     }
 
@@ -2663,10 +2702,15 @@ int dstr_multiply(DSTR dest, size_t n)
         return DSTR_FAIL;
 
     for (size_t i = 0; i < n; ++i) {
-        if (!dstr_append_no_overlap(&tmp, DBUF(dest), DLEN(dest)))
+        if (!dstr_append_no_overlap(&tmp, DBUF(dest), DLEN(dest))) {
+            dstr_clean_data(&tmp);
             return DSTR_FAIL;
+        }
     }
+
     dstr_swap(&tmp, dest);
+    dstr_clean_data(&tmp);
+
     dstr_assert_valid(dest);
     return DSTR_SUCCESS;
 }

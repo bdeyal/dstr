@@ -520,42 +520,33 @@ public:
 
     // Join inplace
     //
-    DString& join_inplace(const char* sep, const std::vector<DString>& v);
-    DString& join_inplace(DStringView sep, const std::vector<DString>& v)
-    {
-        return join_inplace(sep.data(), v);
-    }
+    DString& join_inplace(DStringView sep, const std::vector<DString>& v);
 
-    DString& join_inplace(const char* sep, const char* argv[], size_t argc)
+    DString& join_inplace(DStringView sep, const char* argv[], size_t argc)
     {
-        dstr_join_sz(pImp(), sep, argv, argc);
+        dstr_join_ds(pImp(), sep.pImp(), argv, argc);
         return *this;
     }
 
-    DString& join_inplace(const char* sep, char* argv[], size_t argc)
+    DString& join_inplace(DStringView sep, char* argv[], size_t argc)
     {
-        dstr_join_sz(pImp(), sep, (const char**)argv, argc);
-        return *this;
+        return join_inplace(sep, (const char**)argv, argc);
     }
 
-    DString& join_inplace(DStringView sv, const char* argv[], size_t argc)
-    {
-        return join_inplace(sv.data(), argv, argc);
-    }
 
     // join
     //
     DString join(const std::vector<DString>& v) const
     {
         DString result;
-        result.join_inplace(this->c_str(), v);
+        result.join_inplace(*this, v);
         return result;
     }
 
     DString join(const char* argv[], size_t argc) const
     {
         DString result;
-        result.join_inplace(this->c_str(), argv, argc);
+        result.join_inplace(*this, argv, argc);
         return result;
     }
 

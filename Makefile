@@ -42,7 +42,7 @@ ifeq ($(COMP),clang)
 endif
 
 CFLAGS +=-O2 $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++17
 LDFLAGS += -L./lib64 -s
 
 PROGRAMS = \

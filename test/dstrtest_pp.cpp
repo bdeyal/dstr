@@ -19,8 +19,10 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string_view>
 
 #include <dstr/dstring.hpp>
+
 
 #if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER <= 1200))
 #define TRACE_FN() printf("%d\n", __LINE__)
@@ -2039,7 +2041,7 @@ void test_std_string_view()
     TRACE_FN();
 #if __cplusplus >= 201703L
     DString s1("Hello world today is Friday");
-    string_view sv = s1;
+    std::string_view sv = s1;
 
     cout << s1 << endl;
     cout << sv << endl;
