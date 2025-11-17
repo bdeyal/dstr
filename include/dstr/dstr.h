@@ -53,8 +53,8 @@ typedef const struct DSTR_TYPE* CDSTR;
 #define DSTR_BOOL        bool
 #define DSTR_TRUE        true
 #define DSTR_FALSE       false
-#define DSTR_SUCCESS     DSTR_TRUE
-#define DSTR_FAIL        DSTR_FALSE
+#define DSTR_SUCCESS     1
+#define DSTR_FAIL        0
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,7 +112,7 @@ int dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
 /* private function for use in C++ header */
 //int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len);
-DSTR dstr_grow_ctor(DSTR p, size_t len);
+int dstr_grow_ctor(DSTR p, size_t len);
 
 int dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
 int dstr_insert_sz(DSTR dest, size_t index, const char* value);
@@ -658,4 +658,4 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 /* clean namespace */
 #endif
 
-#endif /* DSTR_H_ */
+#endif /* DSTR_H_INCLUDED */

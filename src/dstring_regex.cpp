@@ -10,7 +10,6 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <memory>
-#include <exception>
 #include <cassert>
 #include <deque>
 #include <vector>
@@ -86,19 +85,6 @@ private:
     DStringRegex& operator=(const DStringRegex&) = delete;
     DStringRegex(DStringRegex&&) = delete;
     DStringRegex& operator=(DStringRegex&&) = delete;
-};
-/*-------------------------------------------------------------------------------*/
-/*-------------------------------------------------------------------------------*/
-
-class DStringError : public std::exception
-{
-public:
-    DStringError(DString&& s) : m_s(s) {}
-    DStringError(const DString& s) : m_s(s) {}
-    DStringError(const char* s) : m_s(s) {}
-    const char* what() const noexcept { return m_s.c_str(); }
-private:
-    DString m_s;
 };
 /*-------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------*/

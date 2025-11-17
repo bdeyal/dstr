@@ -9,6 +9,12 @@
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_view.hpp>
 
+void DString::dstring_ctor_error()
+{
+    throw DStringError("Constructor");
+}
+//-----------------------------------------------------------
+
 DString& DString::sprintf(const char* fmt, ...)
 {
     va_list args;
@@ -69,8 +75,7 @@ std::istream& io_getline(std::istream& in, DString& s)
     s.clear();
 
     char c;
-    while (in.get(c) && c != '\n')
-    {
+    while (in.get(c) && c != '\n') {
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
             s.append(buf, bindex);

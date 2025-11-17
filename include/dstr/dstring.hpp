@@ -9,6 +9,7 @@
 
 #include <iosfwd>
 #include <vector>
+#include <exception>
 
 #if __cplusplus >= 201703L
 #include <string_view>
@@ -56,27 +57,24 @@ public:
     DString(char c, size_t count)
     {
         if (c == '\0' || count == 0) {
-            dstr_init_data(pImp());
-            return;
-        }
-        init_capacity(count);
-        init_data(c, count);
-        init_length(count);
+            dstr_init_data(pImp()); }
+        else {
+            init_capacity(count);
+            init_data(c, count);
+            init_length(count); }
     }
 
     // DString s("A C string");
     //
     DString(const char* sz)
     {
-        size_t len = sz ? strlen(sz) : 0;
-
-        if (!len) {
-            dstr_init_data(pImp());
-            return;
-        }
-        init_capacity(len);
-        init_data(sz, len);
-        init_length(len);
+        if (!sz) {
+            dstr_init_data(pImp()); }
+        else {
+            size_t len = strlen(sz);
+            init_capacity(len);
+            init_data(sz, len);
+            init_length(len); }
     }
 
     // DString s(other_DString);
@@ -84,12 +82,11 @@ public:
     DString(const DString& rhs)
     {
         if (rhs.size() == 0) {
-            dstr_init_data(pImp());
-            return;
-        }
-        init_capacity(rhs.size());
-        init_data(rhs.data(), rhs.size());
-        init_length(rhs.size());
+            dstr_init_data(pImp()); }
+        else {
+            init_capacity(rhs.size());
+            init_data(rhs.data(), rhs.size());
+            init_length(rhs.size()); }
     }
 
 #if __cplusplus >= 201103L
@@ -101,10 +98,9 @@ public:
         m_imp.capacity = rhs.capacity();
         if (rhs.capacity() == DSTR_INITIAL_CAPACITY) {
             memcpy(m_imp.sso_buffer, rhs.m_imp.sso_buffer, DSTR_INITIAL_CAPACITY);
-            m_imp.data = m_imp.sso_buffer;
-        }
-        else
-            m_imp.data = rhs.m_imp.data;
+            m_imp.data = m_imp.sso_buffer;  }
+        else {
+            m_imp.data = rhs.m_imp.data; }
 
         // put rhs in an intial state
         //
@@ -117,16 +113,13 @@ public:
     DString(DStringView rhs, size_t pos, size_t count)
     {
         if (pos >= rhs.size() || count == 0) {
-            dstr_init_data(pImp());
-            return;
-        }
-
-        if (count > rhs.size() - pos)
-            count = rhs.size() - pos;
-
-        init_capacity(count);
-        init_data(rhs.data() + pos, count);
-        init_length(count);
+            dstr_init_data(pImp()); }
+        else {
+            if (count > rhs.size() - pos)
+                count = rhs.size() - pos;
+            init_capacity(count);
+            init_data(rhs.data() + pos, count);
+            init_length(count); }
     }
 
     // DString s("abcdefg", 3) -> "abc"
@@ -134,21 +127,23 @@ public:
     DString(const char* buffer, size_t len)
     {
         if (!buffer || (len = strnlen(buffer, len)) == 0) {
-            dstr_init_data(pImp());
-            return;
-        }
-        init_capacity(len);
-        init_data(buffer, len);
-        init_length(len);
+            dstr_init_data(pImp()); }
+        else {
+            init_capacity(len);
+            init_data(buffer, len);
+            init_length(len); }
     }
 
     // DString s(&str[5], &str[15]);
     //
     DString(const char* first, const char* last)
     {
-        size_t len = last - first;
+        size_t len;
 
-        if ((len = strnlen(first, len)) == 0) {
+        if (!first
+            || (len = (last - first)) == 0
+            || (len = strnlen(first, len)) == 0)
+        {
             dstr_init_data(pImp());
             return;
         }
@@ -163,12 +158,11 @@ public:
     explicit DString(DStringView sv)
     {
         if (sv.size() == 0) {
-            dstr_init_data(pImp());
-            return;
-        }
-        init_capacity(sv.size());
-        init_data(sv.data(), sv.size());
-        init_length(sv.size());
+            dstr_init_data(pImp()); }
+        else {
+            init_capacity(sv.size());
+            init_data(sv.data(), sv.size());
+            init_length(sv.size()); }
     }
 
     DStringView view() const noexcept
@@ -369,71 +363,71 @@ public:
         return *this;
     }
 
-    DString& align_center(size_t width, char fill = ' ')
+    DString& align_center_inplace(size_t width, char fill = ' ')
     {
         if (length() < width)
             dstr_align_center(pImp(), width, fill);
         return *this;
     }
 
-    DString& align_right(size_t width, char fill = ' ')
+    DString& align_right_inplace(size_t width, char fill = ' ')
     {
         if (length() < width)
             dstr_align_right(pImp(), width, fill);
         return *this;
     }
 
-    DString& align_left(size_t width, char fill = ' ')
+    DString& align_left_inplace(size_t width, char fill = ' ')
     {
         if (length() < width)
             dstr_align_left(pImp(), width, fill);
         return *this;
     }
 
-    DString make_center(size_t width, char fill = ' ') const
+    DString align_center(size_t width, char fill = ' ') const
     {
         DString result(*this);
-        result.align_center(width, fill);
+        result.align_center_inplace(width, fill);
         return result;
     }
 
-    DString make_right(size_t width, char fill = ' ') const
+    DString align_right(size_t width, char fill = ' ') const
     {
         DString result(*this);
-        result.align_right(width, fill);
+        result.align_right_inplace(width, fill);
         return result;
     }
 
-    DString make_left(size_t width, char fill = ' ') const
+    DString align_left(size_t width, char fill = ' ') const
     {
         DString result(*this);
-        result.align_left(width, fill);
+        result.align_left_inplace(width, fill);
         return result;
     }
 
-    DString& expandtabs(size_t width = 8)
+    DString& expandtabs_inplace(size_t width = 8)
     {
         dstr_expand_tabs(pImp(), width);
         return *this;
     }
 
-    DString make_expandtabs(size_t width = 8) const
+    DString expandtabs(size_t width = 8) const
     {
         DString result(*this);
-        result.expandtabs(width);
+        result.expandtabs_inplace(width);
         return result;
     }
 
-    DString& title()
+    DString& title_inplace()
     {
         dstr_title(pImp());
         return *this;
     }
 
-    DString make_title() const
+    DString title() const
     {
         DString result(*this);
-        result.title();
+        result.title_inplace();
         return result;
     }
 
@@ -1211,6 +1205,8 @@ private:
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
+    void dstring_ctor_error();
+
     void init_capacity(size_t len)
     {
         if (len < DSTR_INITIAL_CAPACITY) {
@@ -1218,7 +1214,8 @@ private:
             m_imp.data = m_imp.sso_buffer;
         }
         else {
-            dstr_grow_ctor(&m_imp, len);
+            if (!dstr_grow_ctor(&m_imp, len))
+                dstring_ctor_error();
         }
     }
 
@@ -1238,7 +1235,7 @@ private:
         m_imp.data[count] = '\0';
     }
 };
-//----------------------------------------------------------------
+/*-------------------------------------------------------------------------------*/
 
 // For use with std::unordered_map
 //
@@ -1253,7 +1250,20 @@ struct DString_NoCase {
         return s1.icompare(s2) < 0;
     }
 };
-//----------------------------------------------------------------
+/*-------------------------------------------------------------------------------*/
+
+class DStringError : public std::exception
+{
+public:
+    DStringError(DString&& s) : m_s(s) {}
+    DStringError(DStringView s) : m_s(s) {}
+    DStringError(const char* s) : m_s(s) {}
+    const char* what() const noexcept { return m_s.c_str(); }
+private:
+    DString m_s;
+};
+/*-------------------------------------------------------------------------------*/
+
 
 // various operator+()
 //

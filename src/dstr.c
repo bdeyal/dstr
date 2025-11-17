@@ -149,6 +149,7 @@ static DSTR dstr_alloc_empty(void)
 {
     DSTR p = (DSTR) malloc(sizeof(struct DSTR_TYPE));
     if (!p) {
+        errno = ENOMEM;
         dstr_out_of_memory();
         return NULL;
     }
@@ -161,7 +162,7 @@ static DSTR dstr_alloc_empty(void)
 
 // Not static since used in c++ side too
 //
-DSTR dstr_grow_ctor(DSTR p, size_t len)
+int dstr_grow_ctor(DSTR p, size_t len)
 {
     assert(len >= DSTR_INITIAL_CAPACITY);
 
@@ -172,48 +173,49 @@ DSTR dstr_grow_ctor(DSTR p, size_t len)
     if (new_capacity > UINT32_MAX) {
         errno = ENOMEM;
         dstr_out_of_memory();
-        return NULL;
+        return DSTR_FAIL;
     }
 
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
+        errno = ENOMEM;
         dstr_out_of_memory();
-        return NULL;
+        return DSTR_FAIL;
     }
 
     newbuff[0] = '\0';
     p->capacity = new_capacity;
     p->data = newbuff;
-    return p;
+    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR dstr_grow(DSTR p, size_t len)
+static int dstr_grow(DSTR p, size_t len)
 {
-    size_t new_capacity;
     char* newbuff;
 
     assert(p != NULL);
 
     if (p->capacity > len) {
-        return p;
+        return DSTR_SUCCESS;
     }
 
-    new_capacity = p->capacity;
+    size_t new_capacity = p->capacity;
     while (new_capacity <= len)
         new_capacity *= 2;
 
     if (new_capacity > UINT32_MAX) {
         errno = ENOMEM;
         dstr_out_of_memory();
-        return NULL;
+        return DSTR_FAIL;
     }
 
     if (p->capacity == DSTR_INITIAL_CAPACITY) {
         assert(D_IS_SSO(p));
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
+            errno = ENOMEM;
             dstr_out_of_memory();
-            return NULL;
+            return DSTR_FAIL;
         }
 
         if (p->length)
@@ -226,8 +228,9 @@ static DSTR dstr_grow(DSTR p, size_t len)
     else {
         assert(!D_IS_SSO(p));
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
+            errno = ENOMEM;
             dstr_out_of_memory();
-            return NULL;
+            return DSTR_FAIL;
         }
     }
 
@@ -235,11 +238,11 @@ static DSTR dstr_grow(DSTR p, size_t len)
     p->data = newbuff;
 
     dstr_assert_valid(p);
-    return p;
+    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline DSTR dstr_grow_by(DSTR p, size_t n)
+static inline int dstr_grow_by(DSTR p, size_t n)
 {
     return dstr_grow(p, n + DLEN(p));
 }
@@ -418,13 +421,13 @@ static int dstr_replace_imp(DSTR p,
     //
     if (is_overlap(p, buff)) {
         INIT_DSTR(tmp);
-        if (dstr_append_no_overlap(&tmp, buff, buflen))
-        {
-            dstr_remove_imp(p, pos, count);
-            buff = DBUF(&tmp);
-            result = dstr_insert_imp(p, pos, buff, buflen);
-            dstr_clean_data(&tmp);
-        }
+        if (!dstr_append_no_overlap(&tmp, buff, buflen))
+            return DSTR_FAIL;
+
+        dstr_remove_imp(p, pos, count);
+        buff = DBUF(&tmp);
+        result = dstr_insert_imp(p, pos, buff, buflen);
+        dstr_clean_data(&tmp);
     }
     else
     {
@@ -459,28 +462,39 @@ static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
 static inline DSTR dstr_create_len_imp(size_t len)
 {
     DSTR p = dstr_alloc_empty();
-    if (!p)
-        return NULL;
+    if (!p) {
+        return NULL; }
 
     if (len < DSTR_INITIAL_CAPACITY)
         return p;
 
-    return dstr_grow_ctor(p, len);
+    if (!dstr_grow_ctor(p, len)) {
+        dstr_destroy(p);
+        return NULL;
+    }
+
+    return p;
 }
 /*-------------------------------------------------------------------------------*/
 
 static DSTR dstr_create_buff_imp(const char* buff, size_t len)
 {
-    DSTR p;
+    if (!buff || len == 0)
+        return dstr_alloc_empty();
 
+    // verify no embedded nulls
+    //
+    len = strnlen(buff, len);
+
+    // Now allocate
+    //
+    DSTR p;
     if ((p = dstr_create_len_imp(len)) == NULL)
         return NULL;
 
-    if (len > 0) {
-        assert(buff != NULL);
-        memcpy(DBUF(p), buff, len);
-    }
-
+    // copy buffer and set len and null terminator
+    //
+    memcpy(DBUF(p), buff, len);
     DVAL(p,len) = '\0';
     DLEN(p) = len;
 
@@ -796,11 +810,8 @@ DSTR dstr_create_reserve(size_t len)
 
 DSTR dstr_create_bl(const char* buff, size_t len)
 {
-    if (buff == NULL)
-        len = 0;
-    else
-        len = strnlen(buff, len);
-
+    // functon checks for NULL or len==0
+    //
     return dstr_create_buff_imp(buff, len);
 }
 /*-------------------------------------------------------------------------------*/
@@ -809,16 +820,15 @@ DSTR dstr_create_range(const char* first, const char* last)
 {
     size_t len = (size_t)(last - first);
 
-    // in case there is a zero byte in between
-    len = strnlen(first, len);
-
+    // functon checks for NULL or len==0
+    //
     return dstr_create_buff_imp(first, len);
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR dstr_create_sz(const char* sz)
 {
-    if (sz == NULL)
+    if (!sz)
         return dstr_alloc_empty();
 
     return dstr_create_buff_imp(sz, strlen(sz));
@@ -827,6 +837,9 @@ DSTR dstr_create_sz(const char* sz)
 
 DSTR dstr_create_ds(CDSTR rhs)
 {
+    if (!rhs)
+        return dstr_alloc_empty();
+
     dstr_assert_view(rhs);
     return dstr_create_buff_imp(DBUF(rhs), DLEN(rhs));
 }
@@ -834,14 +847,14 @@ DSTR dstr_create_ds(CDSTR rhs)
 
 DSTR dstr_create_substr(CDSTR p, size_t pos, size_t count)
 {
-    dstr_assert_view(p);
+    if (!p || DLEN(p) <= pos) {
+        return dstr_alloc_empty(); }
 
-    if (DLEN(p) > pos) {
-        count = min_2(count, DLEN(p) - pos);
-        if (count > 0)
-            return dstr_create_buff_imp(DBUF(p)+pos, count);
-    }
-    return NULL;
+    dstr_assert_view(p);
+    if ((count = min_2(count, DLEN(p) - pos)) == 0)
+        return dstr_alloc_empty();
+
+    return dstr_create_buff_imp(DBUF(p) + pos, count);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -849,21 +862,15 @@ DSTR dstr_create_cc(char ch, size_t count)
 {
     DSTR p;
 
-    if (count == 0)
-        return dstr_create();
+    if (count == 0 || ch == '\0')
+        return dstr_alloc_empty();
 
     if ((p = dstr_create_len_imp(count)) == NULL)
         return NULL;
 
-    if (ch == '\0') {
-        DVAL(p, 0) = '\0';
-        DLEN(p) = 0;
-    }
-    else {
-        memset(DBUF(p), ch, count);
-        DVAL(p, count) = '\0';
-        DLEN(p) = count;
-    }
+    memset(DBUF(p), ch, count);
+    DVAL(p, count) = '\0';
+    DLEN(p) = count;
 
     dstr_assert_valid(p);
     return p;
@@ -967,7 +974,7 @@ void dstr_destroy(DSTR p)
 
 int dstr_reserve(DSTR p, size_t len)
 {
-    return dstr_grow(p, len) ? DSTR_SUCCESS : DSTR_FAIL;
+    return dstr_grow(p, len);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -985,7 +992,7 @@ int dstr_resize(DSTR p, size_t len)
         dstr_assert_valid(p);
     }
     else {
-        if (dstr_grow(p, len) == NULL)
+        if (!dstr_grow(p, len))
             result = DSTR_FAIL;
     }
 
@@ -2452,8 +2459,6 @@ static int dstr_replace_all_imp(DSTR dest,
         return DSTR_FAIL;
     }
 
-    int result = DSTR_SUCCESS;
-
     for (;;) {
         pos = dstr_find_sz_imp(&tmp, pos, oldstr, 0);
 
@@ -2461,8 +2466,8 @@ static int dstr_replace_all_imp(DSTR dest,
             break;
 
         if (!dstr_replace_imp(&tmp, pos, oldlen, newstr, newlen)) {
-            result = DSTR_FAIL;
-            break;
+            dstr_clean_data(&tmp);
+            return DSTR_FAIL;
         }
 
         if (++num_replaced == count)
@@ -2471,13 +2476,12 @@ static int dstr_replace_all_imp(DSTR dest,
         pos += newlen;
     };
 
-    if (result == DSTR_SUCCESS && num_replaced > 0) {
+    if (num_replaced > 0) {
         dstr_swap(&tmp, dest);
     }
 
     dstr_clean_data(&tmp);
-
-    return result;
+    return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -2593,23 +2597,27 @@ int dstr_expand_tabs(DSTR dest, size_t width)
                 continue;
 
             size_t to_tabstop = width - (DLEN(&tmp) % width);
-            if (!dstr_append_cc(&tmp, ' ', to_tabstop)) {
-                dstr_clean_data(&tmp);
-                return DSTR_FAIL;
-            }
+            if (!dstr_append_cc(&tmp, ' ', to_tabstop))
+                goto fail;
         }
         else {
-            if (!dstr_append_c(&tmp, ch)) {
-                dstr_clean_data(&tmp);
-                return DSTR_FAIL;
-            }
+            if (DLEN(&tmp) + 1 == DCAP(&tmp))
+                if (!dstr_grow_by(&tmp, 1))
+                    goto fail;
+
+            DVAL(&tmp, DLEN(&tmp)) = ch;
+            DLEN(&tmp) += 1;
+            DVAL(&tmp, DLEN(&tmp)) = '\0';
         }
     }
 
     dstr_swap(&tmp, dest);
     dstr_clean_data(&tmp);
-
     return DSTR_SUCCESS;
+
+fail:
+    dstr_clean_data(&tmp);
+    return DSTR_FAIL;
 }
 /*-------------------------------------------------------------------------------*/
 
