@@ -5,9 +5,11 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <algorithm>
+#include <iterator>
 #include <iostream>
 #include <cassert>
 #include <cctype>
+
 
 #include <dstr/dstring.hpp>
 

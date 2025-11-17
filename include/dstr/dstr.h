@@ -456,6 +456,17 @@ static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count)
         dstr_assign_substr(dest, src, (dstr_length(src) - count), count);
 }
 
+// Compatibility
+//
+#if defined(__BORLANDC__)
+#if !defined(__clang__) || (__clang_major__ < 15)
+#define strnlen my_strnlen
+static inline size_t my_strnlen(const char* s, size_t maxlen) {
+	const char *p = (char*) memchr(s, 0, maxlen);
+	return p ? p - s : maxlen;
+}
+#endif
+#endif
 
 #ifdef __cplusplus
 }

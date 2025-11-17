@@ -18,12 +18,6 @@
 
 #define _stricmp  stricmp
 #define _strnicmp strnicmp
-#define strnlen   my_strnlen
-
-static inline size_t my_strnlen(const char* s, size_t maxlen) {
-	const char *p = (char*) memchr(s, 0, maxlen);
-	return p ? p - s : maxlen;
-}
 
 static inline int isblank(int c) { return isspace(c); }
 
