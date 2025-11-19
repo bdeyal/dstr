@@ -19,8 +19,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+#if __cplusplus >= 201703L
 #include <string_view>
-
+#endif
 #include <dstr/dstring.hpp>
 
 
@@ -87,7 +88,7 @@ void test_empty_dstr()
     TRACE_FN();
 
     DString s1;
-    DString s2(nullptr, size_t(0));
+    DString s2((char*)nullptr, size_t(0));
     DString s5(nullptr);
     DString s6('\0', 100);
     DString s7('C', 0);
@@ -246,7 +247,7 @@ void test_assign()
     assert(s2 == "CCCCCCCC");
     assert(strcmp(s2.c_str(), "CCCCCCCC") == 0);
 
-    s2 = nullptr;
+    s2 = (char*)nullptr;
     assert(s2.length() == 0);
 
     DString s3("hello");
@@ -308,7 +309,7 @@ void test_append()
     s4.append("world");
     assert(s4 == "helloworld");
 
-    s4.append(nullptr);
+    s4.append((char*)nullptr);
     assert( s4 == "helloworld");
 
     s4.append("");
@@ -329,7 +330,7 @@ void test_append()
     s5.append("_ABC\0EFG", 10);
     assert(s5 == "hello_ABC");
 
-    s5.append(nullptr, 10);
+    s5.append((char*)nullptr, 10);
     assert(s5 == "hello_ABC");
 
     s5.append("Hi", size_t(0));
@@ -544,7 +545,7 @@ void test_insert()
     s1.insert(0, "XXX", DString::NPOS);
     assert( s1 == "XXXhellXXoX");
 
-    s1.insert(0, nullptr, DString::NPOS);
+    s1.insert(0, (char*)nullptr, DString::NPOS);
     assert( s1 == "XXXhellXXoX");
 
     s1.insert(0, "XXX", size_t(0));
@@ -610,7 +611,7 @@ void test_replace()
     assert( s1 == "world");
 
     DString s2(s1);
-    s1.replace(0, DString::NPOS, nullptr, 100);
+    s1.replace(0, DString::NPOS, (char*)nullptr, 100);
     assert(s1 == "");
 
     s2.replace(2, 8,'\0', 100);
@@ -2057,6 +2058,27 @@ void test_std_string_view()
 }
 //-------------------------------------------------
 
+#define TEST_ZFILL(before, len, after) do {             \
+    DString s(before);                                  \
+    DString f = s.zfill(len);                           \
+    cout << "\"" << f << "\"" << endl;                  \
+    assert(f == (after));                               \
+    } while (0)
+
+void test_zfill()
+{
+    TEST_ZFILL("35",    5, "00035");
+    TEST_ZFILL("+xyz", 10, "+000000xyz");
+    TEST_ZFILL("-100",  8, "-0000100");
+    TEST_ZFILL("++100", 8, "+000+100");
+    TEST_ZFILL("",      5, "00000");
+    TEST_ZFILL("+",     5, "+0000");
+    TEST_ZFILL("123456",  5, "123456");
+    TEST_ZFILL("123456",  6, "123456");
+    TEST_ZFILL("123456",  7, "0123456");
+}
+//-------------------------------------------------
+
 
 int main()
 {
@@ -2118,5 +2140,6 @@ int main()
     test_strip();
     test_times();
     test_std_string_view();
+    test_zfill();
     // last test
 }
