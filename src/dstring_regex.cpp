@@ -558,6 +558,11 @@ struct DStringRegexCache
     std::deque<RegexCacheEntry> fifo;
 };
 
+#if defined(__BORLANDC__)
+#if !defined(__clang__) || (__clang_major__ < 15)
+#define thread_local /**/
+#endif
+#endif
 static thread_local DStringRegexCache<30> re_cache;
 
 }  // unnamed ns
