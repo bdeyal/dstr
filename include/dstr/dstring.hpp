@@ -257,9 +257,7 @@ public:
 
     DString& operator=(DStringView sv)
     {
-        // do nothing if sv originated from *this
-        if (sv.data() != data())
-            assign(sv);
+        assign(sv);
         return *this;
     }
 
@@ -305,7 +303,9 @@ public:
 
     DString& assign(DStringView sv)
     {
-        dstr_assign_ds(pImp(), sv.pImp());
+        // do nothing if sv originated from *this
+        if (data() != sv.data())
+            dstr_assign_ds(pImp(), sv.pImp());
         return *this;
     }
 
@@ -402,6 +402,19 @@ public:
     {
         DString result(*this);
         result.align_left_inplace(width, fill);
+        return result;
+    }
+
+    DString& zfill_inplace(size_t width)
+    {
+        dstr_zfill(pImp(), width);
+        return *this;
+    }
+
+    DString zfill(size_t width) const
+    {
+        DString result(*this);
+        result.zfill_inplace(width);
         return result;
     }
 
@@ -1205,8 +1218,6 @@ private:
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
-    void dstring_ctor_error();
-
     void init_capacity(size_t len)
     {
         if (len < DSTR_INITIAL_CAPACITY) {
@@ -1214,8 +1225,7 @@ private:
             m_imp.data = m_imp.sso_buffer;
         }
         else {
-            if (!dstr_grow_ctor(&m_imp, len))
-                dstring_ctor_error();
+            dstr_grow_ctor(&m_imp, len);
         }
     }
 
@@ -1255,7 +1265,9 @@ struct DString_NoCase {
 class DStringError : public std::exception
 {
 public:
+#if __cplusplus >= 201103L
     DStringError(DString&& s) : m_s(s) {}
+#endif
     DStringError(DStringView s) : m_s(s) {}
     DStringError(const char* s) : m_s(s) {}
     const char* what() const noexcept { return m_s.c_str(); }

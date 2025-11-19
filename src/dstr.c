@@ -14,6 +14,7 @@
 #include <limits.h>
 
 #include <dstr/dstr.h>
+#include "dstr_internal.h"
 
 #if !defined(__cplusplus)
 #if __STDC_VERSION__ < 199901L
@@ -138,10 +139,23 @@ static const char* my_strcasechr(const char* s, int c)
 }
 /*-------------------------------------------------------------------------------*/
 
-static void dstr_out_of_memory()
+// This can be set in the C++ side to throw an exception.
+// In pure C it is NULL
+//
+void (*g_dstr_oom_handler)(void) = NULL;
+
+static void dstr_out_of_memory(void)
 {
+    // set by C++ DString wrapper
+    //
+    if (g_dstr_oom_handler) {
+        g_dstr_oom_handler();
+    }
+
+    // C code goes here
+    //
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
-    exit(EXIT_FAILURE);
+    abort();
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -465,13 +479,12 @@ static inline DSTR dstr_create_len_imp(size_t len)
     if (!p) {
         return NULL; }
 
-    if (len < DSTR_INITIAL_CAPACITY)
-        return p;
+    if (len < DSTR_INITIAL_CAPACITY) {
+        return p; }
 
     if (!dstr_grow_ctor(p, len)) {
         dstr_destroy(p);
-        return NULL;
-    }
+        return NULL; }
 
     return p;
 }
@@ -2584,6 +2597,8 @@ size_t dstr_icount_ds(CDSTR p, CDSTR s)
 
 int dstr_expand_tabs(DSTR dest, size_t width)
 {
+    dstr_assert_valid(dest);
+
     if (!dest || DLEN(dest) == 0)
         return DSTR_SUCCESS;
 
@@ -2620,6 +2635,30 @@ fail:
     return DSTR_FAIL;
 }
 /*-------------------------------------------------------------------------------*/
+
+int dstr_zfill(DSTR dest, size_t width)
+{
+    dstr_assert_valid(dest);
+
+    if (DLEN(dest) >= width)
+        return DSTR_SUCCESS;
+
+    size_t num_zeroes = width - DLEN(dest);
+    size_t insert_pos = 0;
+
+    char ch = DVAL(dest, 0);
+    if (ch == '+' || ch == '-') {
+        ++insert_pos;
+    }
+
+    if (!dstr_insert_cc_imp(dest, insert_pos, '0', num_zeroes))
+        return DSTR_FAIL;
+
+    dstr_assert_valid(dest);
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
 
 void dstr_title(DSTR p)
 {

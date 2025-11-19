@@ -8,10 +8,24 @@
 #include <ctype.h>
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_view.hpp>
+#include "dstr_internal.h"
 
-void DString::dstring_ctor_error()
-{
-    throw DStringError("Constructor");
+// Memory management code installs a OOM handler
+//
+namespace {
+
+void dstring_oom_error(void) {
+    throw DStringError("Out of Memory");
+}
+
+struct Init_OOM_Handler {
+    Init_OOM_Handler() {
+        g_dstr_oom_handler = &dstring_oom_error;
+    }
+};
+
+static Init_OOM_Handler init_oom_handler;
+
 }
 //-----------------------------------------------------------
 

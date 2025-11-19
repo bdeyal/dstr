@@ -97,6 +97,9 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
 void dstr_destroy(DSTR p);
 void dstr_clean_data(DSTR p);
 
+/* private function for use in C++ header */
+int dstr_grow_ctor(DSTR p, size_t len);
+
 /*
  *   Assign | Insert | Append | Replace
  *   a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
@@ -109,10 +112,6 @@ int dstr_assign_range(DSTR dest, const char* first, const char* last);
 int dstr_assign_substr(DSTR dest, CDSTR p, size_t pos, size_t count);
 int dstr_assign_sprintf(DSTR dest, const char* fmt, ...);
 int dstr_assign_vsprintf(DSTR dest, const char* fmt, va_list argptr);
-
-/* private function for use in C++ header */
-//int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len);
-int dstr_grow_ctor(DSTR p, size_t len);
 
 int dstr_insert_cc(DSTR dest, size_t index, char c, size_t count);
 int dstr_insert_sz(DSTR dest, size_t index, const char* value);
@@ -147,6 +146,7 @@ int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, con
 int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_t count);
 int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count);
 int dstr_expand_tabs(DSTR dest, size_t width);
+int dstr_zfill(DSTR dest, size_t width);
 
 /* expand original DEST to be at center of WIDTH characters with fill FILL */
 int dstr_align_center(DSTR dest, size_t width, char fill);
@@ -187,7 +187,6 @@ void dstr_rstrip_c(DSTR p, char c);
  */
 void dstr_lstrip_sz(DSTR p, const char* sz);
 void dstr_rstrip_sz(DSTR p, const char* sz);
-
 
 /* hash for use in hash table */
 unsigned long dstr_hash(CDSTR src, int seed /*=0*/);
@@ -266,6 +265,7 @@ size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s);
 
 /* copy NUMBYTES from INDEX to DEST. returns copied characters*/
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
+
 /* I/O functions*/
 int dstr_fgets(DSTR d, FILE* fp);
 int dstr_fgetline(DSTR d, FILE* fp);
@@ -352,7 +352,6 @@ static inline DSTR_BOOL dstr_iequal_ds(CDSTR lhs, CDSTR rhs)
         (lhs->length == rhs->length) &&
         (dstr_icompare_ds(lhs, rhs) == 0);
 }
-
 
 static inline size_t dstr_length(CDSTR p) {
     return p->length;
@@ -460,7 +459,9 @@ static inline int dstr_assign_right(DSTR dest, CDSTR src, size_t count)
 //
 #if defined(__BORLANDC__)
 #if !defined(__clang__) || (__clang_major__ < 15)
+#ifndef strnlen
 #define strnlen my_strnlen
+#endif
 static inline size_t my_strnlen(const char* s, size_t maxlen) {
 	const char *p = (char*) memchr(s, 0, maxlen);
 	return p ? p - s : maxlen;
@@ -595,6 +596,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dreplaceall_sz      dstr_replace_all_sz
 #define dreplaceall_ds      dstr_replace_all_ds
 #define dexpandtabs         dstr_expand_tabs
+#define dzfill              dstr_zfill
 
 #define dinsert_cc          dstr_insert_cc
 #define dinsert_sz          dstr_insert_sz
