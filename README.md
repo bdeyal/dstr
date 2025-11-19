@@ -7,7 +7,7 @@ Dynamic C strings, similar to C++ std::string with a lean C++ wrapper. This is a
 
 # Build
 Just run make
-On Windows run nmake -f NMakefile
+On Windows run nmake -f NMakefile under win32 folder
 
 # Clean
 make clean OR
