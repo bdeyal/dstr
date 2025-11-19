@@ -331,6 +331,10 @@ public:
         return *this;
     }
 
+    // easy creation from sprintf-like format
+    //
+    static DString format(const char* fmt, ...);
+
     // Insertion functions
     //
     DString& insert(size_t pos, char c, size_t count)
@@ -1114,19 +1118,9 @@ public:
     //
     ///////////////////////////////////////////////////
 
-    // Regexp support
+    // Regexp Match type: forward declaration
     //
-    struct Match
-    {
-        // zero based offset (NPOS if subexpr does not match)
-        size_t offset;
-
-        // length of substring
-        size_t length;
-
-        // name of group
-        char name[64];
-    };
+    struct Match;
 
     // Container types for matches and DString itself
     //
@@ -1244,6 +1238,19 @@ private:
         m_imp.length = count;
         m_imp.data[count] = '\0';
     }
+};
+/*-------------------------------------------------------------------------------*/
+
+struct DString::Match
+{
+    // zero based offset (NPOS if subexpr does not match)
+    size_t offset;
+
+    // length of substring
+    size_t length;
+
+    // name of group
+    DString name;
 };
 /*-------------------------------------------------------------------------------*/
 

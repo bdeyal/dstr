@@ -29,6 +29,17 @@ static Init_OOM_Handler init_oom_handler;
 }
 //-----------------------------------------------------------
 
+/*static*/
+DString DString::format(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    DString result;
+    result.vsprintf(fmt, args);
+    va_end(args);
+    return result;
+}
+
 DString& DString::sprintf(const char* fmt, ...)
 {
     va_list args;

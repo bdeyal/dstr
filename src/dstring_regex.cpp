@@ -35,10 +35,13 @@ public:
     //
     bool match(DStringView subject, size_t offset, int options) const;
     int match(DStringView s, size_t off, DString::Match& m, int opts) const;
-    int match_groups(DStringView s, size_t off, DString::MatchVector& m,  int opts) const;
+    int match_groups(DStringView s, size_t off, DString::MatchVector& m,
+                     int opts) const;
     DString capture(DStringView subject, size_t offset, int options) const;
-    int capture(DStringView subject, size_t offset, std::vector<DString>& strings, int options) const;
-    int subst(DString& subject, size_t offset, DStringView repl, int options) const;
+    int capture(DStringView subject, size_t offset,
+                std::vector<DString>& strings, int options) const;
+    int subst(DString& subject, size_t offset, DStringView repl,
+              int options) const;
 
     // Inlines using the above
     //
@@ -51,7 +54,8 @@ public:
     DString capture(DStringView subject, int options) const {
         return capture(subject, 0, options);
     }
-    int capture(DStringView subject, std::vector<DString>& strings, int options) const {
+    int capture(DStringView subject, std::vector<DString>& strings,
+                int options) const {
         return capture(subject, 0, strings, options);
     }
     int subst(DString& s, DStringView r, int options) const {
@@ -76,8 +80,6 @@ private:
     }
 
 private:
-    size_t subst_single(DString& subject, size_t offset, DStringView repl, int options) const;
-
     // Prevent default, copy and assignment
     //
     DStringRegex() = delete;
@@ -203,8 +205,10 @@ DStringRegex::DStringRegex(DStringView pattern, int options)
     {
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(error_code, buffer, sizeof(buffer));
-        DString msg;
-        msg.sprintf("PCRE2: %s (at offset %zu)", (char*)buffer, error_offset);
+        DString msg = DString::format("PCRE2: %s (at offset %zu)",
+                                      (char*)buffer,
+                                      error_offset);
+
         throw DStringError(std::move(msg));
     }
 
@@ -338,10 +342,10 @@ int DStringRegex::match_groups(DStringView subject, size_t offset,
         // Set group name of match
         //
         if (const char* name = find_group_name(i)) {
-            strncpy(m.name, name, sizeof(m.name) - 1);
+            m.name = name;
         }
         else {
-            m.name[0] = '\0';
+            m.name = "";
         }
 
         mvec.push_back(m);
@@ -404,104 +408,67 @@ int DStringRegex::subst(DString& subject, size_t offset,
                         DStringView replacement,
                         int options) const
 {
+    if (offset > subject.length())
+        return 0;
+
+    // we try substitution on a stack buffer first
+    //
+    uint8_t stbuff[512];
+    uint8_t* outbuf = stbuff;
+    PCRE2_SIZE outlen = sizeof(stbuff);
+    uint32_t pcre_opts = PCRE2_SUBSTITUTE_EXTENDED;
+
     if (options & DSTR_REGEX_GLOBAL)
-    {
-        int rc = 0;
-        size_t pos = subst_single(subject, offset, replacement, options);
-        while (pos != DString::NPOS)
-        {
-            ++rc;
-            pos = subst_single(subject, pos, replacement, options);
-        }
+        pcre_opts |= PCRE2_SUBSTITUTE_GLOBAL;
+    if (options & DSTR_REGEX_NO_VARS)
+        pcre_opts |= PCRE2_SUBSTITUTE_LITERAL;
+
+    // First call - try with local stack buffer
+    //
+    int rc = pcre2_substitute(_pRE,
+                              (PCRE2_SPTR)subject.c_str(), subject.length(),
+                              offset,
+                              pcre_opts | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH,
+                              NULL, NULL,
+                              (PCRE2_SPTR)replacement.c_str(),
+                              replacement.length(),
+                              outbuf, &outlen);
+
+    if (rc == 0) {
+        // none replaced
+        return 0;
+    }
+    else if (rc > 0) {
+        subject.assign((char*) outbuf, outlen);
         return rc;
     }
+    else if (rc == PCRE2_ERROR_NOMEMORY) {
+        // increase memory to needed and retry
+        //
+        std::vector<uint8_t> v;
+        v.reserve(outlen);
+        rc = pcre2_substitute(_pRE,
+                              (PCRE2_SPTR)subject.c_str(),  subject.length(),
+                              offset, pcre_opts, NULL, NULL,
+                              (PCRE2_SPTR)replacement.c_str(),
+                              replacement.length(),
+                              v.data(), &outlen);
 
-    size_t n = subst_single(subject, offset, replacement, options);
-    return (n == DString::NPOS) ? 0 : 1;
-}
-/*-------------------------------------------------------------------------------*/
-
-size_t DStringRegex::subst_single(DString& subject, size_t offset,
-                                  DStringView replacement,
-                                  int options) const
-{
-    if (offset >= subject.length()) return DString::NPOS;
-
-    MatchData mdata(_pRE);
-
-    int rc = pcre2_match(_pRE,
-                         (PCRE2_SPTR)(subject.c_str()),
-                         subject.size(),
-                         offset,
-                         match_options(options),
-                         mdata.pointer(),
-                         nullptr);
-
-    // Handle error
-    //
-    if (rc <= 0) {
-        switch (rc) {
-        case 0:
-            throw DStringError("too many captured substrings");
-        case PCRE2_ERROR_NOMATCH:
-            return DString::NPOS;
-        case PCRE2_ERROR_BADOPTION:
-            throw DStringError("bad option");
-        default:
-            PCRE2_UCHAR buffer[256];
-            pcre2_get_error_message(rc, buffer, sizeof(buffer));
-            throw DStringError((char*)buffer);
+        if (rc > 0) {
+            subject.assign((char*)v.data());
+            return rc;
         }
     }
 
-    // Success (rc > 0)
-    //
-    DString result;
-    size_t len = subject.length();
-    size_t pos = 0;
-    size_t rp = DString::NPOS;
-    while (pos < len)
-    {
-        if (mdata[0] == pos)
-        {
-            DString::const_iterator it  = replacement.begin();
-            DString::const_iterator end = replacement.end();
-            while (it != end)
-            {
-                if (*it == '$' && !(options & DSTR_REGEX_NO_VARS))
-                {
-                    ++it;
-                    if (it != end)
-                    {
-                        char d = *it;
-                        if (d >= '0' && d <= '9')
-                        {
-                            int c = d - '0';
-                            if (c < rc)
-                            {
-                                size_t o = mdata[c*2];
-                                size_t l = mdata[c*2 + 1] - o;
-                                result.append(&subject[o], l);
-                            }
-                        }
-                        else
-                        {
-                            result += '$';
-                            result += d;
-                        }
-                        ++it;
-                    }
-                    else result += '$';
-                }
-                else result += *it++;
-            }
-            pos = mdata[1];
-            rp = result.length();
-        }
-        else result += subject[pos++];
+    if (rc < 0) {
+        PCRE2_UCHAR errbuf[256];
+        pcre2_get_error_message(rc, errbuf, sizeof(errbuf));
+        DString msg = DString::format("PCRE2 substitute error (%d): %s", rc,
+                                      (char*)errbuf);
+        throw DStringError(std::move(msg));
     }
-    subject = result;
-    return rp;
+
+    return rc;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -558,11 +525,6 @@ struct DStringRegexCache
     std::deque<RegexCacheEntry> fifo;
 };
 
-#if defined(__BORLANDC__)
-#if !defined(__clang__) || (__clang_major__ < 15)
-#define thread_local /**/
-#endif
-#endif
 static thread_local DStringRegexCache<30> re_cache;
 
 }  // unnamed ns
@@ -627,7 +589,6 @@ DString DString::capture(DStringView pattern,
     return re.capture(*this, offset, options);
 }
 /*-------------------------------------------------------------------------------*/
-
 
 int DString::capture(DStringView pattern,
                      size_t offset,

@@ -328,6 +328,13 @@ void test_dstring_subst()
     assert(DString("THX1138").subst("\\d+", "00") == "THX00");
 
     assert(DString("string    methods in C++").subst("\\s+", "-", DSTR_REGEX_GLOBAL) == "string-methods-in-C++");
+
+    s = "abc123def123ghi";
+    s.subst_inplace("123", "XYZ", DSTR_REGEX_GLOBAL);
+    cout << s << endl;
+    assert(s == "abcXYZdefXYZghi");
+    assert(hello.subst("(?<vowel>[aeiou])", "${vowel}${vowel}", DSTR_REGEX_GLOBAL) == "heelloo");
+    assert(DString("aaaa").subst("a*", "X", DSTR_REGEX_GLOBAL) == "XX");
 }
 //--------------------------------------------------------------------------------
 
@@ -363,6 +370,7 @@ int main()
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;
+        return 1;
     }
 }
 //--------------------------------------------------------------------------------
