@@ -18,8 +18,8 @@ nmake -f NMakefile COMP=clang test
 REM  borland build and test
 REM
 nmake -f NMakefile clean
-nmake -f NMakefile COMP=borland
-nmake -f NMakefile COMP=borland test
+nmake -f NMakefile PLAT=%Platform% COMP=borland
+nmake -f NMakefile PLAT=%Platform% COMP=borland test
 
 REM  Clean all
 REM

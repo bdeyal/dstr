@@ -5,6 +5,7 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <iostream>
+#include <algorithm>
 #include <cassert>
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_view.hpp>

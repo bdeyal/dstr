@@ -19,9 +19,11 @@
 #define _stricmp  stricmp
 #define _strnicmp strnicmp
 
+#if __BORLANDC__ <= 0x0560
 static inline int isblank(int c) { return isspace(c); }
+#endif
 
-#define nullptr ((void*)0)
+#define nullptr (NULL)
 #define noexcept
 
 #endif
