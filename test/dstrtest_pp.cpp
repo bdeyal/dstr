@@ -725,17 +725,19 @@ void test_fromfile()
 {
     const char* fname = __FILE__;
 
-    DString d1;
-    if (!d1.from_file(fname)) {
-        perror("from_file");
-        return;
+    try {
+        DString d1(DString::from_file(fname));
+        std::string s1 = file_slurp(fname);
+
+        assert(s1 == d1.c_str());
+        assert(d1 == s1.c_str());
+
+        cout << "test_fromfile: Good! file content equal" << endl;
     }
-    std::string s1 = file_slurp(fname);
-
-    assert(s1 == d1.c_str());
-    assert(d1 == s1.c_str());
-
-    cout << "test_fromfile: Good! file content equal" << endl;
+    catch (std::exception& out) {
+        cerr << out.what() << endl;
+        exit(1);
+    }
 }
 //-------------------------------------------------
 

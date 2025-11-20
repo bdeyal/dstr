@@ -72,7 +72,7 @@ void test_dstring_extract_numbers()
 
     // Extract with groups into a vector
     std::vector<DString> v;
-    DString("This is some string").capture("\\w+", v, DSTR_REGEX_GLOBAL);
+    DString("This is some string").capture("\\w+", v, "g");
     cout << v << endl;
 }
 //--------------------------------------------------------------------------------
@@ -315,26 +315,26 @@ void test_dstring_subst()
 
     const char* pattern = R"(([\w\.-]+)@([\w\.-]+\.\w+))";
     DString emails = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
-    emails.subst_inplace(pattern, "***@$2", DSTR_REGEX_GLOBAL);
+    emails.subst_inplace(pattern, "***@$2", "/g");
     cout << emails << endl;
 
     DString hello = "hello";
 
     assert(hello.subst("[aeiou]", "*") == "h*llo");
-    assert(hello.subst("[aeiou]", "*", DSTR_REGEX_GLOBAL) == "h*ll*");
-    assert(hello.subst("[aeiou]", "",  DSTR_REGEX_GLOBAL) == "hll");
+    assert(hello.subst("[aeiou]", "*", "/g") == "h*ll*");
+    assert(hello.subst("[aeiou]", "",  "/g") == "hll");
     assert(hello.subst("ell", "al") == "halo");
     assert(hello.subst("xyzzy", "*") == "hello");
     assert(DString("THX1138").subst("\\d+", "00") == "THX00");
 
-    assert(DString("string    methods in C++").subst("\\s+", "-", DSTR_REGEX_GLOBAL) == "string-methods-in-C++");
+    assert(DString("string    methods in C++").subst("\\s+", "-", "/g") == "string-methods-in-C++");
 
     s = "abc123def123ghi";
-    s.subst_inplace("123", "XYZ", DSTR_REGEX_GLOBAL);
+    s.subst_inplace("123", "XYZ", "/g");
     cout << s << endl;
     assert(s == "abcXYZdefXYZghi");
-    assert(hello.subst("(?<vowel>[aeiou])", "${vowel}${vowel}", DSTR_REGEX_GLOBAL) == "heelloo");
-    assert(DString("aaaa").subst("a*", "X", DSTR_REGEX_GLOBAL) == "XX");
+    assert(hello.subst("(?<vowel>[aeiou])", "${vowel}${vowel}", "/g") == "heelloo");
+    assert(DString("aaaa").subst("a*", "X", "/g") == "XX");
 }
 //--------------------------------------------------------------------------------
 

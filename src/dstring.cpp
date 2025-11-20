@@ -5,7 +5,8 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <iostream>
-#include <ctype.h>
+#include <cctype>
+#include <cerrno>
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_view.hpp>
 #include "dstr_internal.h"
@@ -26,6 +27,33 @@ struct Init_OOM_Handler {
 
 static Init_OOM_Handler init_oom_handler;
 
+}
+//-----------------------------------------------------------
+
+/*static*/
+DString DString::from_file(const char* fname)
+{
+    DString result;
+    if (!dstr_assign_fromfile(result.pImp(), fname)) {
+        DString msg = DString::format("Could not open file: %s: %s\n",
+                                      fname,
+                                      strerror(errno));
+        throw DStringError(std::move(msg));
+    }
+    return result;
+}
+//-----------------------------------------------------------
+
+/*static*/
+DString DString::from_cfile(FILE* fp)
+{
+    DString result;
+    if (!dstr_slurp_stream(result.pImp(), fp)) {
+        DString msg = DString::format("Could read file: %s\n",
+                                      strerror(errno));
+        throw DStringError(std::move(msg));
+    }
+    return result;
 }
 //-----------------------------------------------------------
 

@@ -21,6 +21,36 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
+// TODO: USE PCRE2 constants directly, nor need for extra constants
+//
+// Constants for options (based on POCO)
+//
+enum {
+    REGEX_CASELESS        = 0x00000001, /// case insensitive matching (/i) [ctor]
+    REGEX_MULTILINE       = 0x00000002, /// enable multi-line mode; affects ^ and $ (/m) [ctor]
+    REGEX_DOTALL          = 0x00000004, /// dot matches all characters, including newline (/s) [ctor]
+    REGEX_EXTENDED        = 0x00000008, /// totally ignore whitespace (/x) [ctor]
+    REGEX_ANCHORED        = 0x00000010, /// treat pattern as if it starts with a ^ [ctor, match]
+    REGEX_DOLLAR_ENDONLY  = 0x00000020, /// dollar matches end-of-string only, not last newline in string [ctor]
+    REGEX_EXTRA           = 0x00000040, /// enable optional PCRE functionality [ctor]
+    REGEX_NOTBOL          = 0x00000080, /// circumflex does not match beginning of string [match]
+    REGEX_NOTEOL          = 0x00000100, /// $ does not match end of string [match]
+    REGEX_UNGREEDY        = 0x00000200, /// make quantifiers ungreedy [ctor]
+    REGEX_NOTEMPTY        = 0x00000400, /// empty string never matches [match]
+    REGEX_UTF8            = 0x00000800, /// assume pattern and subject is UTF-8 encoded [ctor]
+    REGEX_NO_AUTO_CAPTURE = 0x00001000, /// disable numbered capturing parentheses [ctor, match]
+    REGEX_NO_UTF8_CHECK   = 0x00002000, /// do not check validity of UTF-8 code sequences [match]
+    REGEX_FIRSTLINE       = 0x00040000, /// an  unanchored  pattern  is  required  to  match
+    REGEX_DUPNAMES        = 0x00080000, /// names used to identify capturing  subpatterns need not be unique [ctor]
+    REGEX_NEWLINE_CR      = 0x00100000, /// assume newline is CR ('\r'), the default [ctor]
+    REGEX_NEWLINE_LF      = 0x00200000, /// assume newline is LF ('\n') [ctor]
+    REGEX_NEWLINE_CRLF    = 0x00300000, /// assume newline is CRLF ("\r\n") [ctor]
+    REGEX_NEWLINE_ANY     = 0x00400000, /// assume newline is any valid Unicode newline character [ctor]
+    REGEX_NEWLINE_ANYCRLF = 0x00500000, /// assume newline is any of CR, LF, CRLF [ctor]
+    REGEX_GLOBAL          = 0x10000000, /// replace all occurences (/g) [subst]
+    REGEX_NO_VARS         = 0x20000000  /// treat dollar in replacement string as ordinary character [subst]
+};
+
 namespace {
 
 // Encapsulates a PCRE2 regular expression object
@@ -123,27 +153,27 @@ static int compile_options(int options)
 {
     int pcre_opts = 0;
 
-    if (options & DSTR_REGEX_CASELESS)
+    if (options & REGEX_CASELESS)
         pcre_opts |= PCRE2_CASELESS;
-    if (options & DSTR_REGEX_MULTILINE)
+    if (options & REGEX_MULTILINE)
         pcre_opts |= PCRE2_MULTILINE;
-    if (options & DSTR_REGEX_DOTALL)
+    if (options & REGEX_DOTALL)
         pcre_opts |= PCRE2_DOTALL;
-    if (options & DSTR_REGEX_EXTENDED)
+    if (options & REGEX_EXTENDED)
         pcre_opts |= PCRE2_EXTENDED;
-    if (options & DSTR_REGEX_ANCHORED)
+    if (options & REGEX_ANCHORED)
         pcre_opts |= PCRE2_ANCHORED;
-    if (options & DSTR_REGEX_DOLLAR_ENDONLY)
+    if (options & REGEX_DOLLAR_ENDONLY)
         pcre_opts |= PCRE2_DOLLAR_ENDONLY;
-    if (options & DSTR_REGEX_UNGREEDY)
+    if (options & REGEX_UNGREEDY)
         pcre_opts |= PCRE2_UNGREEDY;
-    if (options & DSTR_REGEX_UTF8)
+    if (options & REGEX_UTF8)
         pcre_opts |= PCRE2_UTF | PCRE2_UCP;
-    if (options & DSTR_REGEX_NO_AUTO_CAPTURE)
+    if (options & REGEX_NO_AUTO_CAPTURE)
         pcre_opts |= PCRE2_NO_AUTO_CAPTURE;
-    if (options & DSTR_REGEX_FIRSTLINE)
+    if (options & REGEX_FIRSTLINE)
         pcre_opts |= PCRE2_FIRSTLINE;
-    if (options & DSTR_REGEX_DUPNAMES)
+    if (options & REGEX_DUPNAMES)
         pcre_opts |= PCRE2_DUPNAMES;
 
     return pcre_opts;
@@ -154,17 +184,17 @@ static int match_options(int options)
 {
     int pcre_opts = 0;
 
-    if (options & DSTR_REGEX_ANCHORED)
+    if (options & REGEX_ANCHORED)
         pcre_opts |= PCRE2_ANCHORED;
-    if (options & DSTR_REGEX_NOTBOL)
+    if (options & REGEX_NOTBOL)
         pcre_opts |= PCRE2_NOTBOL;
-    if (options & DSTR_REGEX_NOTEOL)
+    if (options & REGEX_NOTEOL)
         pcre_opts |= PCRE2_NOTEOL;
-    if (options & DSTR_REGEX_NOTEMPTY)
+    if (options & REGEX_NOTEMPTY)
         pcre_opts |= PCRE2_NOTEMPTY;
-    if (options & DSTR_REGEX_NO_AUTO_CAPTURE)
+    if (options & REGEX_NO_AUTO_CAPTURE)
         pcre_opts |= PCRE2_NO_AUTO_CAPTURE;
-    if (options & DSTR_REGEX_NO_UTF8_CHECK)
+    if (options & REGEX_NO_UTF8_CHECK)
         pcre_opts |= PCRE2_NO_UTF_CHECK;
 
     return pcre_opts;
@@ -179,15 +209,15 @@ DStringRegex::DStringRegex(DStringView pattern, int options)
     if (!context)
         throw DStringError("cannot create compile context");
 
-    if (options & DSTR_REGEX_NEWLINE_LF)
+    if (options & REGEX_NEWLINE_LF)
         pcre2_set_newline(context, PCRE2_NEWLINE_LF);
-    else if (options & DSTR_REGEX_NEWLINE_CRLF)
+    else if (options & REGEX_NEWLINE_CRLF)
         pcre2_set_newline(context, PCRE2_NEWLINE_CRLF);
-    else if (options & DSTR_REGEX_NEWLINE_ANY)
+    else if (options & REGEX_NEWLINE_ANY)
         pcre2_set_newline(context, PCRE2_NEWLINE_ANY);
-    else if (options & DSTR_REGEX_NEWLINE_ANYCRLF)
+    else if (options & REGEX_NEWLINE_ANYCRLF)
         pcre2_set_newline(context, PCRE2_NEWLINE_ANYCRLF);
-    else // default DSTR_REGEX_NEWLINE_CR
+    else // default REGEX_NEWLINE_CR
         pcre2_set_newline(context, PCRE2_NEWLINE_CR);
 
     int error_code;
@@ -418,9 +448,9 @@ int DStringRegex::subst(DString& subject, size_t offset,
     PCRE2_SIZE outlen = sizeof(stbuff);
     uint32_t pcre_opts = PCRE2_SUBSTITUTE_EXTENDED;
 
-    if (options & DSTR_REGEX_GLOBAL)
+    if (options & REGEX_GLOBAL)
         pcre_opts |= PCRE2_SUBSTITUTE_GLOBAL;
-    if (options & DSTR_REGEX_NO_VARS)
+    if (options & REGEX_NO_VARS)
         pcre_opts |= PCRE2_SUBSTITUTE_LITERAL;
 
     // First call - try with local stack buffer
@@ -429,10 +459,8 @@ int DStringRegex::subst(DString& subject, size_t offset,
                               (PCRE2_SPTR)subject.c_str(), subject.length(),
                               offset,
                               pcre_opts | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH,
-                              NULL, NULL,
-                              (PCRE2_SPTR)replacement.c_str(),
-                              replacement.length(),
-                              outbuf, &outlen);
+                              NULL, NULL, (PCRE2_SPTR)replacement.c_str(),
+                              replacement.length(), outbuf, &outlen);
 
     if (rc == 0) {
         // none replaced
@@ -451,8 +479,7 @@ int DStringRegex::subst(DString& subject, size_t offset,
                               (PCRE2_SPTR)subject.c_str(),  subject.length(),
                               offset, pcre_opts, NULL, NULL,
                               (PCRE2_SPTR)replacement.c_str(),
-                              replacement.length(),
-                              v.data(), &outlen);
+                              replacement.length(), v.data(), &outlen);
 
         if (rc > 0) {
             subject.assign((char*)v.data());
@@ -536,22 +563,22 @@ static thread_local DStringRegexCache<30> re_cache;
 //
 bool DString::match(DStringView pattern, size_t offset) const
 {
-    int ctor_opts = (DSTR_REGEX_CASELESS |
-                     DSTR_REGEX_MULTILINE |
-                     DSTR_REGEX_DOTALL |
-                     DSTR_REGEX_EXTENDED |
-                     DSTR_REGEX_ANCHORED |
-                     DSTR_REGEX_DOLLAR_ENDONLY |
-                     DSTR_REGEX_EXTRA |
-                     DSTR_REGEX_UTF8 |
-                     DSTR_REGEX_NO_AUTO_CAPTURE);
+    int ctor_opts = (REGEX_CASELESS |
+                     REGEX_MULTILINE |
+                     REGEX_DOTALL |
+                     REGEX_EXTENDED |
+                     REGEX_ANCHORED |
+                     REGEX_DOLLAR_ENDONLY |
+                     REGEX_EXTRA |
+                     REGEX_UTF8 |
+                     REGEX_NO_AUTO_CAPTURE);
 
-    int match_opts = (DSTR_REGEX_ANCHORED |
-                      DSTR_REGEX_NOTBOL |
-                      DSTR_REGEX_NOTEOL |
-                      DSTR_REGEX_NOTEMPTY |
-                      DSTR_REGEX_NO_AUTO_CAPTURE |
-                      DSTR_REGEX_NO_UTF8_CHECK);
+    int match_opts = (REGEX_ANCHORED |
+                      REGEX_NOTBOL |
+                      REGEX_NOTEOL |
+                      REGEX_NOTEMPTY |
+                      REGEX_NO_AUTO_CAPTURE |
+                      REGEX_NO_UTF8_CHECK);
 
     const auto& re = re_cache.get_RE(pattern, ctor_opts);
     return re.match(*this, offset, match_opts);
@@ -560,18 +587,18 @@ bool DString::match(DStringView pattern, size_t offset) const
 
 size_t DString::match_within(DStringView pattern, size_t offset) const
 {
-    int ctor_opts = (DSTR_REGEX_CASELESS |
-                     DSTR_REGEX_MULTILINE |
-                     DSTR_REGEX_DOTALL |
-                     DSTR_REGEX_EXTENDED |
-                     DSTR_REGEX_DOLLAR_ENDONLY |
-                     DSTR_REGEX_EXTRA |
-                     DSTR_REGEX_UTF8);
+    int ctor_opts = (REGEX_CASELESS |
+                     REGEX_MULTILINE |
+                     REGEX_DOTALL |
+                     REGEX_EXTENDED |
+                     REGEX_DOLLAR_ENDONLY |
+                     REGEX_EXTRA |
+                     REGEX_UTF8);
 
-    int match_opts = (DSTR_REGEX_NOTBOL |
-                      DSTR_REGEX_NOTEOL |
-                      DSTR_REGEX_NOTEMPTY |
-                      DSTR_REGEX_NO_UTF8_CHECK);
+    int match_opts = (REGEX_NOTBOL |
+                      REGEX_NOTEOL |
+                      REGEX_NOTEMPTY |
+                      REGEX_NO_UTF8_CHECK);
 
     const auto& re = re_cache.get_RE(pattern, ctor_opts);
 
@@ -581,10 +608,46 @@ size_t DString::match_within(DStringView pattern, size_t offset) const
 }
 /*-------------------------------------------------------------------------------*/
 
+static int parse_regex_options(const char* str)
+{
+    if (!str || !*str)
+        return 0;
+
+    int opts = 0;
+    for (; *str; ++str) {
+        switch (*str) {
+        case ' ':
+        case '/': break;
+        case 'g': opts |= REGEX_GLOBAL;     break;
+        case 'i': opts |= REGEX_CASELESS;   break;
+        case 'm': opts |= REGEX_MULTILINE;  break;
+        case 's': opts |= REGEX_DOTALL;     break;
+        case 'x': opts |= REGEX_EXTENDED;   break;
+        case 'X': opts |= REGEX_EXTRA;      break;
+        case 'U': opts |= REGEX_UNGREEDY;   break;
+        case 'D': opts |= REGEX_DOLLAR_ENDONLY;  break;
+        case 'd': opts |= REGEX_NOTEOL;          break;
+        case 'E': opts |= REGEX_NOTEMPTY;        break;
+        case 'n': opts |= REGEX_NO_AUTO_CAPTURE; break;
+        case 'F': opts |= REGEX_FIRSTLINE;       break;
+        case 'A': opts |= REGEX_ANCHORED;        break;
+        case 't': opts |= REGEX_DUPNAMES;        break;
+        case '$': opts |= REGEX_NO_VARS;         break;
+        case '\n': opts |= REGEX_NEWLINE_LF;     break;
+        case '\r': opts |= REGEX_NEWLINE_CR;     break;
+        default:
+            throw DStringError(DString::format("invalid regex option: '%c'", *str));
+        }
+    }
+    return opts;
+}
+/*-------------------------------------------------------------------------------*/
+
 DString DString::capture(DStringView pattern,
                          size_t offset,
-                         int options) const
+                         const char* opts) const
 {
+    int options = parse_regex_options(opts);
     auto& re = re_cache.get_RE(pattern, options);
     return re.capture(*this, offset, options);
 }
@@ -593,24 +656,30 @@ DString DString::capture(DStringView pattern,
 int DString::capture(DStringView pattern,
                      size_t offset,
                      std::vector<DString>& vec,
-                     int options) const
+                     const char* opts) const
 {
+    int options = parse_regex_options(opts);
     const auto& re = re_cache.get_RE(pattern, options);
     return re.capture(*this, offset, vec, options);
 }
 /*-------------------------------------------------------------------------------*/
 
-int DString::match(DStringView pattern, size_t offset, DString::Match& m, int opts) const
+int DString::match(DStringView pattern,
+                   size_t offset,
+                   DString::Match& m,
+                   const char* opts) const
 {
-    const auto& re = re_cache.get_RE(pattern, opts);
-    return re.match(*this, offset, m, opts);
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+    return re.match(*this, offset, m, options);
 }
 /*-------------------------------------------------------------------------------*/
 
 int DString::match_groups(DStringView pattern, size_t offset,
                           DString::MatchVector& matches,
-                          int options) const
+                          const char* opts) const
 {
+    int options = parse_regex_options(opts);
     const auto& re = re_cache.get_RE(pattern, options);
     return re.match_groups(*this, offset, matches, options);
 }
@@ -618,8 +687,9 @@ int DString::match_groups(DStringView pattern, size_t offset,
 
 int DString::subst_inplace(DStringView pattern, size_t offset,
                            DStringView replacement,
-                           int options)
+                           const char* opts)
 {
+    int options = parse_regex_options(opts);
     const auto& re = re_cache.get_RE(pattern, options);
     return re.subst(*this, offset, replacement, options);
 }

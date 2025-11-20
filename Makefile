@@ -153,7 +153,6 @@ install: $(LIB)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr.h $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring.hpp $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring_view.hpp $(PREFIX_INCLUDE)
-	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr_regex_fwd.h $(PREFIX_INCLUDE)
 	/usr/bin/mkdir -p $(PREFIX_LIB)
 	/usr/bin/install -m 0644 -o root -g root $(LIB) -t $(PREFIX_LIB)
 
@@ -161,7 +160,6 @@ uninstall:
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring.hpp
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring_view.hpp
-	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr_regex_fwd.h
 	/usr/bin/rmdir $(PREFIX_INCLUDE)
 	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.a
 	/usr/bin/rmdir --ignore-fail-on-non-empty $(PREFIX_LIB)

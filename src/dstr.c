@@ -68,7 +68,6 @@
     } while(0)
 /*--------------------------------------------------------------------------*/
 
-
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
     const char* cp = haystack;
@@ -303,9 +302,9 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
 
     if (bytes_to_move > 0) {
         assert(index + len + bytes_to_move < DCAP(p));
-        memmove( dstr_address(p, index + len),
-                 dstr_address(p, index),
-                 bytes_to_move );
+        char* to = dstr_address(p, index + len);
+        const char* from  = dstr_address(p, index);
+        memmove(to, from, bytes_to_move );
     }
 
     memcpy(dstr_address(p, index), buff, len);
@@ -378,9 +377,9 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 
     size_t bytes_to_move = DLEN(p) - index;
     if (bytes_to_move > 0) {
-        memmove(dstr_address(p, index + count),
-                dstr_address(p, index),
-                bytes_to_move);
+        char* to = dstr_address(p, index + count);
+        const char* from = dstr_address(p, index);
+        memmove(to, from, bytes_to_move);
     }
 
     memset(dstr_address(p, index), c, count);
@@ -403,8 +402,11 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
     count = min_2(count, DLEN(p) - pos);
     size_t bytes_to_move = DLEN(p) - pos - count;
 
-    if (bytes_to_move > 0)
-        memmove(dstr_address(p, pos), dstr_address(p, pos + count), bytes_to_move);
+    if (bytes_to_move > 0) {
+        char* to = dstr_address(p, pos);
+        const char* from = dstr_address(p, pos + count);
+        memmove(to, from, bytes_to_move);
+    }
 
     DLEN(p) -= count;
     DVAL(p,DLEN(p)) = '\0';
@@ -800,7 +802,6 @@ static DSTR_BOOL dstr_isdigits_imp(CDSTR src, DSTR_BOOL is_hex)
     return DSTR_TRUE;
 }
 /*-------------------------------------------------------------------------------*/
-
 
 /*
  * * * * * * * * * * * * * * * * * *
@@ -2658,7 +2659,6 @@ int dstr_zfill(DSTR dest, size_t width)
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
-
 
 void dstr_title(DSTR p)
 {

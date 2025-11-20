@@ -18,10 +18,6 @@
 #include <dstr/dstr.h>
 #include <dstr/dstring_view.hpp>
 
-#if !defined(NO_DSTRING_REGEX)
-#include <dstr/dstr_regex_fwd.h>
-#endif
-
 // A C++ wrapper around C DSTR_TYPE
 //
 class DString {
@@ -140,9 +136,9 @@ public:
     {
         size_t len;
 
-        if (!first
-            || (len = (last - first)) == 0
-            || (len = strnlen(first, len)) == 0)
+        if (!first ||
+            (len = (last - first)) == 0 ||
+            (len = strnlen(first, len)) == 0)
         {
             dstr_init_data(pImp());
             return;
@@ -186,9 +182,13 @@ public:
     // delegate to other ctor
     //
     explicit DString(std::string_view sv)
-        :
-        DString(sv.data(), sv.size())
     {
+        if (sv.size() == 0) {
+            dstr_init_data(pImp()); }
+        else {
+            init_capacity(sv.size());
+            init_data(sv.data(), sv.size());
+            init_length(sv.size()); }
     }
 #endif
 
@@ -218,23 +218,10 @@ public:
             substr(size() - count, count);
     }
 
-    // slurp a text file into a DString
+    // slurp a text file into a DString (throws)
     //
-    int from_file(const char* fname)
-    {
-        if (dstr_assign_fromfile(pImp(), fname))
-            return DSTR_SUCCESS;
-
-        return DSTR_FAIL;
-    }
-
-    int from_cfile(FILE* fp)
-    {
-        if (dstr_slurp_stream(pImp(), fp))
-            return DSTR_SUCCESS;
-
-        return DSTR_FAIL;
-    }
+    static DString from_file(const char* fname);
+    static DString from_cfile(FILE* fp);
 
 #if __cplusplus >= 201103L
     // Assignments operator and functions
@@ -303,9 +290,7 @@ public:
 
     DString& assign(DStringView sv)
     {
-        // do nothing if sv originated from *this
-        if (data() != sv.data())
-            dstr_assign_ds(pImp(), sv.pImp());
+        dstr_assign_ds(pImp(), sv.pImp());
         return *this;
     }
 
@@ -543,7 +528,6 @@ public:
     {
         return join_inplace(sep, (const char**)argv, argc);
     }
-
 
     // join
     //
@@ -1136,9 +1120,11 @@ public:
 
     // store match info in Match parameter
     //
-    int match(DStringView ptrn, size_t offset, Match& m, int opts = 0) const;
+    int match(DStringView ptrn,
+              size_t offset, Match& m,
+              const char* opts = nullptr) const;
 
-    int match(DStringView pattern, Match& mtch, int options = 0) const
+    int match(DStringView pattern, Match& mtch, const char* options = nullptr) const
     {
         return match(pattern, 0, mtch, options);
     }
@@ -1147,32 +1133,35 @@ public:
     //
     int match_groups(DStringView pattern, size_t offset,
                      MatchVector& matches,
-                     int options = 0) const;
+                     const char* options = nullptr) const;
 
     int match_groups(DStringView pattern,
                      MatchVector& matches,
-                     int options = 0) const
+                     const char* options = nullptr) const
     {
         return match_groups(pattern, 0, matches, options);
     }
 
     // capture - returns matches as strings or vector of strings
     //
-    DString capture(DStringView pattern, size_t offset,
-                    int options = 0) const;
+    DString capture(DStringView pattern,
+                    size_t offset,
+                    const char* options = nullptr) const;
 
-    DString capture(DStringView pattern, int options = 0) const
+    DString capture(DStringView pattern,
+                    const char* options = nullptr) const
     {
         return capture(pattern, 0, options);
     }
 
-    int capture(DStringView pattern, size_t offset,
+    int capture(DStringView pattern,
+                size_t offset,
                 std::vector<DString>& strings,
-                int options = 0) const;
+                const char* options = nullptr) const;
 
     int capture(DStringView pattern,
                 std::vector<DString>& strings,
-                int options = 0) const
+                const char* options = nullptr) const
     {
         return capture(pattern, 0, strings, options);
     }
@@ -1181,23 +1170,28 @@ public:
     //
     int subst_inplace(DStringView pattern, size_t offset,
                       DStringView replacement,
-                      int options = 0);
+                      const char* options = nullptr);
 
-    int subst_inplace(DStringView pattern, DStringView r, int options = 0)
+    int subst_inplace(DStringView pattern,
+                      DStringView r,
+                      const char* options = nullptr)
     {
         return subst_inplace(pattern, 0, r, options);
     }
 
-    DString subst(DStringView pattern, size_t offset,
+    DString subst(DStringView pattern,
+                  size_t offset,
                   DStringView replacement,
-                  int options = 0) const
+                  const char* options = nullptr) const
     {
         DString result(*this);
         result.subst_inplace(pattern, offset, replacement, options);
         return result;
     }
 
-    DString subst(DStringView pattern, DStringView r, int options = 0) const
+    DString subst(DStringView pattern,
+                  DStringView r,
+                  const char* options = nullptr) const
     {
         return subst(pattern, 0, r, options);
     }
@@ -1282,7 +1276,6 @@ private:
     DString m_s;
 };
 /*-------------------------------------------------------------------------------*/
-
 
 // various operator+()
 //
@@ -1396,7 +1389,6 @@ inline DString to_dstring(long double val)
 
 #undef NUMBER_TO_DSTRING
 //----------------------------------------------------------------
-
 
 // Include guard
 //
