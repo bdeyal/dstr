@@ -40,7 +40,7 @@ int main()
 
     std::vector<DString> v2;
     for (int i = 0; i < 20; ++i)
-        v2.push_back(to_dstring(i).times(20));
+        v2.push_back(DString::to_string(i).times(20));
 
     auto p = v2.begin() + 10;
     v2.erase(p);

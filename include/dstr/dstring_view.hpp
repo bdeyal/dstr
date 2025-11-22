@@ -4,15 +4,19 @@
  * This file is part of DString C and C++ dynamic string library,
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
-#ifndef DSTRING_VIEW_HPP_INCLUDED
+#if !defined(DSTRING_VIEW_HPP_INCLUDED)
 #define DSTRING_VIEW_HPP_INCLUDED
 
-#include <iosfwd>
-#include <dstr/dstr.h>
+#if !defined(DSTRING_HPP_INCLUDED)
+#error "dstring_view.hpp cannot be included directly. Use dstr/dstring.hpp"
+#endif
 
-// Forward declaraton
+// Forward declaratons
 //
-class DString;
+class    DString;
+struct   DStringMatch;
+typedef  std::vector<DStringMatch> DSMatchVector;
+//-----------------------------------------------
 
 class DStringView {
 public:
@@ -96,6 +100,17 @@ public:
     {
         return dstr_substr(pImp(), pos, numbytes, dest, destsize);
     }
+
+    // Like in basic - TODO
+    //
+    DString left(size_t count) const;
+    DString mid(size_t pos, size_t count) const;
+    DString right(size_t count) const;
+    DString expandtabs(size_t width = 8) const;
+    DString title() const;
+    DString join(const std::vector<DString>& v) const;
+    DString join(const char* argv[], size_t argc) const;
+    DString times(size_t n) const;
 
     // Inline queries
     //
@@ -408,6 +423,125 @@ public:
         m_imp.data += n;
         m_imp.length -= n;
     }
+
+    /////////////////////////////////////////////////////////////////
+    //
+    //  Split, tokenize, partition
+    //
+    /////////////////////////////////////////////////////////////////
+
+    // split: empty string between separator character or string
+    //
+    void split(char c, std::vector<DString>& dest) const;
+    void split(const char* sep, std::vector<DString>& dest) const;
+
+    void split(DStringView sep, std::vector<DString>& dest)  const
+    {
+        split(sep.data(), dest);
+    }
+
+    void splitlines(std::vector<DString>& dest) const
+    {
+        split('\n', dest);
+    }
+
+    void tokenize(const char* separators, std::vector<DString>& dest) const;
+    void tokenize(DStringView separators, std::vector<DString>& dest) const
+    {
+        tokenize(separators.data(), dest);
+    }
+
+    // split() without any separator will split on any whitespace
+    // character (including \n \r \t \f and spaces) and will discard
+    // empty strings from the result
+    //
+    void split(std::vector<DString>& dest) const
+    {
+        tokenize("\n\r\t\f ", dest);
+    }
+
+    void partition(const char* s,
+                   DString& left, DString& middle, DString& right) const;
+
+    void rpartition(const char* s,
+                    DString& left, DString& middle, DString& right) const;
+
+    void partition(DStringView s, DString& l, DString& m, DString& r) const
+    {
+        partition(s.c_str(), l, m, r);
+    }
+
+    void rpartition(DStringView s, DString& l, DString& m, DString& r) const
+    {
+        rpartition(s.c_str(), l, m, r);
+    }
+
+#if !defined(NO_DSTRING_REGEX)
+    ///////////////////////////////////////////////////
+    //
+    //   Regexp Support
+    //
+    ///////////////////////////////////////////////////
+
+    // *this is an exact match
+    //
+    bool match(DStringView pattern, size_t offset = 0) const;
+
+    // pattern appears somewhere in *this. Returns position or NPOS
+    //
+    size_t match_within(DStringView pattern, size_t offset = 0) const;
+
+    // store match info in Match parameter
+    //
+    int match(DStringView ptrn,
+              size_t offset, DStringMatch& m,
+              const char* opts = nullptr) const;
+
+    int match(DStringView pattern, DStringMatch& mtch, const char* options = nullptr) const
+    {
+        return match(pattern, 0, mtch, options);
+    }
+
+    // match groups into a vector of matches
+    //
+    int match_groups(DStringView pattern, size_t offset,
+                     DSMatchVector& matches,
+                     const char* options = nullptr) const;
+
+    int match_groups(DStringView pattern,
+                     DSMatchVector& matches,
+                     const char* options = nullptr) const
+    {
+        return match_groups(pattern, 0, matches, options);
+    }
+
+    // capture - returns matches as strings or vector of strings
+    //
+    int capture(DStringView pattern,
+                size_t offset,
+                DString& result,
+                const char* options = nullptr) const;
+
+    int capture(DStringView pattern,
+                DString& result,
+                const char* options = nullptr) const
+    {
+        return capture(pattern, 0, result, options);
+    }
+
+    int capture(DStringView pattern,
+                size_t offset,
+                std::vector<DString>& strings,
+                const char* options = nullptr) const;
+
+    int capture(DStringView pattern,
+                std::vector<DString>& strings,
+                const char* options = nullptr) const
+    {
+        return capture(pattern, 0, strings, options);
+    }
+#endif // NO_DSTRING_REGEX
+
 
 private:
     // Single data member.

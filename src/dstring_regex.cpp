@@ -12,7 +12,6 @@
 #include <memory>
 #include <cassert>
 #include <deque>
-#include <vector>
 #include <cstdint>
 
 #include <dstr/dstring.hpp>
@@ -61,36 +60,19 @@ public:
     DStringRegex(DStringView pattern, int options = 0);
     ~DStringRegex();
 
-    // Implemented below
+    // Implemented out of line below
     //
     bool match(DStringView subject, size_t offset, int options) const;
-    int match(DStringView s, size_t off, DString::Match& m, int opts) const;
-    int match_groups(DStringView s, size_t off, DString::MatchVector& m,
-                     int opts) const;
-    DString capture(DStringView subject, size_t offset, int options) const;
+    int  match(DStringView s, size_t off, DString::Match& m, int opts) const;
+    int  match_groups(DStringView s, size_t off, DString::MatchVector& m,
+                      int opts) const;
+    int capture(DStringView subject, size_t offset,
+                DString& result, int options) const;
     int capture(DStringView subject, size_t offset,
                 std::vector<DString>& strings, int options) const;
     int subst(DString& subject, size_t offset, DStringView repl,
               int options) const;
 
-    // Inlines using the above
-    //
-    int match(DStringView s, DString::Match& m, int opts) const {
-        return match(s, 0, m, opts);
-    }
-    int match_groups(DStringView s, DString::MatchVector& m, int opts) const {
-        return match_groups(s, 0, m, opts);
-    }
-    DString capture(DStringView subject, int options) const {
-        return capture(subject, 0, options);
-    }
-    int capture(DStringView subject, std::vector<DString>& strings,
-                int options) const {
-        return capture(subject, 0, strings, options);
-    }
-    int subst(DString& s, DStringView r, int options) const {
-        return subst(s, 0, r, options);
-    }
 private:
     // Actual type is pcre2_code_8*
     pcre2_code* _pRE;
@@ -400,15 +382,18 @@ handle_error:
 }
 /*-------------------------------------------------------------------------------*/
 
-DString DStringRegex::capture(DStringView subject, size_t offset,
-                              int options) const
+int DStringRegex::capture(DStringView subject, size_t offset,
+                          DString& result,
+                          int options) const
 {
     DString::Match mtch;
+
     int rc = match(subject, offset, mtch, options);
+
     if (rc > 0 && mtch.offset != DString::NPOS)
-        return DString(subject, mtch.offset, mtch.length);
-    else
-        return DString();
+        result = subject.substr(mtch.offset, mtch.length);
+
+    return rc;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -515,9 +500,10 @@ using std::make_unique;
 /*-------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------*/
 
-template <size_t LIMIT>
 struct DStringRegexCache
 {
+    static const size_t LIMIT = 30;
+
     struct RegexCacheEntry {
         RegexCacheEntry(DStringView rhs, int opts)
             :
@@ -538,7 +524,9 @@ struct DStringRegexCache
             }
         }
 
-        remove_oldest_if_full();
+        if (fifo.size() >= LIMIT)
+            remove_oldest_if_full();
+
         fifo.emplace_back(pattern, options);
         return *(fifo.back().pRE);
     }
@@ -552,7 +540,12 @@ struct DStringRegexCache
     std::deque<RegexCacheEntry> fifo;
 };
 
-static thread_local DStringRegexCache<30> re_cache;
+#ifdef __BORLANDC__
+#if !defined(__clang__) || (__clang_major__ < 15)
+#define thread_local
+#endif
+#endif
+static thread_local DStringRegexCache re_cache;
 
 }  // unnamed ns
 /*-------------------------------------------------------------------------------*/
@@ -643,13 +636,56 @@ static int parse_regex_options(const char* str)
 }
 /*-------------------------------------------------------------------------------*/
 
-DString DString::capture(DStringView pattern,
+int DStringView::capture(DStringView pattern,
                          size_t offset,
+                         DString& result,
                          const char* opts) const
 {
     int options = parse_regex_options(opts);
     auto& re = re_cache.get_RE(pattern, options);
-    return re.capture(*this, offset, options);
+    return re.capture(*this, offset, result, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+int DStringView::capture(DStringView pattern,
+                         size_t offset,
+                         std::vector<DString>& vec,
+                         const char* opts) const
+{
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+    return re.capture(*this, offset, vec, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+int DStringView::match(DStringView pattern,
+                       size_t offset,
+                       DString::Match& m,
+                       const char* opts) const
+{
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+    return re.match(*this, offset, m, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+int DStringView::match_groups(DStringView pattern, size_t offset,
+                              DString::MatchVector& matches,
+                              const char* opts) const
+{
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+    return re.match_groups(*this, offset, matches, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+DString DString::capture(DStringView pattern,
+                         size_t offset,
+                         const char* opts) const
+{
+    DString result;
+    view().capture(pattern, offset, result, opts);
+    return result;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -658,9 +694,7 @@ int DString::capture(DStringView pattern,
                      std::vector<DString>& vec,
                      const char* opts) const
 {
-    int options = parse_regex_options(opts);
-    const auto& re = re_cache.get_RE(pattern, options);
-    return re.capture(*this, offset, vec, options);
+    return view().capture(pattern, offset, vec, opts);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -669,9 +703,7 @@ int DString::match(DStringView pattern,
                    DString::Match& m,
                    const char* opts) const
 {
-    int options = parse_regex_options(opts);
-    const auto& re = re_cache.get_RE(pattern, options);
-    return re.match(*this, offset, m, options);
+    return view().match(pattern, offset, m, opts);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -679,9 +711,7 @@ int DString::match_groups(DStringView pattern, size_t offset,
                           DString::MatchVector& matches,
                           const char* opts) const
 {
-    int options = parse_regex_options(opts);
-    const auto& re = re_cache.get_RE(pattern, options);
-    return re.match_groups(*this, offset, matches, options);
+    return view().match_groups(pattern, offset, matches, opts);
 }
 /*-------------------------------------------------------------------------------*/
 

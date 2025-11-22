@@ -16,7 +16,11 @@
 #endif
 
 #include <dstr/dstr.h>
-#include <dstr/dstring_view.hpp>
+
+// For DStringView. This is a helper header that should not
+// be included directly
+//
+#include "dstring_view.hpp"
 
 // A C++ wrapper around C DSTR_TYPE
 //
@@ -151,7 +155,7 @@ public:
 
     // Support DStringView (same code as copy ctor)
     //
-    explicit DString(DStringView sv)
+    DString(DStringView sv)
     {
         if (sv.size() == 0) {
             dstr_init_data(pImp()); }
@@ -552,7 +556,8 @@ public:
 
     // duplicate *this n times
     //
-    DString times(size_t n) const {
+    DString times(size_t n) const
+    {
         DString result(*this);
         result.times_inplace(n);
         return result;
@@ -664,17 +669,20 @@ public:
         tokenize("\n\r\t\f ", dest);
     }
 
-    void partition(const char* s, std::vector<DString>& dest) const;
-    void rpartition(const char* s, std::vector<DString>& dest) const;
+    void partition(const char* s,
+                   DString& left, DString& middle, DString& right) const;
 
-    void partition(DStringView s, std::vector<DString>& dest) const
+    void rpartition(const char* s,
+                    DString& left, DString& middle, DString& right) const;
+
+    void partition(DStringView s, DString& l, DString& m, DString& r) const
     {
-        partition(s.c_str(), dest);
+        partition(s.c_str(), l, m, r);
     }
 
-    void rpartition(DStringView s, std::vector<DString>& dest) const
+    void rpartition(DStringView s, DString& l, DString& m, DString& r) const
     {
-        rpartition(s.c_str(), dest);
+        rpartition(s.c_str(), l, m, r);
     }
 
     void reserve(size_t len)
@@ -1047,6 +1055,11 @@ public:
         return dstr_fgetline(pImp(), fp);
     }
 
+    //////////////////////////////////////////////////////
+    //
+    // Conversions  Built in types <==> DString
+    //
+    //////////////////////////////////////////////////////
     int stoi(size_t* index = nullptr, int base = 10) const
     {
         return dstr_to_int(pImp(), index, base);
@@ -1087,6 +1100,71 @@ public:
         return dstr_to_ldouble(pImp(), index);
     }
 
+    // Built in types -> DString
+    //
+    static DString to_string(int val)
+    {
+        DString r;
+        r.itos(val);
+        return r;
+    }
+
+    static DString to_string(unsigned int val)
+    {
+        DString r;
+        r.itos_ul(val);
+        return r;
+    }
+
+    static DString to_string(long val)
+    {
+        DString r;
+        r.itos(val);
+        return r;
+    }
+
+    static DString to_string(unsigned long val)
+    {
+        DString r;
+        r.itos_ul(val);
+        return r;
+    }
+
+    static DString to_string(long long val)
+    {
+        DString r;
+        r.itos(val);
+        return r;
+    }
+
+    static DString to_string(unsigned long long val)
+    {
+        DString r;
+        r.itos_ul(val);
+        return r;
+    }
+
+    static DString to_string(float val)
+    {
+        DString r;
+        r.append_sprintf("%f", val);
+        return r;
+    }
+
+    static DString to_string(double val)
+    {
+        DString r;
+        r.append_sprintf("%f", val);
+        return r;
+    }
+
+    static DString to_string(long double val)
+    {
+        DString r;
+        r.append_sprintf("%Lf", val);
+        return r;
+    }
+
     // C++ algorithms support : functions
     //
     size_type      size()  const { return length(); }
@@ -1104,11 +1182,8 @@ public:
 
     // Regexp Match type: forward declaration
     //
-    struct Match;
-
-    // Container types for matches and DString itself
-    //
-    typedef std::vector<Match> MatchVector;
+    typedef struct DStringMatch Match;
+    typedef DSMatchVector       MatchVector;
 
     // *this is an exact match
     //
@@ -1235,7 +1310,7 @@ private:
 };
 /*-------------------------------------------------------------------------------*/
 
-struct DString::Match
+struct DStringMatch
 {
     // zero based offset (NPOS if subexpr does not match)
     size_t offset;
@@ -1320,74 +1395,6 @@ inline DString operator+(const char* sz, DStringView rhs)
 std::ostream& operator<<(std::ostream& out, DStringView s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
-//----------------------------------------------------------------
-
-// to_dstring() functions
-//
-inline DString to_dstring(int val)
-{
-    DString r;
-    r.itos(val);
-    return r;
-}
-
-inline DString to_dstring(unsigned int val)
-{
-    DString r;
-    r.itos_ul(val);
-    return r;
-}
-
-inline DString to_dstring(long val)
-{
-    DString r;
-    r.itos(val);
-    return r;
-}
-
-inline DString to_dstring(unsigned long val)
-{
-    DString r;
-    r.itos_ul(val);
-    return r;
-}
-
-inline DString to_dstring(long long val)
-{
-    DString r;
-    r.itos(val);
-    return r;
-}
-
-inline DString to_dstring(unsigned long long val)
-{
-    DString r;
-    r.itos_ul(val);
-    return r;
-}
-
-#define NUMBER_TO_DSTRING(v, fmt) do {           \
-    char buf[40];                                \
-    int n = snprintf(buf, sizeof(buf), fmt, v);  \
-    DString res; res.assign(buf, buf + n);       \
-    return res; } while(0)
-
-inline DString to_dstring(float val)
-{
-    NUMBER_TO_DSTRING(val, "%f");
-}
-
-inline DString to_dstring(double val)
-{
-    NUMBER_TO_DSTRING(val, "%f");
-}
-
-inline DString to_dstring(long double val)
-{
-    NUMBER_TO_DSTRING(val, "%Lf");
-}
-
-#undef NUMBER_TO_DSTRING
 //----------------------------------------------------------------
 
 // Include guard

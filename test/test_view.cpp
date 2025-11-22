@@ -80,7 +80,7 @@ void test_various()
         long n = rand();
         n *= rand();
         if (i % 2) n = -n;
-        DString nstr = to_dstring(n);
+        DString nstr = DString::to_string(n);
         assert(nstr.stol() == n);
 
         DStringView sv3(nstr);

@@ -1882,12 +1882,11 @@ void test_translate()
 //-------------------------------------------------
 
 #define ASSERT_PARTITION(str, what, p1, p2, p3) do {  \
-    std::vector<DString> v;                           \
-    DString(str).partition((what), v);                \
-    assert(v.size() == 3);                            \
-    assert(v[0] == p1);                               \
-    assert(v[1] == p2);                               \
-    assert(v[2] == p3);                               \
+        DString  l, m, r;                             \
+        DString(str).partition((what), l, m, r);      \
+        assert(l == p1);                              \
+        assert(m == p2);                              \
+        assert(r == p3);                              \
     } while(0)
 
 void test_partition()
@@ -1924,13 +1923,12 @@ void test_partition()
 }
 //-------------------------------------------------
 
-#define ASSERT_RPARTITION(str, what, p1, p2, p3) do {  \
-        std::vector<DString> v;                        \
-        DString(str).rpartition((what), v);            \
-        assert(v.size() == 3);                         \
-        assert(v[0] == p1);                            \
-        assert(v[1] == p2);                            \
-        assert(v[2] == p3);                            \
+#define ASSERT_RPARTITION(str, what, p1, p2, p3) do { \
+        DString  l, m, r;                             \
+        DString(str).rpartition((what), l, m, r);     \
+        assert(l == p1);                              \
+        assert(m == p2);                              \
+        assert(r == p3);                              \
     } while(0)
 
 void test_rpartition()
