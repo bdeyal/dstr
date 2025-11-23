@@ -130,7 +130,7 @@ void test_dstring_group_extract()
 }
 //--------------------------------------------------------------------------------
 
-void test_dstring_re_match()
+void test_dstring_match()
 {
     TRACE_FN();
 
@@ -143,10 +143,6 @@ void test_dstring_re_match()
     s = "abc123";
     assert(!s.match("[0-9]+"));
     assert(s.match("[0-9]+", 3));
-
-    cout << "***********************************************************" << endl;
-    cout << "***********************************************************" << endl;
-    cout << "***********************************************************" << endl;
 
     //s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
     s = "alice@foo.com";
@@ -169,16 +165,12 @@ void test_dstring_match_within()
     assert(!s.match("[0-9]+"));
     assert(s.match("[0-9]+", 3));
 
-    cout << "***********************************************************" << endl;
-    cout << "***********************************************************" << endl;
-    cout << "***********************************************************" << endl;
-
     s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
     assert(s.match_within(R"(([\w\.-]+)@([\w\.-]+\.\w+))") <= s.length());
 }
 //--------------------------------------------------------------------------------
 
-void test_dstring_re_capture()
+void test_dstring_capture()
 {
     TRACE_FN();
 
@@ -210,7 +202,7 @@ void test_dstring_re_capture()
 }
 //--------------------------------------------------------------------------------
 
-void test_dstring_re_match_struct()
+void test_dstring_match_struct()
 {
     TRACE_FN();
 
@@ -357,10 +349,10 @@ void test_ip_address()
 int main()
 {
     try {
-        test_dstring_re_match();
+        test_dstring_match();
         test_dstring_match_within();
-        test_dstring_re_capture();
-        test_dstring_re_match_struct();
+        test_dstring_capture();
+        test_dstring_match_struct();
         test_dstring_replace_all();
         test_dstring_subst();
         test_dstring_group_extract();
