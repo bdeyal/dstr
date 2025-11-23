@@ -304,7 +304,7 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
         assert(index + len + bytes_to_move < DCAP(p));
         char* to = dstr_address(p, index + len);
         const char* from  = dstr_address(p, index);
-        memmove(to, from, bytes_to_move );
+        memmove(to, from, bytes_to_move);
     }
 
     memcpy(dstr_address(p, index), buff, len);

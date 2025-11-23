@@ -23,6 +23,7 @@
 #include <string_view>
 #endif
 #include <dstr/dstring.hpp>
+#include <dstr/dstringstream.hpp>
 
 
 #if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER <= 1200))
@@ -2083,6 +2084,34 @@ void test_zfill()
 }
 //-------------------------------------------------
 
+void test_dstringstream(void)
+{
+    DStringOut out;
+    out << "Hello World";
+    DString s = out.str();
+    cout << "OUT.STR() " << out.str() << endl;
+    cout << s << endl;
+    assert(s == "Hello World");
+
+    for (int i = -100; i < 100; ++i) {
+        assert(to_dstring(i) == DString::to_string(i)); }
+
+    // to_dstring is a template that uses operator <<
+    //
+    for (double d = -100.0; d < 100.0; d += 3.14159) {
+        assert(to_dstring(d) == DString::to_string(d)); }
+
+    // Slurp this file in two methods and compare
+    //
+    std::ifstream in(__FILE__);
+    if (!in) throw DStringError("open");
+    DStringOut dsout;
+    dsout << in.rdbuf();
+
+    DString content2 = DString::from_file(__FILE__);
+    assert(content2 == dsout.str());
+}
+//-------------------------------------------------
 
 int main()
 {
@@ -2145,5 +2174,6 @@ int main()
     test_times();
     test_std_string_view();
     test_zfill();
+    test_dstringstream();
     // last test
 }

@@ -166,6 +166,17 @@ public:
             init_length(sv.size()); }
     }
 
+    // Static constructors
+    //
+    // * slurp a text file into a DString (throws)
+    // * create from a printf-like format
+    //
+    static DString from_file(const char* fname);
+    static DString from_cfile(FILE* fp);
+    static DString format(const char* fmt, ...);
+
+    // DstringView conversion
+    //
     DStringView view() const noexcept
     {
         return DStringView(data(), size());
@@ -176,16 +187,14 @@ public:
         return view();
     }
 
-#if __cplusplus >= 201703L
-    // Support std::string_view
+    // Support C++17 std::string_view
     //
+#if __cplusplus >= 201703L
     operator std::string_view() const noexcept
     {
         return std::string_view(data(), size());
     }
 
-    // delegate to other ctor
-    //
     explicit DString(std::string_view sv)
     {
         if (sv.size() == 0) {
@@ -222,11 +231,6 @@ public:
             DString(*this) :
             substr(size() - count, count);
     }
-
-    // slurp a text file into a DString (throws)
-    //
-    static DString from_file(const char* fname);
-    static DString from_cfile(FILE* fp);
 
 #if __cplusplus >= 201103L
     // Assignments operator and functions
@@ -314,16 +318,14 @@ public:
         return *this;
     }
 
+    // Auto expanding as needed
+    //
     DString& sprintf(const char* fmt, ...);
 
     DString& vsprintf(const char* fmt, va_list args) {
         dstr_assign_vsprintf(pImp(), fmt, args);
         return *this;
     }
-
-    // easy creation from sprintf-like format
-    //
-    static DString format(const char* fmt, ...);
 
     // Insertion functions
     //
@@ -834,32 +836,38 @@ public:
         return rstrip_inplace(sz).lstrip_inplace(sz);
     }
 
-    DString lstrip(char c) const {
+    DString lstrip(char c) const
+    {
         DString result(*this);
         return result.lstrip_inplace(c);
     }
 
-    DString lstrip(const char* sz) const {
+    DString lstrip(const char* sz) const
+    {
         DString result(*this);
         return result.lstrip_inplace(sz);
     }
 
-    DString rstrip(char c) const {
+    DString rstrip(char c) const
+    {
         DString result(*this);
         return result.rstrip_inplace(c);
     }
 
-    DString rstrip(const char* sz) const {
+    DString rstrip(const char* sz) const
+    {
         DString result(*this);
         return result.rstrip_inplace(sz);
     }
 
-    DString strip(char c) const {
+    DString strip(char c) const
+    {
         DString result(*this);
         return result.strip_inplace(c);
     }
 
-    DString strip(const char* sz) const {
+    DString strip(const char* sz) const
+    {
         DString result(*this);
         return result.strip_inplace(sz);
     }
@@ -1252,7 +1260,7 @@ public:
     static DString to_string(double val)
     {
         DString r;
-        r.append_sprintf("%f", val);
+        r.append_sprintf("%g", val);
         return r;
     }
 
