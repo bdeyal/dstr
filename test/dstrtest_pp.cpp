@@ -2086,20 +2086,11 @@ void test_zfill()
 
 void test_dstringstream(void)
 {
+    TRACE_FN();
     DStringOut out;
     out << "Hello World";
     DString s = out.str();
-    cout << "OUT.STR() " << out.str() << endl;
-    cout << s << endl;
     assert(s == "Hello World");
-
-    for (int i = -100; i < 100; ++i) {
-        assert(to_dstring(i) == DString::to_string(i)); }
-
-    // to_dstring is a template that uses operator <<
-    //
-    for (double d = -100.0; d < 100.0; d += 3.14159) {
-        assert(to_dstring(d) == DString::to_string(d)); }
 
     // Slurp this file in two methods and compare
     //
@@ -2107,9 +2098,18 @@ void test_dstringstream(void)
     if (!in) throw DStringError("open");
     DStringOut dsout;
     dsout << in.rdbuf();
-
     DString content2 = DString::from_file(__FILE__);
     assert(content2 == dsout.str());
+
+    // to_dstring is a template that uses operator <<
+    //
+    for (int i = -100; i < 100; ++i) {
+        assert(to_dstring(i) == DString::to_string(i)); }
+
+    // to_dstring is a template that uses operator <<
+    //
+    for (double d = -100.0; d < 100.0; d += 3.14159) {
+        assert(to_dstring(d) == DString::to_string(d)); }
 }
 //-------------------------------------------------
 

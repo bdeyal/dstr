@@ -1,6 +1,8 @@
 #ifndef DSTR_STDBOOL_INCLUDED
 #define DSTR_STDBOOL_INCLUDED
 
+#include <ctype.h>
+
 // Borland C++ 5.x missing stdbool.h
 // Added it here in addition to some missing stuff in BCC 5.x on 32 bit code
 // Compilation is in C++ mode only (since dstr.c is C99 and above)

@@ -12,32 +12,32 @@
 #include <streambuf>
 #include <dstr/dstring.hpp>
 
-// Currently only for output
+// Currently only for output (Unbuffered, slow)
 //
 class DStringBuf : public std::streambuf {
 public:
-    explicit DStringBuf() {
-        reset_put_area();
+    explicit DStringBuf() : str_() {
+        setp(nullptr, nullptr);
     }
 
     const DString& str() const { return str_; }
 
     void clear() {
         str_.clear();
-        reset_put_area();
     }
 
 protected:
     int_type overflow(int_type ch) {
+        if (traits_type::eq_int_type(ch, traits_type::eof())) {
+            return traits_type::not_eof(ch);
+        }
         str_.push_back((char)ch);
-        reset_put_area();
-        return ch;
+        return traits_type::not_eof(ch);
     }
 
     std::streamsize xsputn(const char* s, std::streamsize n) {
         if (n <= 0) return 0;
         str_.append(s, (size_t) n);
-        reset_put_area();
         return n;
     }
 
@@ -46,15 +46,6 @@ protected:
     }
 
 private:
-    void reset_put_area() {
-        if (str_.empty()) {
-            setp(nullptr, nullptr); }
-        else {
-            char* p = (char*)str_.data();
-            setp(p, p + str_.capacity());
-            pbump((int)str_.size()); }
-    }
-
     DString str_;
 };
 //----------------------------------------------

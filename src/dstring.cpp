@@ -5,8 +5,8 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <iostream>
-#include <cctype>
-#include <cerrno>
+#include <ctype.h>
+#include <errno.h>
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_view.hpp>
 #include "dstr_internal.h"
@@ -153,6 +153,12 @@ void DStringView::rpartition(const char* s, DString& left, DString& middle, DStr
 //
 /////////////////////////////////////////////////////////
 
+#if __cplusplus >= 201103L
+#define STD_MOVE std::move
+#else
+#define STD_MOVE(a) (a)
+#endif
+
 /*static*/
 DString DString::from_file(const char* fname)
 {
@@ -161,7 +167,7 @@ DString DString::from_file(const char* fname)
         DString msg = DString::format("Could not open file: %s: %s\n",
                                       fname,
                                       strerror(errno));
-        throw DStringError(std::move(msg));
+        throw DStringError(STD_MOVE(msg));
     }
     return result;
 }
@@ -174,7 +180,7 @@ DString DString::from_cfile(FILE* fp)
     if (!dstr_slurp_stream(result.pImp(), fp)) {
         DString msg = DString::format("Could read file: %s\n",
                                       strerror(errno));
-        throw DStringError(std::move(msg));
+        throw DStringError(STD_MOVE(msg));
     }
     return result;
 }
