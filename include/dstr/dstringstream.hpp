@@ -16,11 +16,10 @@
 //
 class DStringBuf : public std::streambuf {
 public:
-    explicit DStringBuf(DString& str) : str_(str) {
+    explicit DStringBuf() {
         reset_put_area();
     }
 
-    DString&       str()       { return str_; }
     const DString& str() const { return str_; }
 
     void clear() {
@@ -56,18 +55,17 @@ private:
             pbump((int)str_.size()); }
     }
 
-    DString& str_;
+    DString str_;
 };
 //----------------------------------------------
 //----------------------------------------------
 
 class DStringOut : public std::ostream {
     DStringBuf buf_;
-    DString    str_;
 public:
-    DStringOut() : std::ostream(&buf_), buf_(str_) {}
-    const DString& str() const noexcept { return str_; }
-    void clear() { str_.clear(); buf_.clear(); }
+    DStringOut() : std::ostream(&buf_), buf_() {}
+    const DString& str() const noexcept { return buf_.str(); }
+    void clear() { buf_.clear(); }
 };
 //----------------------------------------------
 //----------------------------------------------
