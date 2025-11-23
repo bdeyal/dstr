@@ -474,21 +474,21 @@ void test_remove()
 
 #define TEST_TRIM_LEFT(before, after) do {                  \
         DString s(before);                                  \
-        s.trim_left();                                      \
+        s.trim_left_inplace();                              \
         assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
 #define TEST_TRIM_RIGHT(before, after) do {                 \
         DString s(before);                                  \
-        s.trim_right();                                     \
+        s.trim_right_inplace();                             \
         assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
 #define TEST_TRIM_BOTH(before, after) do {                  \
         DString s(before);                                  \
-        s.trim();                                           \
+        s.trim_inplace();                                   \
         assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
@@ -989,7 +989,7 @@ void test_put_get_safe()
     assert(s1 == str_upper);
 
     // back to lowercase
-    s1.lower();
+    s1.lower_inplace();
     assert(s1 == str_lower);
 
     // Now test the 'safe' part
@@ -1016,7 +1016,7 @@ void test_put_get_safe()
 
 #define TEST_ASCII_UPPER(before, after) do {                \
         DString s(before);                                  \
-        s.upper();                                          \
+        s.upper_inplace();                                  \
         assert(s == after);                                 \
         assert(s.size() == 0 || s.isupper());              \
     } while (0)
@@ -1024,7 +1024,7 @@ void test_put_get_safe()
 
 #define TEST_ASCII_LOWER(before, after) do {                \
         DString s(before);                                  \
-        s.lower();                                          \
+        s.lower_inplace();                                  \
         assert( s == after );                               \
         assert(s.size() == 0 || s.islower());              \
     } while (0)
@@ -1032,14 +1032,14 @@ void test_put_get_safe()
 
 #define TEST_ASCII_SWAPCASE(before, after) do {             \
         DString s(before);                                  \
-        s.swapcase();                                       \
+        s.swapcase_inplace();                               \
         assert(s == after);                                 \
     } while (0)
 //-------------------------------------------------
 
 #define TEST_REVERSE(before, after) do {                  \
         DString s(before);                                \
-        s.reverse();                                      \
+        s.reverse_inplace();                              \
         assert( s == after );                             \
     } while (0)
 //-------------------------------------------------
@@ -1977,46 +1977,50 @@ void test_strip()
     TRACE_FN();
 
     DString s("####Hello####");
-    s.strip('#');
+    s.strip_inplace('#');
     assert(s == "Hello");
 
     s = "#####################";
-    s.rstrip('#');
+    s.rstrip_inplace('#');
     assert(s == "");
 
     s = "#####################";
-    s.rstrip("#");
+    s.rstrip_inplace("#");
     assert(s == "");
 
     s = " ###Hello###";
-    s.strip('#');
+    s.strip_inplace('#');
     assert(s == " ###Hello");
 
     s = " \n \t hello\n";
-    s.strip('\n');
+    s.strip_inplace('\n');
     assert(s == " \n \t hello");
 
     s = "\n\n \t hello\n";
-    s.strip('\n');
+    s.strip_inplace('\n');
     assert(s == " \t hello");
 
     s = "www.example.com";
-    s.strip("cmow.");
+    s.strip_inplace("cmow.");
     std::cout << s << "\n";
     assert(s == "example");
 
     s = " www.example.com";
-    s.strip("cmow.");
+    s.strip_inplace("cmow.");
     assert(s == " www.example");
 
     s = "www.example.com ";
-    s.strip("cmow.");
+    s.strip_inplace("cmow.");
     std::cout << "\"" << s << "\"\n";
     assert(s == "example.com ");
 
     s = "Arthur: three!";
-    s.lstrip("Arthur: ");
+    s.lstrip_inplace("Arthur: ");
     assert(s == "ee!");
+
+    s = "Hello World \t\r\n";
+    s.chomp();
+    assert(s == "Hello World");
 }
 //-------------------------------------------------
 

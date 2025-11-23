@@ -75,7 +75,7 @@ void test_reverse()
     assert(s1 == s2);
 
     std::reverse(s1.begin(), s1.end());
-    s2.reverse();
+    s2.reverse_inplace();
 
     cout << s1.c_str() << endl;
     cout << s2.c_str() << endl;

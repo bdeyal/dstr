@@ -101,8 +101,13 @@ public:
         return dstr_substr(pImp(), pos, numbytes, dest, destsize);
     }
 
-    // Like in basic - TODO
+    // Following function must be defined out of line either in .cpp file or
+    // in a header file but only after class DString is fully known.
     //
+    DString align_center(size_t width, char fill = ' ') const;
+    DString align_right(size_t width, char fill = ' ') const;
+    DString align_left(size_t width, char fill = ' ') const;
+    DString zfill(size_t width) const;
     DString left(size_t count) const;
     DString mid(size_t pos, size_t count) const;
     DString right(size_t count) const;
@@ -111,6 +116,19 @@ public:
     DString join(const std::vector<DString>& v) const;
     DString join(const char* argv[], size_t argc) const;
     DString times(size_t n) const;
+    DString lstrip(char c) const;
+    DString lstrip(const char* sz) const;
+    DString rstrip(char c) const;
+    DString rstrip(const char* sz) const;
+    DString strip(char c) const;
+    DString strip(const char* sz) const;
+    DString upper() const;
+    DString lower() const;
+    DString swapcase() const;
+    DString reverse() const;
+    DString trim_right() const;
+    DString trim_left() const;
+    DString trim() const;
 
     // Inline queries
     //

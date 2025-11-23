@@ -145,72 +145,6 @@ void DStringView::rpartition(const char* s, DString& left, DString& middle, DStr
 }
 //-----------------------------------------------------------
 
-DString DStringView::substr(size_t pos, size_t len) const
-{
-    return DString(*this, pos, len);
-}
-//----------------------------------------------------------------
-
-DString DStringView::left(size_t count) const
-{
-    return substr(0, count);
-}
-//----------------------------------------------------------------
-
-DString DStringView::mid(size_t pos, size_t count) const
-{
-    return substr(pos, count);
-}
-//----------------------------------------------------------------
-
-DString DStringView::right(size_t count) const
-{
-    return (size() <= count) ?
-        DString(*this) :
-        substr(size() - count, count);
-}
-//----------------------------------------------------------------
-
-DString DStringView::expandtabs(size_t width) const
-{
-    DString result(*this);
-    result.expandtabs_inplace(width);
-    return result;
-}
-//----------------------------------------------------------------
-
-DString DStringView::title() const
-{
-    DString result(*this);
-    result.title_inplace();
-    return result;
-}
-//----------------------------------------------------------------
-
-DString DStringView::join(const std::vector<DString>& v) const
-{
-    DString result;
-    result.join_inplace(*this, v);
-    return result;
-}
-//----------------------------------------------------------------
-
-DString DStringView::join(const char* argv[], size_t argc) const
-{
-    DString result;
-    result.join_inplace(*this, argv, argc);
-    return result;
-}
-//----------------------------------------------------------------
-
-DString DStringView::times(size_t n) const
-{
-    DString result(*this);
-    result.times_inplace(n);
-    return result;
-}
-//----------------------------------------------------------------
-
 /////////////////////////////////////////////////////////
 //
 //   DString implementation
@@ -330,36 +264,6 @@ std::istream& io_getline(std::istream& in, DString& s)
         s.append(buf, bindex);
 
     return in;
-}
-//-----------------------------------------------------------
-
-void DString::split(char sep, std::vector<DString>& dest) const
-{
-    view().split(sep, dest);
-}
-//-----------------------------------------------------------
-
-void DString::split(const char* sep, std::vector<DString>& dest) const
-{
-    view().split(sep, dest);
-}
-//-----------------------------------------------------------
-
-void DString::tokenize(const char* pattern, std::vector<DString>& dest) const
-{
-    view().tokenize(pattern, dest);
-}
-//-----------------------------------------------------------
-
-void DString::partition(const char* s, DString& left, DString& middle, DString& right) const
-{
-    view().partition(s, left, middle, right);
-}
-//-----------------------------------------------------------
-
-void DString::rpartition(const char* s, DString& left, DString& middle, DString& right) const
-{
-    view().rpartition(s, left, middle, right);
 }
 //-----------------------------------------------------------
 

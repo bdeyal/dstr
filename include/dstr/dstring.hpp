@@ -22,6 +22,7 @@
 //
 #include "dstring_view.hpp"
 
+
 // A C++ wrapper around C DSTR_TYPE
 //
 class DString {
@@ -457,6 +458,11 @@ public:
         dstr_chop(pImp());
     }
 
+    void chomp()
+    {
+        rstrip_inplace(" \t\n\r");
+    }
+
     void pop_back()
     {
         chop();
@@ -641,8 +647,14 @@ public:
 
     // split: empty string between separator character or string
     //
-    void split(char c, std::vector<DString>& dest) const;
-    void split(const char* sep, std::vector<DString>& dest) const;
+    void split(char c, std::vector<DString>& dest) const
+    {
+        view().split(c, dest);
+    }
+    void split(const char* sep, std::vector<DString>& dest) const
+    {
+        view().split(sep, dest);
+    }
 
     void split(DStringView sep, std::vector<DString>& dest)  const
     {
@@ -654,7 +666,11 @@ public:
         split('\n', dest);
     }
 
-    void tokenize(const char* separators, std::vector<DString>& dest) const;
+    void tokenize(const char* separators, std::vector<DString>& dest) const
+    {
+        view().tokenize(separators, dest);
+    }
+
     void tokenize(DStringView separators, std::vector<DString>& dest) const
     {
         tokenize(separators.data(), dest);
@@ -669,11 +685,15 @@ public:
         tokenize("\n\r\t\f ", dest);
     }
 
-    void partition(const char* s,
-                   DString& left, DString& middle, DString& right) const;
+    void partition(const char* s, DString& l, DString& m, DString& r) const
+    {
+        view().partition(s, l, m, r);
+    }
 
-    void rpartition(const char* s,
-                    DString& left, DString& middle, DString& right) const;
+    void rpartition(const char* s, DString& l, DString& m, DString& r) const
+    {
+        view().rpartition(s, l, m, r);
+    }
 
     void partition(DStringView s, DString& l, DString& m, DString& r) const
     {
@@ -699,71 +719,149 @@ public:
 
     // Text manipulations (upper, lower etc)
     //
-    void upper()
+    DString& upper_inplace()
     {
         dstr_ascii_upper(pImp());
+        return *this;
     }
 
-    void lower()
+    DString upper() const
+    {
+        DString r(*this);
+        return r.upper_inplace();
+    }
+
+    DString& lower_inplace()
     {
         dstr_ascii_lower(pImp());
+        return *this;
     }
 
-    void swapcase()
+    DString lower() const
+    {
+        DString r(*this);
+        return r.lower_inplace();
+    }
+
+    DString& swapcase_inplace()
     {
         dstr_ascii_swapcase(pImp());
+        return *this;
     }
 
-    void reverse()
+    DString swapcase() const
+    {
+        DString r(*this);
+        return r.swapcase_inplace();
+    }
+
+    DString& reverse_inplace()
     {
         dstr_reverse(pImp());
+        return *this;
     }
 
-    void trim_right()
+    DString reverse() const
+    {
+        DString r(*this);
+        return r.reverse_inplace();
+    }
+
+    DString& trim_right_inplace()
     {
         dstr_trim_right(pImp());
+        return *this;
     }
 
-    void trim_left()
+    DString trim_right() const {
+        DString r(*this);
+        return r.trim_right_inplace();
+    }
+
+    DString& trim_left_inplace()
     {
         dstr_trim_left(pImp());
+        return *this;
     }
 
-    void trim()
+    DString trim_left() const {
+        DString r(*this);
+        return r.trim_left_inplace();
+    }
+
+    DString& trim_inplace()
     {
         dstr_trim_both(pImp());
+        return *this;
     }
 
-    void lstrip(char c)
+    DString trim() const {
+        DString r(*this);
+        return r.trim_inplace();
+    }
+
+    DString& lstrip_inplace(char c)
     {
         dstr_lstrip_c(pImp(), c);
+        return *this;
     }
 
-    void lstrip(const char* sz)
+    DString& lstrip_inplace(const char* sz)
     {
         dstr_lstrip_sz(pImp(), sz);
+        return *this;
     }
 
-    void rstrip(char c)
+    DString& rstrip_inplace(char c)
     {
         dstr_rstrip_c(pImp(), c);
+        return *this;
     }
 
-    void rstrip(const char* sz)
+    DString& rstrip_inplace(const char* sz)
     {
         dstr_rstrip_sz(pImp(), sz);
+        return *this;
     }
 
-    void strip(char c)
+    DString& strip_inplace(char c)
     {
-        rstrip(c);
-        lstrip(c);
+        return rstrip_inplace(c).lstrip_inplace(c);
     }
 
-    void strip(const char* sz)
+    DString& strip_inplace(const char* sz)
     {
-        rstrip(sz);
-        lstrip(sz);
+        return rstrip_inplace(sz).lstrip_inplace(sz);
+    }
+
+    DString lstrip(char c) const {
+        DString result(*this);
+        return result.lstrip_inplace(c);
+    }
+
+    DString lstrip(const char* sz) const {
+        DString result(*this);
+        return result.lstrip_inplace(sz);
+    }
+
+    DString rstrip(char c) const {
+        DString result(*this);
+        return result.rstrip_inplace(c);
+    }
+
+    DString rstrip(const char* sz) const {
+        DString result(*this);
+        return result.rstrip_inplace(sz);
+    }
+
+    DString strip(char c) const {
+        DString result(*this);
+        return result.strip_inplace(c);
+    }
+
+    DString strip(const char* sz) const {
+        DString result(*this);
+        return result.strip_inplace(sz);
     }
 
     void clear()
@@ -1396,6 +1494,202 @@ std::ostream& operator<<(std::ostream& out, DStringView s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
 //----------------------------------------------------------------
+
+//////////////////////////////////////////////////////
+//
+//  DStringView inline functions that can be defined
+//  only after DString type is fully known.
+//
+//////////////////////////////////////////////////////
+inline DString DStringView::substr(size_t pos, size_t len) const
+{
+    return DString(*this, pos, len);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::left(size_t count) const
+{
+    return substr(0, count);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::mid(size_t pos, size_t count) const
+{
+    return substr(pos, count);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::right(size_t count) const
+{
+    return (size() <= count) ?
+        DString(*this) :
+        substr(size() - count, count);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::expandtabs(size_t width) const
+{
+    DString result(*this);
+    result.expandtabs_inplace(width);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::title() const
+{
+    DString result(*this);
+    result.title_inplace();
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::join(const std::vector<DString>& v) const
+{
+    DString result;
+    result.join_inplace(*this, v);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::join(const char* argv[], size_t argc) const
+{
+    DString result;
+    result.join_inplace(*this, argv, argc);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::times(size_t n) const
+{
+    DString result(*this);
+    result.times_inplace(n);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::align_center(size_t width, char fill) const
+{
+    DString result(*this);
+    result.align_center_inplace(width, fill);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::align_right(size_t width, char fill) const
+{
+    DString result(*this);
+    result.align_right_inplace(width, fill);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::align_left(size_t width, char fill) const
+{
+    DString result(*this);
+    result.align_left_inplace(width, fill);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::zfill(size_t width) const
+{
+    DString result(*this);
+    result.zfill_inplace(width);
+    return result;
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::lstrip(char c) const
+{
+    DString result(*this);
+    return result.lstrip_inplace(c);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::lstrip(const char* sz) const
+{
+    DString result(*this);
+    return result.lstrip_inplace(sz);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::rstrip(char c) const
+{
+    DString result(*this);
+    return result.rstrip_inplace(c);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::rstrip(const char* sz) const
+{
+    DString result(*this);
+    return result.rstrip_inplace(sz);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::strip(char c) const
+{
+    DString result(*this);
+    return result.strip_inplace(c);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::strip(const char* sz) const
+{
+    DString result(*this);
+    return result.strip_inplace(sz);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::upper() const
+{
+    DString r(*this);
+    return r.upper_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::lower() const
+{
+    DString r(*this);
+    return r.lower_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::swapcase() const
+{
+    DString r(*this);
+    return r.swapcase_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::reverse() const
+{
+    DString r(*this);
+    return r.reverse_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::trim_right() const
+{
+    DString r(*this);
+    return r.trim_right_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::trim_left() const
+{
+    DString r(*this);
+    return r.trim_left_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::trim() const
+{
+    DString r(*this);
+    return r.trim_inplace();
+}
+//----------------------------------------------------------------
+
 
 // Include guard
 //

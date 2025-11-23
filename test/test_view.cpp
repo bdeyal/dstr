@@ -6,6 +6,7 @@
  */
 #include <iostream>
 #include <algorithm>
+#include <iterator>
 #include <cassert>
 #include <dstr/dstring.hpp>
 #include <dstr/dstring_view.hpp>
@@ -520,6 +521,507 @@ void test_remove_profix()
 }
 //-------------------------------------------------
 
+void test_expandtabs()
+{
+    TRACE_FN();
+
+    DStringView s1("\t");
+
+    assert(s1.expandtabs() == "        ");
+    assert(s1.expandtabs(1) == " ");
+    assert(s1.expandtabs(2) == "  ");
+    assert(s1.expandtabs(60) == DString(' ', 60));
+
+    DStringView s2 = "Hello\tWorld\tToday\tIs\tSaturday";
+    assert(s2.expandtabs()  == "Hello   World   Today   Is      Saturday");
+    assert(s2.expandtabs(7) == "Hello  World  Today  Is     Saturday");
+    assert(s2.expandtabs(6) == "Hello World Today Is    Saturday");
+    assert(s2.expandtabs(5) == "Hello     World     Today     Is   Saturday");
+    assert(s2.expandtabs(4) == "Hello   World   Today   Is  Saturday");
+    assert(s2.expandtabs(3) == "Hello World Today Is Saturday");
+    assert(s2.expandtabs(2) == "Hello World Today Is  Saturday");
+    assert(s2.expandtabs(1) == "Hello World Today Is Saturday");
+    assert(s2.expandtabs(0) == "HelloWorldTodayIsSaturday");
+}
+//-------------------------------------------------
+
+void test_title()
+{
+    TRACE_FN();
+
+    const char* s = "hello world today 33 is SAT";
+    DStringView d1(s);
+
+    cout << d1.title() << endl;
+    assert(d1.title() == "Hello World Today 33 Is SAT");
+    assert(d1.title().istitle());
+
+    d1 = "Welcome to my 2nd world";
+    cout << d1.title() << endl;
+    assert(d1.title() == "Welcome To My 2Nd World");
+    assert(d1.title().istitle());
+
+    d1 = "hello b2b2b2 and 3g3g3g";
+    cout << d1.title() << endl;
+    assert(d1.title() == "Hello B2B2B2 And 3G3G3G");
+    assert(d1.title().istitle());
+
+    d1 = "hello b2bb2b2 a.n.d 3g3g3g";
+    cout << d1.title() << endl;
+    assert(d1.title() == "Hello B2Bb2B2 A.N.D 3G3G3G");
+    assert(d1.title().istitle());
+
+    d1 = "hello b2b2b2 a_n_d 3g3g3g";
+    cout << d1.title() << endl;
+    assert(d1.title() == "Hello B2B2B2 A_N_D 3G3G3G");
+    assert(d1.title().istitle());
+}
+//-------------------------------------------------
+
+void test_join()
+{
+    TRACE_FN();
+
+    const char* argv[] = {"hello", "world", "good", "morning", NULL};
+    size_t argc = 4;
+
+    DStringView s1("...");
+    assert(s1.join(argv, argc) == "hello...world...good...morning");
+
+    assert(s1.join(argv, 100) == "hello...world...good...morning");
+
+    assert(s1.join(argv, 2) == "hello...world");
+
+    DStringView sep("+++");
+    assert(sep.join(argv, argc) == "hello+++world+++good+++morning");
+
+#if __cplusplus >= 201103L
+    std::vector<DString> v{"hello", "world", "good", "morning"};
+#else
+    std::vector<DString> v;
+    v.push_back("hello");
+    v.push_back("world");
+    v.push_back("good");
+    v.push_back("morning");
+#endif
+    assert(s1.join(v) == "hello...world...good...morning");
+    assert(sep.join(v) == "hello+++world+++good+++morning");
+
+#if __cplusplus >= 201103L
+    assert(sep.join(std::vector<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
+#endif
+}
+//-------------------------------------------------
+
+void test_split()
+{
+    TRACE_FN();
+
+    std::vector<DString> dest;
+
+    DStringView s2 = "  Hello,World,,,\t\tToday is Tuesday 1.1.1.1, 2.2.2.2,33.33.33";
+
+    s2.tokenize(", \t", dest);
+    assert(dest.size() == 8);
+    assert(dest[0] == "Hello");
+    assert(dest[1] == "World");
+    assert(dest[6] == "2.2.2.2");
+    assert(dest[7] == "33.33.33");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    DStringView s3("Hello\nWorld\n\nGood\n\nMorning");
+    s3.splitlines(dest);
+    assert(dest.size() == 6);
+    int i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    dest.clear();
+    DStringView s4 = "Hello:World::Good::Morning";
+    s4.split(':', dest);
+    assert(dest.size() == 6);
+    i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    dest.clear();
+    DStringView s5 = "Hello,World,,Good,,Morning";
+    s5.split(",", dest);
+    assert(dest.size() == 6);
+    i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    dest.clear();
+    DStringView s6 = "hello";
+    s6.split("hello", dest);
+    assert(dest.size() == 2);
+    i = 0;
+    assert(dest[i++] == "");
+    assert(dest[i++] == "");
+
+    dest.clear();
+    DStringView s7 = "hello";
+    s7.split("xxx", dest);
+    assert(dest.size() == 1);
+    i = 0;
+    assert(dest[i++] == "hello");
+
+    dest.clear();
+    DStringView s8 = "hello";
+    s8.split("helloxxx", dest);
+    assert(dest.size() == 1);
+    i = 0;
+    assert(dest[i++] == "hello");
+
+    dest.clear();
+    DStringView s9 = "hello";
+    s9.split("el", dest);
+    assert(dest.size() == 2);
+    i = 0;
+    assert(dest[i++] == "h");
+    assert(dest[i++] == "lo");
+    dest.clear();
+
+    DStringView s10 = "helello";
+    s10.split("el", dest);
+    assert(dest.size() == 3);
+    i = 0;
+    assert(dest[i++] == "h");
+    assert(dest[i++] == "");
+    assert(dest[i++] == "lo");
+
+    DStringView s11 = "Hello \t\r\nWorld\n  \t\t\nGood\n\f\r\nMorning";
+    dest.clear();
+    s11.split(dest);
+    assert(dest.size() == 4);
+    i = 0;
+    assert(dest[i++] == "Hello");
+    assert(dest[i++] == "World");
+    assert(dest[i++] == "Good");
+    assert(dest[i++] == "Morning");
+    copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+}
+//-------------------------------------------------
+
+#define ASSERT_PARTITION(str, what, p1, p2, p3) do {      \
+        DString  l, m, r;                                 \
+        DStringView(str).partition((what), l, m, r);      \
+        assert(l == p1);                                  \
+        assert(m == p2);                                  \
+        assert(r == p3);                                  \
+    } while(0)
+
+void test_partition()
+{
+    TRACE_FN();
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "bananas",
+                     "I could eat ",
+                     "bananas",
+                     " all day");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "apples",
+                     "I could eat bananas all day",
+                     "",
+                     "");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "I could eat bananas all day",
+                     "",
+                     "I could eat bananas all day",
+                     "");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "",
+                     "",
+                     "",
+                     "I could eat bananas all day");
+
+    ASSERT_PARTITION("x=y", "=", "x", "=", "y");
+    ASSERT_PARTITION("=y", "=", "", "=", "y");
+    ASSERT_PARTITION("x=", "=", "x", "=", "");
+}
+//-------------------------------------------------
+
+#define ASSERT_RPARTITION(str, what, p1, p2, p3) do {     \
+        DString  l, m, r;                                 \
+        DStringView(str).rpartition((what), l, m, r);     \
+        assert(l == p1);                                  \
+        assert(m == p2);                                  \
+        assert(r == p3);                                  \
+    } while(0)
+
+void test_rpartition()
+{
+    TRACE_FN();
+
+    ASSERT_PARTITION("We all could eat bananas all day",
+                     "all",
+                     "We ",
+                     "all",
+                     " could eat bananas all day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "all",
+                      "We all could eat bananas ",
+                      "all",
+                      " day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "apples",
+                      "",
+                      "",
+                      "We all could eat bananas all day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "We all could eat bananas all day",
+                      "",
+                      "We all could eat bananas all day",
+                      "");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "",
+                      "We all could eat bananas all day",
+                      "",
+                      "");
+
+    ASSERT_RPARTITION("x=y", "=", "x", "=", "y");
+    ASSERT_RPARTITION("=y", "=", "", "=", "y");
+    ASSERT_RPARTITION("x=", "=", "x", "=", "");
+
+}
+//-------------------------------------------------
+
+void test_times()
+{
+    TRACE_FN();
+
+    DStringView s("A");
+    assert(s.times(5) == "AAAAA");
+    assert(s.times(2).times(2) == s.times(4));
+    assert(s.times(0) == "");
+    assert(s.times(1) == s);
+    assert(DString('=', 50) == DStringView("=").times(50));
+
+    cout << DString('=', 50) << endl;
+    cout << "H E L L O   W O R L D" << endl;
+    cout << DStringView("=").times(50) << endl;
+}
+//-------------------------------------------------
+
+#define TEST_ASCII_UPPER(before, after) do {                \
+        DStringView s(before);                              \
+        assert(s.upper() == after);                         \
+    } while (0)
+//-------------------------------------------------
+
+#define TEST_ASCII_LOWER(before, after) do {                \
+        DStringView s(before);                              \
+        assert(s.lower() == after );                        \
+    } while (0)
+//-------------------------------------------------
+
+#define TEST_ASCII_SWAPCASE(before, after) do {             \
+        DStringView s(before);                              \
+        assert(s.swapcase() == after);                      \
+    } while (0)
+//-------------------------------------------------
+
+#define TEST_REVERSE(before, after) do {                  \
+        DStringView s(before);                            \
+        assert(s.reverse() == after );                    \
+    } while (0)
+//-------------------------------------------------
+
+void test_ascii_upper_lower()
+{
+    TRACE_FN();
+
+    TEST_ASCII_UPPER("a", "A");
+    TEST_ASCII_UPPER("a_b_c234DeF", "A_B_C234DEF");
+
+    TEST_ASCII_LOWER( "A", "a");
+    TEST_ASCII_LOWER("A_B_c234DeF", "a_b_c234def");
+
+    TEST_ASCII_LOWER( "", "");
+    TEST_ASCII_UPPER( "", "");
+
+    TEST_ASCII_SWAPCASE("Hello World", "hELLO wORLD");
+    TEST_ASCII_SWAPCASE("", "");
+    TEST_ASCII_SWAPCASE("a_b_c234DeF", "A_B_C234dEf");
+}
+//-------------------------------------------------
+
+void test_reverse()
+{
+    TRACE_FN();
+
+    TEST_REVERSE("A", "A");
+    TEST_REVERSE("AB", "BA");
+    TEST_REVERSE("ABC", "CBA");
+    TEST_REVERSE("ABCD", "DCBA");
+    TEST_REVERSE("Good Morning", "gninroM dooG");
+}
+//-------------------------------------------------
+
+
+#define TEST_TRIM_LEFT(before, after) do {                  \
+        DStringView s(before);                              \
+        assert(s.trim_left() == after);                     \
+    } while (0)
+//-------------------------------------------------
+
+#define TEST_TRIM_RIGHT(before, after) do {                 \
+        DStringView s(before);                              \
+        assert(s.trim_right() == after);                    \
+    } while (0)
+//-------------------------------------------------
+
+#define TEST_TRIM_BOTH(before, after) do {                  \
+        DStringView s(before);                              \
+        assert(s.trim() == after);                          \
+    } while (0)
+//-------------------------------------------------
+
+void test_trim()
+{
+    TRACE_FN();
+
+    TEST_TRIM_LEFT("H", "H");
+    TEST_TRIM_LEFT("Hello", "Hello");
+    TEST_TRIM_LEFT("      H", "H");
+    TEST_TRIM_LEFT("      Hello", "Hello");
+    TEST_TRIM_LEFT("         ",  "");
+    TEST_TRIM_LEFT("", "");
+
+    TEST_TRIM_RIGHT("Hello",      "Hello");
+    TEST_TRIM_RIGHT("Hello    ", "Hello");
+    TEST_TRIM_RIGHT("H",          "H");
+    TEST_TRIM_RIGHT("H   " ,      "H");
+    TEST_TRIM_RIGHT("     ",      "");
+    TEST_TRIM_RIGHT("",           "");
+
+    TEST_TRIM_BOTH("     H   ",   "H");
+    TEST_TRIM_BOTH("     Hello  ", "Hello");
+    TEST_TRIM_BOTH("Hello",   "Hello");
+    TEST_TRIM_BOTH("      Hello",  "Hello");
+    TEST_TRIM_BOTH("Hello    ",  "Hello");
+    TEST_TRIM_BOTH("         ",   "");
+    TEST_TRIM_BOTH("",            "");
+}
+//-------------------------------------------------
+
+void test_left_mid_right()
+{
+    TRACE_FN();
+
+    DStringView src("ABCD EFGH IJKL MNOP QRST UVWX YZ");
+    assert( src.left(4) == "ABCD");
+    assert( src.left(9) == "ABCD EFGH");
+    assert( src.left(20) == "ABCD EFGH IJKL MNOP ");
+    assert( src.left(100) == src);
+
+    assert( src.right(4) == "X YZ");
+    assert( src.right(7) == "UVWX YZ");
+    assert( src.right(23) == " IJKL MNOP QRST UVWX YZ");
+    assert( src.right(100) == src);
+
+    assert( src.mid(5, 4) == "EFGH");
+    assert( src.mid(5, 20) == "EFGH IJKL MNOP QRST ");
+    assert( src.mid(0, 100) == src);
+    assert( src.mid(4, 1000) == " EFGH IJKL MNOP QRST UVWX YZ");
+}
+//-------------------------------------------------
+
+void test_strip()
+{
+    TRACE_FN();
+
+    DStringView s("####Hello####");
+    assert(s.strip('#') == "Hello");
+
+    s = "#####################";
+    assert(s.rstrip('#') == "");
+
+    s = "#####################";
+    assert(s.rstrip("#") == "");
+
+    s = " ###Hello###";
+    assert(s.strip('#') == " ###Hello");
+
+    s = " \n \t hello\n";
+    assert(s.strip('\n') == " \n \t hello");
+
+    s = "\n\n \t hello\n";
+    assert(s.strip('\n') == " \t hello");
+
+    s = "www.example.com";
+    assert(s.strip("cmow.") == "example");
+
+    s = " www.example.com";
+    assert(s.strip("cmow.") == " www.example");
+
+    s = "www.example.com ";
+    assert(s.strip("cmow.") == "example.com ");
+
+    s = "Arthur: three!";
+    assert(s.lstrip("Arthur: ") == "ee!");
+}
+//-------------------------------------------------
+
+#define TEST_ZFILL(before, len, after) do {              \
+        DStringView sv(before);                          \
+        assert(sv.zfill(len) == (after));                \
+    } while (0)
+
+void test_zfill()
+{
+    TEST_ZFILL("35",    5, "00035");
+    TEST_ZFILL("+xyz", 10, "+000000xyz");
+    TEST_ZFILL("-100",  8, "-0000100");
+    TEST_ZFILL("++100", 8, "+000+100");
+    TEST_ZFILL("",      5, "00000");
+    TEST_ZFILL("+",     5, "+0000");
+    TEST_ZFILL("123456",  5, "123456");
+    TEST_ZFILL("123456",  6, "123456");
+    TEST_ZFILL("123456",  7, "0123456");
+}
+//-------------------------------------------------
+
+void test_align()
+{
+    TRACE_FN();
+
+    DStringView sv("Hello");
+
+    assert(sv.align_center(8, '@') == "@Hello@@");
+    assert(sv.align_right(8, '@')  == "@@@Hello");
+    assert(sv.align_left(8, '@')   == "Hello@@@");
+
+    assert(sv.align_center(2, '@') == "Hello");
+    assert(sv.align_right(2, '@')  == "Hello");
+    assert(sv.align_left(2, '@')   == "Hello");
+}
+//-------------------------------------------------
+
 int main()
 {
     test_various();
@@ -537,4 +1039,18 @@ int main()
     test_find();
     test_rfind();
     test_remove_profix();
+    test_expandtabs();
+    test_title();
+    test_join();
+    test_split();
+    test_partition();
+    test_rpartition();
+    test_times();
+    test_ascii_upper_lower();
+    test_reverse();
+    test_trim();
+    test_left_mid_right();
+    test_strip();
+    test_zfill();
+    test_align();
 }

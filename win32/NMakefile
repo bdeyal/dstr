@@ -90,6 +90,7 @@ test: $(PROGRAMS)
 	.\test_tokens.exe
 	.\test_algs.exe
 	.\test_regex.exe
+	.\test_view.exe
 
 dstr.obj: ..\src\dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c -o $@
