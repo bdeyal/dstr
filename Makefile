@@ -16,11 +16,6 @@ ifeq ($(COMP),gcc)
 	CXX=g++
 endif
 
-ifeq ($(COMP),gcc15)
-	CC=/opt/gcc-15.2/bin/gcc
-	CXX=/opt/gcc-15.2/bin/g++
-endif
-
 ifeq ($(COMP),mingw64)
 	CC=x86_64-w64-mingw32-gcc
 	CXX=x86_64-w64-mingw32-g++
@@ -39,6 +34,8 @@ endif
 ifeq ($(COMP),clang)
 	CC=clang
 	CXX=clang++
+	AR=llvm-ar
+	LDFLAGS=-fuse-ld=lld
 endif
 
 CFLAGS +=-O2 $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
