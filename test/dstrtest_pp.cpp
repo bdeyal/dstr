@@ -2087,6 +2087,7 @@ void test_zfill()
 void test_dstringstream(void)
 {
     TRACE_FN();
+
     DStringOut out;
     out << "Hello World";
     DString s = out.str();
@@ -2110,6 +2111,42 @@ void test_dstringstream(void)
     //
     for (double d = -100.0; d < 100.0; d += 3.14159) {
         assert(to_dstring(d) == DString::to_string(d)); }
+}
+//-------------------------------------------------
+
+#define TEST_SUCC(before, after) do {                                   \
+    DString s(before);                                                  \
+    DString next = s.succ();                                            \
+    cout << "\"" << before << "\".succ() ==> \"" << next << "\"\n";     \
+    assert(next == after); } while(0)
+
+void test_succ()
+{
+    TRACE_FN();
+
+    TEST_SUCC("abcd", "abce");
+    TEST_SUCC("THX1138", "THX1139");
+    TEST_SUCC("<<koala>>", "<<koalb>>");
+    TEST_SUCC("1999zzz", "2000aaa");
+    TEST_SUCC("ZZZ9999", "AAAA0000");
+    TEST_SUCC("***", "**+");
+    TEST_SUCC("9", "10");
+    TEST_SUCC("z", "aa");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("hell!z99", "helm!a00");
+    TEST_SUCC("hell!9", "hell!10");
+    TEST_SUCC("hell!99", "hell!100");
+    TEST_SUCC("hell!zz", "helm!aa");
+    TEST_SUCC("abc-43", "abc-44");
+    TEST_SUCC("abc-99", "abc-100");
+    TEST_SUCC("abc-a99", "abc-b00");
+    TEST_SUCC("abc-z99", "abd-a00");
+    TEST_SUCC("hell2!99", "hell3!00");
+    TEST_SUCC("hell2!@$99", "hell3!@$00");
+    TEST_SUCC("hella!@$zz", "hellb!@$aa");
+    TEST_SUCC("a/@z", "b/@a");
+    TEST_SUCC("/@z", "/@aa");
 }
 //-------------------------------------------------
 
@@ -2175,5 +2212,6 @@ int main()
     test_std_string_view();
     test_zfill();
     test_dstringstream();
+    test_succ();
     // last test
 }

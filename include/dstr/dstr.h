@@ -275,6 +275,9 @@ void dstr_translate(DSTR dest, const char* arr1, const char* arr2);
 void dstr_squeeze(DSTR dest, const char* squeeze);
 void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2);
 
+/* similar to ruby's .succ function */
+int dstr_successor(DSTR dest);
+
 struct DSTR_PartInfo {
     // l, m, r = left, mid, right
     size_t l_pos;

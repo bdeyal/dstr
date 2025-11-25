@@ -1022,6 +1022,37 @@ void test_align()
 }
 //-------------------------------------------------
 
+#define TEST_SUCC(before, after) do {                                   \
+        DStringView s(before);                                          \
+        assert(s.succ() == after);                                      \
+        cout << "\"" << before << "\".succ() ==> \"" << after << "\"\n"; \
+    } while(0)
+
+void test_succ()
+{
+    TRACE_FN();
+
+    TEST_SUCC("abcd", "abce");
+    TEST_SUCC("THX1138", "THX1139");
+    TEST_SUCC("<<koala>>", "<<koalb>>");
+    TEST_SUCC("1999zzz", "2000aaa");
+    TEST_SUCC("ZZZ9999", "AAAA0000");
+    TEST_SUCC("***", "**+");
+    TEST_SUCC("9", "10");
+    TEST_SUCC("z", "aa");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("hell!z99", "helm!a00");
+    TEST_SUCC("hell!9", "hell!10");
+    TEST_SUCC("hell!99", "hell!100");
+    TEST_SUCC("hell!zz", "helm!aa");
+    TEST_SUCC("abc-43", "abc-44");
+    TEST_SUCC("abc-99", "abc-100");
+    TEST_SUCC("abc-a99", "abc-b00");
+    TEST_SUCC("abc-z99", "abd-a00");
+}
+//-------------------------------------------------
+
 int main()
 {
     test_various();
@@ -1053,4 +1084,5 @@ int main()
     test_strip();
     test_zfill();
     test_align();
+    test_succ();
 }

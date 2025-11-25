@@ -3016,3 +3016,167 @@ size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
     return pos;
 }
 /*--------------------------------------------------------------------------*/
+
+static DSTR_BOOL same_carry_after_puncts(CDSTR p, long pos, int carry)
+{
+    char c;
+    for (; pos >= 0; --pos) {
+        c = DVAL(p, pos);
+        if (isalnum(c)) break;
+    }
+
+    return
+        isalnum(c) && ((isdigit(c) && isdigit(carry)) ||
+                       (isalpha(c) && isalpha(carry)));
+}
+
+/*
+    TODO Fix to have these expected results:
+
+    1. TEST_SUCC("/@z", "/@aa");
+    2. TEST_SUCC("a/@z99", "b/@a00");
+    2. TEST_SUCC("hell2!99", "hell3!00");
+    2. TEST_SUCC("", "");
+
+ */
+static int dstr_successor_alnum(DSTR dest)
+{
+    int carry = 0;
+    int only_digits = 1;
+
+    for (long pos = DLEN(dest) - 1; pos >= 0; --pos) {
+        char c = DVAL(dest, pos);
+        if (!isalnum(c)) {
+            if (carry && only_digits) {
+                if (!same_carry_after_puncts(dest, pos, carry)) {
+                    dstr_insert_cc_imp(dest, pos + 1, carry, 1);
+                    return 0;
+                }
+            }
+            only_digits = 0;
+        }
+        else {
+            if (!isdigit(c))
+                only_digits = 0;
+
+            switch (c) {
+            case '9':
+                DVAL(dest, pos) = '0';
+                carry = '1';
+                break;
+            case 'z':
+                DVAL(dest, pos) = 'a';
+                carry = 'a';
+                break;
+            case 'Z':
+                DVAL(dest, pos) = 'A';
+                carry = 'A';
+                break;
+            default:
+                DVAL(dest, pos) = ++c;
+                carry = 0;
+            }
+
+            if (carry == 0)
+                break;
+        }
+    }
+
+    return carry;
+}
+/*--------------------------------------------------------------------------*/
+
+static int dstr_successor_printable(DSTR dest)
+{
+    int carry = 0;
+
+    /*
+      increment to next printable in ASCII skipping alnum
+       ' ' -> '/'
+       0 -> 9
+       ':' -> '@'
+       A -> Z
+       '[' -> '`'
+       a -> z
+       '{' -> '~'
+    */
+    for (long pos = DLEN(dest) - 1; pos >= 0; --pos) {
+        char c = DVAL(dest, pos);
+        if (isprint(c)) {
+            switch (c) {
+            case '/':
+                DVAL(dest, pos) = ':';
+                carry = 0;
+                break;
+            case '@':
+                DVAL(dest, pos) = '[';
+                carry = 0;
+                break;
+            case '`':
+                DVAL(dest, pos) = '{';
+                carry = 0;
+                break;
+            case '~':
+                DVAL(dest, pos) = ' ';
+                carry = ' ';
+                break;
+            default:
+                DVAL(dest, pos) =  ++c;
+                carry = 0;
+            }
+        }
+
+        if (carry == 0)
+            break;
+    }
+
+    return carry;
+}
+/*--------------------------------------------------------------------------*/
+
+int dstr_successor(DSTR dest)
+{
+    dstr_assert_valid(dest);
+
+    if (DLEN(dest) == 0)
+        return DSTR_SUCCESS;
+
+    size_t alnum_count = 0;
+    size_t print_count = 0;
+
+    for (size_t n = 0; n < DLEN(dest); ++n) {
+        char ch = DVAL(dest, n);
+        if (isalnum(ch)) {
+            ++alnum_count;
+        }
+        else if (isprint(ch)) {
+            ++print_count;
+        }
+    }
+
+    int carry = 0;
+    if (alnum_count) {
+        // If we have alnum chars, only they are incremented
+        //
+        carry = dstr_successor_alnum(dest);
+    }
+    else if (print_count) {
+        // If we have printable chars, only they are incremented
+        //
+        carry = dstr_successor_printable(dest);
+    }
+    else {
+        // otherwise we do nothing
+        //
+        return DSTR_FAIL;
+    }
+
+    if (carry) {
+        if (!dstr_insert_cc_imp(dest, 0, (char) carry, 1))
+            return DSTR_FAIL;
+    }
+
+    dstr_assert_valid(dest);
+    return DSTR_SUCCESS;
+}
+/*--------------------------------------------------------------------------*/

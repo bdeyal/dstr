@@ -129,6 +129,7 @@ public:
     DString trim_right() const;
     DString trim_left() const;
     DString trim() const;
+    DString succ() const;
 
     // Inline queries
     //

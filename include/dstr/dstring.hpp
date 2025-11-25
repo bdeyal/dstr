@@ -647,6 +647,18 @@ public:
         return translate_squeeze(from, to);
     }
 
+    DString& succ_inplace()
+    {
+        dstr_successor(pImp());
+        return *this;
+    }
+
+    DString succ() const
+    {
+        DString res(*this);
+        return res.succ_inplace();
+    }
+
     // split: empty string between separator character or string
     //
     void split(char c, std::vector<DString>& dest) const
@@ -1695,6 +1707,13 @@ inline DString DStringView::trim() const
 {
     DString r(*this);
     return r.trim_inplace();
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::succ() const
+{
+    DString r(*this);
+    return r.succ_inplace();
 }
 //----------------------------------------------------------------
 
