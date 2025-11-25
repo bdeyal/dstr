@@ -1173,6 +1173,11 @@ public:
         return dstr_fgetline(pImp(), fp);
     }
 
+    void fputline(FILE* fp)
+    {
+        fprintf(fp, "%s\n", data());
+    }
+
     //////////////////////////////////////////////////////
     //
     // Conversions  Built in types <==> DString

@@ -3076,8 +3076,8 @@ static int dstr_increment_printable(DSTR dest)
         if (isprint(c)) {
             switch (c) {
             case '~':
-                DVAL(dest, pos) = ' ';
-                carry = ' ';
+                DVAL(dest, pos) = '!';
+                carry = '!';
                 break;
             default:
                 DVAL(dest, pos) =  ++c;
