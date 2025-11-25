@@ -3019,7 +3019,7 @@ size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 
 static DSTR_BOOL same_carry_after_puncts(CDSTR p, long pos, int carry)
 {
-    char c;
+    char c = '\0';
     for (; pos >= 0; --pos) {
         c = DVAL(p, pos);
         if (isalnum(c)) break;
@@ -3029,56 +3029,37 @@ static DSTR_BOOL same_carry_after_puncts(CDSTR p, long pos, int carry)
         isalnum(c) && ((isdigit(c) && isdigit(carry)) ||
                        (isalpha(c) && isalpha(carry)));
 }
+/*--------------------------------------------------------------------------*/
 
-/*
-    TODO Fix to have these expected results:
-
-    1. TEST_SUCC("/@z", "/@aa");
-    2. TEST_SUCC("a/@z99", "b/@a00");
-    2. TEST_SUCC("hell2!99", "hell3!00");
-    2. TEST_SUCC("", "");
-
- */
-static int dstr_successor_alnum(DSTR dest)
+static int dstr_increment_alnum(DSTR dest)
 {
     int carry = 0;
-    int only_digits = 1;
+    int only_alnum = 1;
 
     for (long pos = DLEN(dest) - 1; pos >= 0; --pos) {
         char c = DVAL(dest, pos);
         if (!isalnum(c)) {
-            if (carry && only_digits) {
+            if (carry && only_alnum) {
                 if (!same_carry_after_puncts(dest, pos, carry)) {
                     dstr_insert_cc_imp(dest, pos + 1, carry, 1);
                     return 0;
                 }
             }
-            only_digits = 0;
+            only_alnum = 0;
         }
+        else if (c == '9') {
+            DVAL(dest, pos) = '0';
+            carry = '1'; }
+        else if (c == 'z') {
+            DVAL(dest, pos) = 'a';
+            carry = 'a'; }
+        else if (c == 'Z') {
+            DVAL(dest, pos) = 'A';
+            carry = 'A'; }
         else {
-            if (!isdigit(c))
-                only_digits = 0;
-
-            switch (c) {
-            case '9':
-                DVAL(dest, pos) = '0';
-                carry = '1';
-                break;
-            case 'z':
-                DVAL(dest, pos) = 'a';
-                carry = 'a';
-                break;
-            case 'Z':
-                DVAL(dest, pos) = 'A';
-                carry = 'A';
-                break;
-            default:
-                DVAL(dest, pos) = ++c;
-                carry = 0;
-            }
-
-            if (carry == 0)
-                break;
+            DVAL(dest, pos) = ++c;
+            carry = 0;
+            break;
         }
     }
 
@@ -3086,36 +3067,14 @@ static int dstr_successor_alnum(DSTR dest)
 }
 /*--------------------------------------------------------------------------*/
 
-static int dstr_successor_printable(DSTR dest)
+static int dstr_increment_printable(DSTR dest)
 {
     int carry = 0;
 
-    /*
-      increment to next printable in ASCII skipping alnum
-       ' ' -> '/'
-       0 -> 9
-       ':' -> '@'
-       A -> Z
-       '[' -> '`'
-       a -> z
-       '{' -> '~'
-    */
     for (long pos = DLEN(dest) - 1; pos >= 0; --pos) {
         char c = DVAL(dest, pos);
         if (isprint(c)) {
             switch (c) {
-            case '/':
-                DVAL(dest, pos) = ':';
-                carry = 0;
-                break;
-            case '@':
-                DVAL(dest, pos) = '[';
-                carry = 0;
-                break;
-            case '`':
-                DVAL(dest, pos) = '{';
-                carry = 0;
-                break;
             case '~':
                 DVAL(dest, pos) = ' ';
                 carry = ' ';
@@ -3134,7 +3093,7 @@ static int dstr_successor_printable(DSTR dest)
 }
 /*--------------------------------------------------------------------------*/
 
-int dstr_successor(DSTR dest)
+int dstr_increment(DSTR dest)
 {
     dstr_assert_valid(dest);
 
@@ -3158,15 +3117,15 @@ int dstr_successor(DSTR dest)
     if (alnum_count) {
         // If we have alnum chars, only they are incremented
         //
-        carry = dstr_successor_alnum(dest);
+        carry = dstr_increment_alnum(dest);
     }
     else if (print_count) {
-        // If we have printable chars, only they are incremented
+        // If we have printable chars without alnum only they are incremented
         //
-        carry = dstr_successor_printable(dest);
+        carry = dstr_increment_printable(dest);
     }
     else {
-        // otherwise we do nothing
+        // otherwise we don't know how to inc
         //
         return DSTR_FAIL;
     }

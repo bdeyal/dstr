@@ -10,8 +10,6 @@
 #include <string>
 #include <iterator>
 #include <vector>
-#include <list>
-#include <deque>
 
 #include <assert.h>
 #include <string.h>
@@ -2124,6 +2122,19 @@ void test_succ()
 {
     TRACE_FN();
 
+    TEST_SUCC("USA", "USB");
+    TEST_SUCC("", "");
+    TEST_SUCC("00", "01");
+    TEST_SUCC("09", "10");
+    TEST_SUCC("99", "100");
+    TEST_SUCC("aa", "ab");
+    TEST_SUCC("az", "ba");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("AA", "AB");
+    TEST_SUCC("AZ", "BA");
+    TEST_SUCC("ZZ", "AAA");
+    TEST_SUCC("zz99zz99", "aaa00aa00");
+    TEST_SUCC("99zz99zz", "100aa00aa");
     TEST_SUCC("abcd", "abce");
     TEST_SUCC("THX1138", "THX1139");
     TEST_SUCC("<<koala>>", "<<koalb>>");
@@ -2132,7 +2143,6 @@ void test_succ()
     TEST_SUCC("***", "**+");
     TEST_SUCC("9", "10");
     TEST_SUCC("z", "aa");
-    TEST_SUCC("zz", "aaa");
     TEST_SUCC("zz", "aaa");
     TEST_SUCC("hell!z99", "helm!a00");
     TEST_SUCC("hell!9", "hell!10");
@@ -2144,9 +2154,12 @@ void test_succ()
     TEST_SUCC("abc-z99", "abd-a00");
     TEST_SUCC("hell2!99", "hell3!00");
     TEST_SUCC("hell2!@$99", "hell3!@$00");
-    TEST_SUCC("hella!@$zz", "hellb!@$aa");
+    TEST_SUCC("hello!@$99", "hello!@$100");
+    TEST_SUCC("hell8!@$zz", "hell8!@$aaa");
     TEST_SUCC("a/@z", "b/@a");
     TEST_SUCC("/@z", "/@aa");
+    TEST_SUCC("XY.99", "XY.100");
+    TEST_SUCC("XY1.99", "XY2.00");
 }
 //-------------------------------------------------
 

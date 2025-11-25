@@ -649,7 +649,7 @@ public:
 
     DString& succ_inplace()
     {
-        dstr_successor(pImp());
+        dstr_increment(pImp());
         return *this;
     }
 

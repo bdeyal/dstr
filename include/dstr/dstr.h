@@ -276,7 +276,7 @@ void dstr_squeeze(DSTR dest, const char* squeeze);
 void dstr_translate_squeeze(DSTR dest, const char* arr1, const char* arr2);
 
 /* similar to ruby's .succ function */
-int dstr_successor(DSTR dest);
+int dstr_increment(DSTR dest);
 
 struct DSTR_PartInfo {
     // l, m, r = left, mid, right
@@ -637,6 +637,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define disspace            dstr_isspace
 #define distitle            dstr_istitle
 #define dsisupper           dstr_isupper
+#define dstrinc             dstr_increment
 
 #define dstrhash            dstr_hash
 
