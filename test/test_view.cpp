@@ -503,7 +503,7 @@ size_t count_substrings(DStringView hive, DStringView bee)
 }
 //-------------------------------------------------
 
-void test_remove_profix()
+void test_remove_prefix()
 {
     TRACE_FN();
 
@@ -520,6 +520,54 @@ void test_remove_profix()
     assert(hive == "");
 }
 //-------------------------------------------------
+
+void test_remove()
+{
+    DStringView s2("hello");
+    assert(s2.remove('l') == "heo");
+    assert(s2.remove_any("l") == "heo");
+    assert(s2.remove_any("lo") == "he");
+    assert(s2.remove_any("aeiou") == "hll");
+    assert(s2.remove_any("") == "hello");
+
+    assert(s2.remove_prefix("h") == "ello");
+    assert(s2.remove_prefix("he") == "llo");
+    assert(s2.remove_prefix("hel") == "lo");
+    assert(s2.remove_prefix("hell") == "o");
+    assert(s2.remove_prefix("hello") == "");
+    assert(s2.remove_prefix("helloXXX") == "hello");
+
+    assert(s2.iremove_prefix("H") == "ello");
+    assert(s2.iremove_prefix("HE") == "llo");
+    assert(s2.iremove_prefix("Hel") == "lo");
+    assert(s2.iremove_prefix("HeLl") == "o");
+    assert(s2.iremove_prefix("HeLlO") == "");
+    assert(s2.iremove_prefix("heLLoXXX") == "hello");
+
+    assert(s2.remove_suffix("o") == "hell");
+    assert(s2.remove_suffix("lo") == "hel");
+    assert(s2.remove_suffix("llo") == "he");
+    assert(s2.remove_suffix("ello") == "h");
+    assert(s2.remove_suffix("hello") == "");
+    assert(s2.remove_suffix("helloXXX") == "hello");
+
+    assert(s2.iremove_suffix("O") == "hell");
+    assert(s2.iremove_suffix("LO") == "hel");
+    assert(s2.iremove_suffix("Llo") == "he");
+    assert(s2.iremove_suffix("ElLO") == "h");
+    assert(s2.iremove_suffix("HeLlO") == "");
+    assert(s2.iremove_suffix("helloXXX") == "hello");
+
+    s2 = "Hello World";
+    assert(s2.remove('l') == "Heo Word");
+    assert(s2.remove('H') == "ello World");
+    assert(s2.remove('o') == "Hell Wrld");
+
+    s2 = "File.eXe";
+    assert(s2.iremove_suffix(".exe") == "File");
+}
+//-------------------------------------------------
+
 
 void test_expandtabs()
 {
@@ -1033,6 +1081,18 @@ void test_succ()
     TRACE_FN();
 
     TEST_SUCC("USA", "USB");
+    TEST_SUCC("", "");
+    TEST_SUCC("00", "01");
+    TEST_SUCC("09", "10");
+    TEST_SUCC("99", "100");
+    TEST_SUCC("aa", "ab");
+    TEST_SUCC("az", "ba");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("AA", "AB");
+    TEST_SUCC("AZ", "BA");
+    TEST_SUCC("ZZ", "AAA");
+    TEST_SUCC("zz99zz99", "aaa00aa00");
+    TEST_SUCC("99zz99zz", "100aa00aa");
     TEST_SUCC("abcd", "abce");
     TEST_SUCC("THX1138", "THX1139");
     TEST_SUCC("<<koala>>", "<<koalb>>");
@@ -1041,7 +1101,6 @@ void test_succ()
     TEST_SUCC("***", "**+");
     TEST_SUCC("9", "10");
     TEST_SUCC("z", "aa");
-    TEST_SUCC("zz", "aaa");
     TEST_SUCC("zz", "aaa");
     TEST_SUCC("hell!z99", "helm!a00");
     TEST_SUCC("hell!9", "hell!10");
@@ -1053,9 +1112,12 @@ void test_succ()
     TEST_SUCC("abc-z99", "abd-a00");
     TEST_SUCC("hell2!99", "hell3!00");
     TEST_SUCC("hell2!@$99", "hell3!@$00");
-    TEST_SUCC("hella!@$zz", "hellb!@$aa");
+    TEST_SUCC("hello!@$99", "hello!@$100");
+    TEST_SUCC("hell8!@$zz", "hell8!@$aaa");
     TEST_SUCC("a/@z", "b/@a");
     TEST_SUCC("/@z", "/@aa");
+    TEST_SUCC("XY.99", "XY.100");
+    TEST_SUCC("XY1.99", "XY2.00");
 }
 //-------------------------------------------------
 
@@ -1075,7 +1137,8 @@ int main()
     test_count();
     test_find();
     test_rfind();
-    test_remove_profix();
+    test_remove_prefix();
+    test_remove();
     test_expandtabs();
     test_title();
     test_join();

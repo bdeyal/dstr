@@ -130,6 +130,12 @@ public:
     DString trim_left() const;
     DString trim() const;
     DString succ() const;
+    DString remove(char c) const;
+    DString remove_any(DStringView selectors) const;
+    DString remove_prefix(DStringView prefix) const;
+    DString remove_suffix(DStringView suffix) const;
+    DString iremove_prefix(DStringView prefix) const;
+    DString iremove_suffix(DStringView suffix) const;
 
     // Inline queries
     //

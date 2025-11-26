@@ -17,9 +17,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#if __cplusplus >= 201703L
-#include <string_view>
-#endif
+
 #include <dstr/dstring.hpp>
 #include <dstr/dstringstream.hpp>
 
@@ -468,6 +466,49 @@ void test_remove()
 
     s1.erase(0, DString::NPOS);
     assert(s1 == "");
+
+    DString s2("hello");
+    assert(s2.remove('l') == "heo");
+    assert(s2.remove_any("l") == "heo");
+    assert(s2.remove_any("lo") == "he");
+    assert(s2.remove_any("aeiou") == "hll");
+    assert(s2.remove_any("") == "hello");
+
+    assert(s2.remove_prefix("h") == "ello");
+    assert(s2.remove_prefix("he") == "llo");
+    assert(s2.remove_prefix("hel") == "lo");
+    assert(s2.remove_prefix("hell") == "o");
+    assert(s2.remove_prefix("hello") == "");
+    assert(s2.remove_prefix("helloXXX") == "hello");
+
+    assert(s2.iremove_prefix("H") == "ello");
+    assert(s2.iremove_prefix("HE") == "llo");
+    assert(s2.iremove_prefix("Hel") == "lo");
+    assert(s2.iremove_prefix("HeLl") == "o");
+    assert(s2.iremove_prefix("HeLlO") == "");
+    assert(s2.iremove_prefix("heLLoXXX") == "hello");
+
+    assert(s2.remove_suffix("o") == "hell");
+    assert(s2.remove_suffix("lo") == "hel");
+    assert(s2.remove_suffix("llo") == "he");
+    assert(s2.remove_suffix("ello") == "h");
+    assert(s2.remove_suffix("hello") == "");
+    assert(s2.remove_suffix("helloXXX") == "hello");
+
+    assert(s2.iremove_suffix("O") == "hell");
+    assert(s2.iremove_suffix("LO") == "hel");
+    assert(s2.iremove_suffix("Llo") == "he");
+    assert(s2.iremove_suffix("ElLO") == "h");
+    assert(s2.iremove_suffix("HeLlO") == "");
+    assert(s2.iremove_suffix("helloXXX") == "hello");
+
+    s2 = "Hello World";
+    assert(s2.remove('l') == "Heo Word");
+    assert(s2.remove('H') == "ello World");
+    assert(s2.remove('o') == "Hell Wrld");
+
+    s2 = "File.eXe";
+    assert(s2.iremove_suffix(".exe") == "File");
 }
 //-------------------------------------------------
 
@@ -1968,6 +2009,26 @@ void test_rpartition()
     ASSERT_RPARTITION("=y", "=", "", "=", "y");
     ASSERT_RPARTITION("x=", "=", "x", "=", "");
 
+    // Using rpartition to split file name
+    //
+    const char* unix_path = "/path/to/some/basename.ext";
+    DStringView sv(unix_path);
+    DString dir, sep, fname;
+    sv.rpartition("/", dir, sep, fname);
+    assert(dir == "/path/to/some");
+    assert(fname == "basename.ext");
+    DString basename = fname.remove_suffix(".ext");
+    assert(basename == "basename");
+
+    // Now for windows
+    //
+    const char* win_path = "C:\\Path\\To\\Some\\Basename.EXE";
+    sv = win_path;
+    sv.rpartition("\\", dir, sep, fname);
+    assert(dir == "C:\\Path\\To\\Some");
+    assert(fname == "Basename.EXE");
+    basename = fname.iremove_suffix(".exe");
+    assert(basename == "Basename");
 }
 //-------------------------------------------------
 

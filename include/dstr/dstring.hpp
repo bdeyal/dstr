@@ -889,9 +889,82 @@ public:
         dstr_clear(pImp());
     }
 
-    void erase(size_t pos, size_t count = 1)
+    DString& erase(size_t pos, size_t count = 1)
     {
         dstr_remove(pImp(), pos, count);
+        return *this;
+    }
+
+    DString& remove_inplace(char c)
+    {
+        dstr_remove_char(pImp(), c);
+        return *this;
+    }
+
+    DString& remove_any_inplace(DStringView selectors)
+    {
+        dstr_remove_any(pImp(), selectors.c_str());
+        return *this;
+    }
+
+    DString& remove_prefix_inplace(DStringView prefix)
+    {
+        dstr_remove_prefix(pImp(), prefix.c_str());
+        return *this;
+    }
+
+    DString& remove_suffix_inplace(DStringView suffix)
+    {
+        dstr_remove_suffix(pImp(), suffix.c_str());
+        return *this;
+    }
+
+    DString& iremove_prefix_inplace(DStringView prefix)
+    {
+        dstr_iremove_prefix(pImp(), prefix.c_str());
+        return *this;
+    }
+
+    DString& iremove_suffix_inplace(DStringView suffix)
+    {
+        dstr_iremove_suffix(pImp(), suffix.c_str());
+        return *this;
+    }
+
+    DString remove(char c) const
+    {
+        DString res(*this);
+        return res.remove_inplace(c);
+    }
+
+    DString remove_any(DStringView selectors) const
+    {
+        DString res(*this);
+        return res.remove_any_inplace(selectors);
+    }
+
+    DString remove_prefix(DStringView prefix) const
+    {
+        DString res(*this);
+        return res.remove_prefix_inplace(prefix);
+    }
+
+    DString remove_suffix(DStringView suffix) const
+    {
+        DString res(*this);
+        return res.remove_suffix_inplace(suffix);
+    }
+
+    DString iremove_prefix(DStringView prefix) const
+    {
+        DString res(*this);
+        return res.iremove_prefix_inplace(prefix);
+    }
+
+    DString iremove_suffix(DStringView suffix) const
+    {
+        DString res(*this);
+        return res.iremove_suffix_inplace(suffix);
     }
 
     void swap(DString& rhs)
@@ -1721,6 +1794,49 @@ inline DString DStringView::succ() const
     return r.succ_inplace();
 }
 //----------------------------------------------------------------
+
+inline DString DStringView::remove(char c) const
+{
+    DString res(*this);
+    return res.remove_inplace(c);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::remove_any(DStringView selectors) const
+{
+    DString res(*this);
+    return res.remove_any_inplace(selectors);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::remove_prefix(DStringView prefix) const
+{
+    DString res(*this);
+    return res.remove_prefix_inplace(prefix);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::remove_suffix(DStringView suffix) const
+{
+    DString res(*this);
+    return res.remove_suffix_inplace(suffix);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::iremove_prefix(DStringView prefix) const
+{
+    DString res(*this);
+    return res.iremove_prefix_inplace(prefix);
+}
+//----------------------------------------------------------------
+
+inline DString DStringView::iremove_suffix(DStringView suffix) const
+{
+    DString res(*this);
+    return res.iremove_suffix_inplace(suffix);
+}
+//----------------------------------------------------------------
+
 
 
 // Include guard

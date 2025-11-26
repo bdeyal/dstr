@@ -68,15 +68,30 @@
     } while(0)
 /*--------------------------------------------------------------------------*/
 
+static const char* my_strcasechr(const char* s, int c)
+{
+    if (!s) return NULL;
+
+    unsigned char uc = (unsigned char) toupper(c);
+    unsigned char lc = (unsigned char) tolower(c);
+
+    for (; *s != '\0'; ++s) {
+        unsigned char curr = *s;
+        if (curr == lc || curr == uc)
+            return s;
+    }
+
+    return NULL;
+}
+/*-------------------------------------------------------------------------------*/
+
 static const char* my_strcasestr(const char* haystack, const char* needle)
 {
-    const char* cp = haystack;
-
     if (*needle == '\0')
         return haystack;
 
-    while (*cp != '\0') {
-        const char* s1 = cp;
+    for ( ; *haystack; ++haystack) {
+        const char* s1 = haystack;
         const char* s2 = needle;
 
         while ( *s1 && *s2 && (*s1 == *s2 || toupper(*s1) == toupper(*s2)) ) {
@@ -85,9 +100,7 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
         }
 
         if (*s2 == '\0')
-            return cp;
-
-        ++cp;
+            return haystack;
     }
 
     return NULL;
@@ -106,35 +119,27 @@ static inline size_t min_3(size_t a, size_t b, size_t c)
 }
 /*-------------------------------------------------------------------------------*/
 
-static inline char* dstr_address(DSTR p, size_t pos) {
+static inline char* dstr_address(DSTR p, size_t pos)
+{
     return (DBUF(p) + pos);
-}
-static inline const char* dstr_address_c(CDSTR p, size_t pos) {
-    return (DBUF(p) + pos);
-}
-static inline char* dstr_tail(DSTR p) {
-    return dstr_address(p, DLEN(p));
-}
-static inline const char* dstr_end_of_storage(DSTR p) {
-    return dstr_address_c(p, DCAP(p));
 }
 /*-------------------------------------------------------------------------------*/
 
-static const char* my_strcasechr(const char* s, int c)
+static inline const char* dstr_address_c(CDSTR p, size_t pos)
 {
-    if (!s)
-        return NULL;
+    return (DBUF(p) + pos);
+}
+/*-------------------------------------------------------------------------------*/
 
-    unsigned char uc = (unsigned char) toupper(c);
-    unsigned char lc = (unsigned char) tolower(c);
+static inline char* dstr_tail(DSTR p)
+{
+    return dstr_address(p, DLEN(p));
+}
+/*-------------------------------------------------------------------------------*/
 
-    for (; *s != '\0'; ++s) {
-        unsigned char curr = *s;
-        if (curr == lc || curr == uc)
-            return s;
-    }
-
-    return NULL;
+static inline const char* dstr_end_of_storage(DSTR p)
+{
+    return dstr_address_c(p, DCAP(p));
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -589,35 +594,36 @@ static size_t dstr_rfind_sz_imp(CDSTR p,
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR_BOOL dstr_suffix_sz_imp(CDSTR p,
+static ptrdiff_t dstr_suffix_sz_imp(CDSTR p,
                                     const char* s,
                                     int ignore_case)
 {
-    DSTR_BOOL result;
     size_t compare_len;
     const char* compare_addr;
 
     dstr_assert_view(p);
     assert(s != NULL);
 
-    if (DSTR_IS_NULL(p) || s == NULL)
-        return DSTR_FALSE;
+    if (!p || !s) {
+        return -1; }
 
-    if ((compare_len = strlen(s)) > DLEN(p))
-        return DSTR_FALSE;
+    if ((compare_len = strlen(s)) > DLEN(p)) {
+        return -1; }
 
     compare_addr = DBUF(p) + (DLEN(p) - compare_len);
 
-    if (ignore_case)
-        result = (strcasecmp(compare_addr, s) == 0);
-    else
-        result = (strcmp(compare_addr, s) == 0);
+    if (ignore_case) {
+        if (strcasecmp(compare_addr, s) != 0) {
+            return -1; } }
+    else {
+        if (strcmp(compare_addr, s) != 0) {
+            return -1; } }
 
-    return result;
+    return (compare_addr - DBUF(p));
 }
 /*-------------------------------------------------------------------------------*/
 
-static DSTR_BOOL dstr_prefix_sz_imp(CDSTR p,
+static ptrdiff_t dstr_prefix_sz_imp(CDSTR p,
                                     const char* s,
                                     int ignore_case)
 {
@@ -639,7 +645,7 @@ static DSTR_BOOL dstr_prefix_sz_imp(CDSTR p,
             ++s;
         }
     }
-    return (*s == '\0');
+    return (*s == '\0') ? (pbuf - DBUF(p)) : -1;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1268,26 +1274,26 @@ DSTR_BOOL dstr_icontains_sz(CDSTR p, const char* s)
 DSTR_BOOL dstr_suffix_sz(CDSTR p, const char* s)
 {
     /* don't ignore case */
-    return dstr_suffix_sz_imp(p, s, DSTR_FALSE);
+    return dstr_suffix_sz_imp(p, s, DSTR_FALSE) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR_BOOL dstr_isuffix_sz(CDSTR p, const char* s)
 {
     /* ignore case */
-    return dstr_suffix_sz_imp(p, s, DSTR_TRUE);
+    return dstr_suffix_sz_imp(p, s, DSTR_TRUE) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR_BOOL dstr_prefix_sz(CDSTR p, const char* s)
 {
-    return dstr_prefix_sz_imp(p, s, DSTR_FALSE);
+    return dstr_prefix_sz_imp(p, s, DSTR_FALSE) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR_BOOL dstr_iprefix_sz(CDSTR p, const char* s)
 {
-    return dstr_prefix_sz_imp(p, s, DSTR_TRUE);
+    return dstr_prefix_sz_imp(p, s, DSTR_TRUE) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -3137,5 +3143,107 @@ int dstr_increment(DSTR dest)
 
     dstr_assert_valid(dest);
     return DSTR_SUCCESS;
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_remove_char(DSTR p, char to_delete)
+{
+    dstr_assert_valid(p);
+
+    INIT_DSTR(tmp);
+
+    // Do translation from table
+    //
+    for (size_t index = 0; index < DLEN(p); ++index)
+    {
+        char ch = DVAL(p, index);
+        if (ch != to_delete)
+            dstr_append_inline(&tmp, ch);
+    }
+
+    dstr_swap(p, &tmp);
+    dstr_clean_data(&tmp);
+
+    dstr_assert_valid(p);
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_remove_any(DSTR p, const char* selectors)
+{
+    if (!selectors || !*selectors)
+        return;
+
+    /*
+     *  optimization : if selectors is a string of one character then call
+     *  dstr_remove_char() with that character.
+     */
+    if (selectors[1] == '\0') {
+        dstr_remove_char(p, selectors[0]);
+        return; }
+
+    unsigned char to_delete[256] = { 0 };
+    while (*selectors) {
+        to_delete[(unsigned char)(*selectors)] = 1;
+        ++selectors;
+    }
+
+    INIT_DSTR(tmp);
+
+    // Do translation from table
+    //
+    for (size_t index = 0; index < DLEN(p); ++index)
+    {
+        char ch = DVAL(p, index);
+        int deleted = to_delete[(unsigned char) ch];
+        if (!deleted)
+            dstr_append_inline(&tmp, ch);
+    }
+
+    dstr_swap(p, &tmp);
+    dstr_clean_data(&tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_remove_prefix(DSTR p, const char* s)
+{
+    if (!s || !*s)
+        return;
+
+    ptrdiff_t pos = dstr_prefix_sz_imp(p, s, 0);
+    if (pos > 0)
+        dstr_remove_imp(p, 0, pos);
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_iremove_prefix(DSTR p, const char* s)
+{
+    if (!s || !*s)
+        return;
+
+    ptrdiff_t pos = dstr_prefix_sz_imp(p, s, 1);
+    if (pos > 0)
+        dstr_remove_imp(p, 0, pos);
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_remove_suffix(DSTR p, const char* s)
+{
+    if (!s || !*s)
+        return;
+
+    ptrdiff_t pos = dstr_suffix_sz_imp(p, s, 0);
+    if (pos >= 0)
+        dstr_remove_imp(p, pos, DLEN(p));
+}
+/*--------------------------------------------------------------------------*/
+
+void dstr_iremove_suffix(DSTR p, const char* s)
+{
+    if (!s || !*s)
+        return;
+
+    ptrdiff_t pos = dstr_suffix_sz_imp(p, s, 1);
+    if (pos >= 0)
+        dstr_remove_imp(p, pos, DLEN(p));
 }
 /*--------------------------------------------------------------------------*/

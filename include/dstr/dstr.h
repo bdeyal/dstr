@@ -48,8 +48,6 @@ typedef const struct DSTR_TYPE* CDSTR;
 /*--------------------------------------------------------------------------*/
 
 #define DSTR_NPOS        ((size_t)(-1))
-#define DSTR_NULL        NULL
-#define DSTR_IS_NULL(p)  ((p) == NULL)
 #define DSTR_BOOL        bool
 #define DSTR_TRUE        true
 #define DSTR_FALSE       false
@@ -173,8 +171,17 @@ void dstr_reverse(DSTR p);
 void dstr_trim_right(DSTR p);
 void dstr_trim_left(DSTR p);
 void dstr_trim_both(DSTR p);
-//void dstr_truncate(DSTR p);
+
+/*
+ *  Remove functions
+ */
 void dstr_remove(DSTR p, size_t pos, size_t count);
+void dstr_remove_char(DSTR p, char c);
+void dstr_remove_any(DSTR p, const char* selectors);
+void dstr_remove_prefix(DSTR p, const char* s);
+void dstr_remove_suffix(DSTR p, const char* s);
+void dstr_iremove_prefix(DSTR p, const char* s);
+void dstr_iremove_suffix(DSTR p, const char* s);
 
 /*
  *  Like trim but strip a special char from edges
@@ -185,8 +192,8 @@ void dstr_rstrip_c(DSTR p, char c);
 /*
  *  Like above but strip any of sz from edges
  */
-void dstr_lstrip_sz(DSTR p, const char* sz);
-void dstr_rstrip_sz(DSTR p, const char* sz);
+void dstr_lstrip_sz(DSTR p, const char* selectors);
+void dstr_rstrip_sz(DSTR p, const char* selectors);
 
 /* hash for use in hash table */
 unsigned long dstr_hash(CDSTR src, int seed /*=0*/);
@@ -252,16 +259,16 @@ DSTR_BOOL dstr_prefix_sz(CDSTR p, const char* s);
 DSTR_BOOL dstr_iprefix_sz(CDSTR p, const char* s);
 
 /* ffo = find_first of, ffno = find first not of */
-size_t dstr_ffo_sz(CDSTR p, size_t pos, const char* s);
-size_t dstr_ffo_ds(CDSTR p, size_t pos, CDSTR s);
-size_t dstr_ffno_sz(CDSTR p, size_t pos, const char* s);
-size_t dstr_ffno_ds(CDSTR p, size_t pos, CDSTR s);
+size_t dstr_ffo_sz(CDSTR p, size_t pos, const char* selectors);
+size_t dstr_ffo_ds(CDSTR p, size_t pos, CDSTR selectors);
+size_t dstr_ffno_sz(CDSTR p, size_t pos, const char* selectors);
+size_t dstr_ffno_ds(CDSTR p, size_t pos, CDSTR selectors);
 
 /* flo = find_last of, flno = find last not of */
-size_t dstr_flo_sz(CDSTR p, size_t pos, const char* s);
-size_t dstr_flo_ds(CDSTR p, size_t pos, CDSTR s);
-size_t dstr_flno_sz(CDSTR p, size_t pos, const char* s);
-size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR s);
+size_t dstr_flo_sz(CDSTR p, size_t pos, const char* selectors);
+size_t dstr_flo_ds(CDSTR p, size_t pos, CDSTR selectors);
+size_t dstr_flno_sz(CDSTR p, size_t pos, const char* selectors);
+size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR selectors);
 
 /* copy NUMBYTES from INDEX to DEST. returns copied characters*/
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
@@ -578,10 +585,17 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstralign_c         dstr_align_center
 
 #define dstrfree            dstr_destroy
+#define dcleandata          dstr_clean_data
 #define dstrclear           dstr_clear
 #define dstrresize          dstr_resize
 #define dstrerase           dstr_remove
 #define dstrshrink          dstr_shrink_to_fit
+#define drmchar             dstr_remove_char
+#define drmany              dstr_remove_any
+#define drmprefix           dstr_remove_prefix
+#define drmsuffix           dstr_remove_suffix
+#define drmprefix_i         dstr_remove_prefix
+#define drmsuffix_i         dstr_remove_suffix
 
 #define dsprintf            dstr_assign_sprintf
 #define dvsprintf           dstr_assign_vsprintf

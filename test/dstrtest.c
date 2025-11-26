@@ -1305,12 +1305,14 @@ void test_prefix()
     assert( dstartswith(s1, "Good"));
     assert( dstartswith(s1, longstr));
     assert( !dstartswith(s1, "good"));
+    assert( dstartswith(s1, ""));
 
     assert( dstartswith_i(s1, "GOOD MORNING"));
     assert( dstartswith_i(s1, "GooD"));
     assert( dstartswith_i(s1, "GooD morNiNg Today is Friday"));
     assert( !dstartswith(s1, "H"));
     assert( !dstartswith_i(s1, "H"));
+    assert( dstartswith_i(s1, ""));
 
     dstrfree(s1);
 }
