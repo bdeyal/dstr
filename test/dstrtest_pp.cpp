@@ -1058,7 +1058,7 @@ void test_put_get_safe()
         DString s(before);                                  \
         s.upper_inplace();                                  \
         assert(s == after);                                 \
-        assert(s.size() == 0 || s.isupper());              \
+        assert(s.size() == 0 || s.isupper());               \
     } while (0)
 //-------------------------------------------------
 
@@ -1066,7 +1066,7 @@ void test_put_get_safe()
         DString s(before);                                  \
         s.lower_inplace();                                  \
         assert( s == after );                               \
-        assert(s.size() == 0 || s.islower());              \
+        assert(s.size() == 0 || s.islower());               \
     } while (0)
 //-------------------------------------------------
 

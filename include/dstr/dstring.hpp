@@ -22,7 +22,6 @@
 //
 #include "dstring_view.hpp"
 
-
 // A C++ wrapper around C DSTR_TYPE
 //
 class DString {
@@ -977,8 +976,6 @@ public:
         return dstr_substr(pImp(), pos, numbytes, dest, destsize);
     }
 
-    // Inline queries
-    //
     const char* c_str()    const noexcept { return m_imp.data;     }
     const char* data()     const noexcept { return m_imp.data;     }
     size_t      length()   const noexcept { return m_imp.length;   }
@@ -1116,7 +1113,7 @@ public:
     bool isalnum()      const { return dstr_isalnum(pImp()); }
     bool isalpha()      const { return dstr_isalpha(pImp()); }
     bool is_ascii()     const { return dstr_isascii(pImp()); }
-#if !defined(_WIN32)
+#if !defined(isascii)
     bool isascii()      const { return is_ascii();           }
 #endif
     bool isdecimal()    const { return dstr_isdecimal(pImp()); }
@@ -1508,7 +1505,7 @@ private:
 
 struct DStringMatch
 {
-    // zero based offset (NPOS if subexpr does not match)
+    // zero based offset (NPOS for no match)
     size_t offset;
 
     // length of substring

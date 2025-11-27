@@ -1274,26 +1274,26 @@ DSTR_BOOL dstr_icontains_sz(CDSTR p, const char* s)
 DSTR_BOOL dstr_suffix_sz(CDSTR p, const char* s)
 {
     /* don't ignore case */
-    return dstr_suffix_sz_imp(p, s, DSTR_FALSE) >= 0;
+    return dstr_suffix_sz_imp(p, s, 0) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR_BOOL dstr_isuffix_sz(CDSTR p, const char* s)
 {
     /* ignore case */
-    return dstr_suffix_sz_imp(p, s, DSTR_TRUE) >= 0;
+    return dstr_suffix_sz_imp(p, s, 1) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR_BOOL dstr_prefix_sz(CDSTR p, const char* s)
 {
-    return dstr_prefix_sz_imp(p, s, DSTR_FALSE) >= 0;
+    return dstr_prefix_sz_imp(p, s, 0) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
 DSTR_BOOL dstr_iprefix_sz(CDSTR p, const char* s)
 {
-    return dstr_prefix_sz_imp(p, s, DSTR_TRUE) >= 0;
+    return dstr_prefix_sz_imp(p, s, 1) >= 0;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -3037,9 +3037,15 @@ static DSTR_BOOL same_carry_after_puncts(CDSTR p, long pos, int carry)
 }
 /*--------------------------------------------------------------------------*/
 
+// To make more readable
+//
+enum {
+    NO_CARRY = 0
+};
+
 static int dstr_increment_alnum(DSTR dest)
 {
-    int carry = 0;
+    int carry = NO_CARRY;
     int only_alnum = 1;
 
     for (long pos = DLEN(dest) - 1; pos >= 0; --pos) {
@@ -3048,7 +3054,7 @@ static int dstr_increment_alnum(DSTR dest)
             if (carry && only_alnum) {
                 if (!same_carry_after_puncts(dest, pos, carry)) {
                     dstr_insert_cc_imp(dest, pos + 1, carry, 1);
-                    return 0;
+                    return NO_CARRY;
                 }
             }
             only_alnum = 0;
@@ -3064,7 +3070,7 @@ static int dstr_increment_alnum(DSTR dest)
             carry = 'A'; }
         else {
             DVAL(dest, pos) = ++c;
-            carry = 0;
+            carry = NO_CARRY;
             break;
         }
     }
@@ -3075,7 +3081,7 @@ static int dstr_increment_alnum(DSTR dest)
 
 static int dstr_increment_printable(DSTR dest)
 {
-    int carry = 0;
+    int carry = NO_CARRY;
 
     for (long pos = DLEN(dest) - 1; pos >= 0; --pos) {
         char c = DVAL(dest, pos);
@@ -3087,11 +3093,11 @@ static int dstr_increment_printable(DSTR dest)
                 break;
             default:
                 DVAL(dest, pos) =  ++c;
-                carry = 0;
+                carry = NO_CARRY;
             }
         }
 
-        if (carry == 0)
+        if (carry == NO_CARRY)
             break;
     }
 
@@ -3119,7 +3125,7 @@ int dstr_increment(DSTR dest)
         }
     }
 
-    int carry = 0;
+    int carry = NO_CARRY;
     if (alnum_count) {
         // If we have alnum chars, only they are incremented
         //
