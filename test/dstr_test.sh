@@ -1,6 +1,11 @@
 #!/bin/sh
 
 set -e
+NPROC=8
+
+script_full_name=$(readlink -f $0)
+script_dir=$(dirname $script_full_name)
+pushd $script_dir
 
 for COMP in gcc clang; do
 	echo ">>>> VALGRIND ($COMP) TEST..."
@@ -24,7 +29,6 @@ for COMP in gcc clang; do
 	echo ">>>> GC OK"
 	echo
 done
-
 
 # Test with C++ compilation
 #
@@ -53,3 +57,45 @@ for COMP in g++ clang++; do
 	echo ">>>> GC OK"
 	echo
 done
+
+popd
+
+# test build of mingw32
+#
+make clean
+make -j$NPROC COMP=mingw32
+
+# test build of mingw64
+#
+make clean
+make -j$NPROC COMP=mingw64
+
+# test built and run with CLANG
+#
+make clean
+make -j$NPROC COMP=clang test
+
+# test built and run with CLANG and sanitize
+#
+make clean
+make -j$NPROC COMP=clang SANITIZE=1 test
+
+# test built and run with gcc15
+#
+make clean
+gcc15.env make -j$NPROC test
+
+# test built and run with gcc15 and sanitize
+#
+make clean
+gcc15.env make -j$NPROC SANITIZE=1 test
+
+# test build and run with default gcc and sanitize
+#
+make clean
+make -j$NPROC SANITIZE=1 test
+
+# test and run with default gcc - ready for installation
+#
+make clean
+make -j$NPROC test

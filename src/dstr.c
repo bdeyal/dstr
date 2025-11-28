@@ -1868,6 +1868,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
 // FNV-1 hash algorithm
 //
 // See: https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+//
 unsigned long dstr_hash(CDSTR src, int seed)
 {
     dstr_assert_view(src);

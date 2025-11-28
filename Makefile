@@ -136,7 +136,7 @@ testvg: $(PROGRAMS) ./test/test_file.txt
 
 .PHONY: test_various
 test_various: ./test/dstr_test.sh
-	cd ./test && ./dstr_test.sh | tee test_various.txt
+	./test/dstr_test.sh | tee ./test/test_various.txt
 
 clean:
 	rm -rf ./lib64
