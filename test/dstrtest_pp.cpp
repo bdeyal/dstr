@@ -1907,6 +1907,8 @@ void test_translate()
     DSTRTRANS("Hi Sam!", "mSa", "eJo", "Hi Joe!");
 
     DSTRTRANS("hello", "aeiou", "-", "h-ll-");
+    DSTRTRANS("hello", "aeiou", "", "hello");
+    DSTRTRANS("hello", "aeiou", NULL, "hll");
     DSTRTRANS("hello", "aeiou", "AA-", "hAll-");
     DSTRTRANS("hello world today is sunday", "aeiou", NULL, "hll wrld tdy s sndy");
     DSTRTRANS("hello world today is sunday", "^aeiou", NULL, "eoooaiua");

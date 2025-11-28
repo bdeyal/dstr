@@ -94,7 +94,7 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
         const char* s1 = haystack;
         const char* s2 = needle;
 
-        while ( *s1 && *s2 && (*s1 == *s2 || toupper(*s1) == toupper(*s2)) ) {
+        while (*s1 && *s2 && (*s1 == *s2 || toupper(*s1) == toupper(*s2))) {
             ++s1;
             ++s2;
         }
@@ -450,8 +450,7 @@ static int dstr_replace_imp(DSTR p,
         result = dstr_insert_imp(p, pos, buff, buflen);
         dstr_clean_data(&tmp);
     }
-    else
-    {
+    else {
         dstr_remove_imp(p, pos, count);
         result = dstr_insert_imp(p, pos, buff, buflen);
     }
@@ -2810,8 +2809,7 @@ static void dstr_translate_range_aux(DSTR dest, const char* arr1, const char* ar
 
 static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
 {
-    if (!arr1)
-        return;
+    assert(arr1 != NULL);
 
     unsigned char to_delete[256] = { 0 };
     while (*arr1) {
@@ -2819,26 +2817,30 @@ static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
         ++arr1;
     }
 
-    INIT_DSTR(tmp);
+    size_t read_index = 0;
+    size_t write_index = 0;
 
     // Do translation from table
     //
-    for (size_t index = 0; index < dstr_length(dest); ++index)
+    for ( ; read_index < DLEN(dest); ++read_index)
     {
-        char ch = dstr_getchar(dest, index);
+        char ch = DVAL(dest, read_index);
         int deleted = to_delete[(unsigned char) ch];
-        if (negate) {
-            if (deleted)
-                dstr_append_inline(&tmp, ch);
-        }
-        else {
-            if (!deleted)
-                dstr_append_inline(&tmp, ch);
-        }
+
+        // If normal  (negate = false) and !deleted  => copy
+        // If oppsite (negate = true) and delete => copy
+        // Therefore...
+        //
+        if (negate ^ deleted)
+            continue;
+
+        DVAL(dest, write_index) = ch;
+        ++write_index;
     }
 
-    dstr_swap(dest, &tmp);
-    dstr_clean_data(&tmp);
+    DVAL(dest, write_index) = '\0';
+    DLEN(dest) = write_index;
+    dstr_assert_valid(dest);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -2927,22 +2929,26 @@ void dstr_squeeze(DSTR dest, const char* squeeze)
     for (; *squeeze ; ++squeeze)
         to_squeeze[(unsigned char)(*squeeze)] = 1;
 
-    INIT_DSTR(tmp);
+    size_t read_index = 0;
+    size_t write_index = 0;
 
     // Do translation from table
     //
     char prev_ch = '\0';
-    for (size_t index = 0; index < dstr_length(dest); ++index)
+    for ( ; read_index < DLEN(dest); ++read_index)
     {
-        char ch = dstr_getchar(dest, index);
-        if (ch != prev_ch || !to_squeeze[(unsigned char)ch])
-            dstr_append_inline(&tmp, ch);
+        char ch = DVAL(dest, read_index);
+        if (ch != prev_ch || !to_squeeze[(unsigned char)ch]) {
+            DVAL(dest, write_index) = ch;
+            ++write_index;
+        }
 
         prev_ch = ch;
     }
 
-    dstr_swap(dest, &tmp);
-    dstr_clean_data(&tmp);
+    DVAL(dest, write_index) = '\0';
+    DLEN(dest) = write_index;
+    dstr_assert_valid(dest);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -3156,19 +3162,20 @@ void dstr_remove_char(DSTR p, char to_delete)
 {
     dstr_assert_valid(p);
 
-    INIT_DSTR(tmp);
+    size_t write_index = 0;
+    size_t read_index = 0;
 
-    // Do translation from table
-    //
-    for (size_t index = 0; index < DLEN(p); ++index)
+    for ( ; read_index < DLEN(p); ++read_index)
     {
-        char ch = DVAL(p, index);
-        if (ch != to_delete)
-            dstr_append_inline(&tmp, ch);
+        char ch = DVAL(p, read_index);
+        if (ch != to_delete) {
+            DVAL(p, write_index) = ch;
+            ++write_index;
+        }
     }
 
-    dstr_swap(p, &tmp);
-    dstr_clean_data(&tmp);
+    DVAL(p, write_index) = '\0';
+    DLEN(p) = write_index;
 
     dstr_assert_valid(p);
 }
@@ -3180,33 +3187,17 @@ void dstr_remove_any(DSTR p, const char* selectors)
         return;
 
     /*
-     *  optimization : if selectors is a string of one character then call
+     *  Optimization: if selectors is a string of one character then call
      *  dstr_remove_char() with that character.
      */
     if (selectors[1] == '\0') {
         dstr_remove_char(p, selectors[0]);
         return; }
 
-    unsigned char to_delete[256] = { 0 };
-    while (*selectors) {
-        to_delete[(unsigned char)(*selectors)] = 1;
-        ++selectors;
-    }
-
-    INIT_DSTR(tmp);
-
-    // Do translation from table
-    //
-    for (size_t index = 0; index < DLEN(p); ++index)
-    {
-        char ch = DVAL(p, index);
-        int deleted = to_delete[(unsigned char) ch];
-        if (!deleted)
-            dstr_append_inline(&tmp, ch);
-    }
-
-    dstr_swap(p, &tmp);
-    dstr_clean_data(&tmp);
+    /*  We already have delete by selectors in the more general translate
+     *  functions
+     */
+    dstr_translate_delete_aux(p, selectors, 0 /*negate*/);
 }
 /*--------------------------------------------------------------------------*/
 
