@@ -724,3 +724,127 @@ int DString::subst_inplace(DStringView pattern, size_t offset,
     return re.subst(*this, offset, replacement, options);
 }
 /*-------------------------------------------------------------------------------*/
+
+///////////////////////////////////////////////////////////////////
+//
+// C interface implemented here (for code reuse and RE cache)
+//
+//////////////////////////////////////////////////////////////////
+
+bool dstr_regex_exact(CDSTR p, const char* pattern, size_t offset) try
+{
+    int ctor_opts = (REGEX_CASELESS |
+                     REGEX_MULTILINE |
+                     REGEX_DOTALL |
+                     REGEX_EXTENDED |
+                     REGEX_ANCHORED |
+                     REGEX_DOLLAR_ENDONLY |
+                     REGEX_EXTRA |
+                     REGEX_UTF8 |
+                     REGEX_NO_AUTO_CAPTURE);
+
+    int match_opts = (REGEX_ANCHORED |
+                      REGEX_NOTBOL |
+                      REGEX_NOTEOL |
+                      REGEX_NOTEMPTY |
+                      REGEX_NO_AUTO_CAPTURE |
+                      REGEX_NO_UTF8_CHECK);
+
+    const auto& re = re_cache.get_RE(pattern, ctor_opts);
+    DStringView vw(dstr_cstr(p), dstr_length(p));
+    return re.match(vw, offset, match_opts);
+}
+catch (...) {
+    return false;
+}
+/*-------------------------------------------------------------------------------*/
+
+size_t dstr_regex_within(CDSTR p, const char* pattern, size_t offset) try
+{
+    int ctor_opts = (REGEX_CASELESS |
+                     REGEX_MULTILINE |
+                     REGEX_DOTALL |
+                     REGEX_EXTENDED |
+                     REGEX_DOLLAR_ENDONLY |
+                     REGEX_EXTRA |
+                     REGEX_UTF8);
+
+    int match_opts = (REGEX_NOTBOL |
+                      REGEX_NOTEOL |
+                      REGEX_NOTEMPTY |
+                      REGEX_NO_UTF8_CHECK);
+
+    const auto& re = re_cache.get_RE(pattern, ctor_opts);
+
+    DString::Match mtch;
+    DStringView vw(dstr_cstr(p), dstr_length(p));
+    re.match(vw, offset, mtch, match_opts);
+    return mtch.offset;
+}
+catch (...) {
+    return DSTR_NPOS;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_regex_match(CDSTR p, const char* pattern, size_t offset,
+                     DSTR_Regex_Match* c_match, const char* opts) try
+{
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+
+    DStringView vw(dstr_cstr(p), dstr_length(p));
+    DString::Match m;
+    int result = re.match(vw, offset, m, options);
+
+    if (c_match) {
+        c_match->offset = m.offset;
+        c_match->length = m.length;
+        strncpy(c_match->name, m.name.c_str(), sizeof(c_match->name) - 1);
+    }
+    return result;
+}
+catch (...) {
+    return -1;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_regex_substitute(DSTR p, const char* pattern, size_t offset,
+                          const char* replacement, const char* opts) try
+{
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+
+    DString& subject = *((DString*)(p));
+    return re.subst(subject, offset, replacement, options);
+}
+catch (...) {
+    return -1;
+}
+/*-------------------------------------------------------------------------------*/
+
+int dstr_regex_match_groups(CDSTR p, const char* pattern, size_t offset,
+                            DSTR_Regex_Match matches[], size_t mlen,
+                            const char* opts) try
+{
+    int options = parse_regex_options(opts);
+    const auto& re = re_cache.get_RE(pattern, options);
+
+    DStringView vw(dstr_cstr(p), dstr_length(p));
+    DString::MatchVector mv;
+    int result = re.match_groups(vw, offset, mv, options);
+    if (result <= 0) return result;
+
+    size_t count = 0;
+    for (const auto& m : mv) {
+        auto& c_m = matches[count];
+        c_m.offset = m.offset;
+        c_m.length = m.length;
+        strncpy(c_m.name, m.name.c_str(), sizeof(c_m.name) - 1);
+        if (++count == mlen) break;
+    }
+    return result;
+}
+catch (...) {
+    return -1;
+}
+/*-------------------------------------------------------------------------------*/

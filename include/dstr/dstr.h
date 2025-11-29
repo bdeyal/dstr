@@ -319,6 +319,35 @@ unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base);
 float              dstr_to_float(CDSTR p, size_t* index);
 double             dstr_to_double(CDSTR p, size_t* index);
 long double        dstr_to_ldouble(CDSTR p, size_t* index);
+
+#if !defined(NO_DSTRING_REGEX)
+/*
+ *  Regexp functions
+ */
+typedef struct DSTR_Regex_Match {
+    // zero based offset (NPOS for no match)
+    size_t offset;
+
+    // length of substring
+    size_t length;
+
+    // name of group
+    char name[64];
+} DSTR_Regex_Match;
+
+bool   dstr_regex_exact(CDSTR p, const char* pattern, size_t offset);
+size_t dstr_regex_within(CDSTR p, const char* pattern, size_t offset);
+
+int dstr_regex_match(CDSTR p, const char* pattern, size_t offset,
+                     DSTR_Regex_Match* match, const char* options);
+
+int dstr_regex_match_groups(CDSTR p, const char* pattern, size_t offset,
+                            DSTR_Regex_Match match[], size_t matchlen,
+                            const char* options);
+
+int dstr_regex_substitute(DSTR p, const char* pattern, size_t offset,
+                          const char* replacement, const char* options);
+#endif
 /*-------------------------------------------------------------------------------*/
 
 /* 3way strcmp-like comparison*/
@@ -730,6 +759,14 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 
 #define dstrpart            dstr_partition
 #define dstrrpart           dstr_rpartition
+
+// Regex functions
+//
+#define dre_exact           dstr_regex_exact
+#define dre_within          dstr_regex_within
+#define dre_match           dstr_regex_match
+#define dre_groups          dstr_regex_match_groups
+#define dre_subst           dstr_regex_substitute
 
 /* clean namespace */
 #endif

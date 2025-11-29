@@ -52,6 +52,7 @@ PROGRAMS = \
 	./test/test_tokens \
 	./test/test_algs \
 	./test/test_regex \
+	./test/test_regex_c \
 	./test/test_view
 
 DEPS = ./include/dstr/dstr.h
@@ -91,6 +92,10 @@ all: $(PROGRAMS)
 ./test/test_regex: ./test/test_regex.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
 
+./test/test_regex_c: ./test/test_regex_c.c   $(LIB) $(DEPS_PP)
+	$(CC) $(CFLAGS) -c -o ./test/test_regex_c.o ./test/test_regex_c.c
+	$(CXX) $(CXXFLAGS) -o $@ ./test/test_regex_c.o $(LDFLAGS) -ldstr -lpcre2-8
+
 ./test/test_view: ./test/test_view.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
@@ -114,6 +119,7 @@ test: $(PROGRAMS) ./test/test_file.txt
 	./test/test_tokens
 	./test/test_algs
 	./test/test_regex
+	./test/test_regex_c
 	./test/test_hash
 	./test/test_view
 
@@ -127,6 +133,7 @@ testvg: $(PROGRAMS) ./test/test_file.txt
 	valgrind ./test/test_tokens
 	valgrind ./test/test_algs
 	valgrind ./test/test_regex
+	valgrind ./test/test_regex_c
 	valgrind ./test/test_hash
 	valgrind ./test/test_view
 
