@@ -441,7 +441,7 @@ public:
 
     void push_back(char c)
     {
-        dstr_append_inline(pImp(), c);
+        dstr_append_char(pImp(), c);
     }
 
     void push_front(char c)
@@ -804,7 +804,7 @@ public:
 
     DString& trim_inplace()
     {
-        dstr_trim_both(pImp());
+        dstr_trim(pImp());
         return *this;
     }
 

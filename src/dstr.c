@@ -43,11 +43,6 @@
 #define DCAP(p)       (BASE(p)->capacity)
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
-
-/* Stack base init. For use in this file */
-#define INIT_DSTR(identifier)    \
-    struct DSTR_TYPE identifier; \
-    dstr_init_data(&identifier)
 /*--------------------------------------------------------------------------*/
 
 // Checks for CDSTR type (a.k.s const DSTR_TYPE*)
@@ -448,7 +443,7 @@ static int dstr_replace_imp(DSTR p,
         dstr_remove_imp(p, pos, count);
         buff = DBUF(&tmp);
         result = dstr_insert_imp(p, pos, buff, buflen);
-        dstr_clean_data(&tmp);
+        DONE_DSTR(tmp);
     }
     else {
         dstr_remove_imp(p, pos, count);
@@ -815,7 +810,7 @@ static DSTR_BOOL dstr_isdigits_imp(CDSTR src, DSTR_BOOL is_hex)
  *
  * * * * * * * * * * * * * * * * * *
  */
-DSTR dstr_create(void)
+DSTR dstr_create_empty(void)
 {
     return dstr_alloc_empty();
 }
@@ -1038,7 +1033,7 @@ int dstr_shrink_to_fit(DSTR p)
         return DSTR_FAIL;
 
     dstr_swap(p, &tmp);
-    dstr_clean_data(&tmp);
+    DONE_DSTR(tmp);
 
     dstr_assert_valid(p);
     return DSTR_SUCCESS;
@@ -1140,20 +1135,14 @@ int dstr_append_cc(DSTR p, char c, size_t count)
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_append_c(DSTR p, char c)
+int dstr_grow_append_c(DSTR p, char c)
 {
     dstr_assert_valid(p);
 
-    if (c == '\0')
-        return DSTR_SUCCESS;
+    if (c == '\0') return DSTR_SUCCESS;
 
-    if ((DLEN(p) + 1) >= DCAP(p)) {
-        // amortized constant. Internal buffer capacity doubled
-        // when needed
-        //
-        if (!dstr_grow_by(p, 1)) {
-            return DSTR_FAIL;
-        }
+    if (!dstr_grow_by(p, 1)) {
+        return DSTR_FAIL;
     }
 
     DVAL(p, DLEN(p)) = c;
@@ -1603,7 +1592,7 @@ void dstr_trim_left(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_trim_both(DSTR p)
+void dstr_trim(DSTR p)
 {
     dstr_trim_left(p);
     dstr_trim_right(p);
@@ -2196,7 +2185,7 @@ int dstr_to_int(CDSTR p, size_t* index, int base)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     int result = strtol(str, &endp, base);
@@ -2221,7 +2210,7 @@ long dstr_to_long(CDSTR p, size_t* index, int base)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     long result = strtol(str, &endp, base);
@@ -2246,7 +2235,7 @@ unsigned long dstr_to_ulong(CDSTR p, size_t* index, int base)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     unsigned long result = strtoul(str, &endp, base);
@@ -2271,7 +2260,7 @@ long long dstr_to_llong(CDSTR p, size_t* index, int base)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     long long result = strtoll(str, &endp, base);
@@ -2296,7 +2285,7 @@ unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     unsigned long long result = strtoull(str, &endp, base);
@@ -2321,7 +2310,7 @@ float dstr_to_float(CDSTR p, size_t* index)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     float result = strtof(str, &endp);
@@ -2346,7 +2335,7 @@ double dstr_to_double(CDSTR p, size_t* index)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     double result = strtod(str, &endp);
@@ -2371,7 +2360,7 @@ long double dstr_to_ldouble(CDSTR p, size_t* index)
     errno = 0;
 
     dstr_assert_view(p);
-    const char* str = dstr_cstring(p);
+    const char* str = dstr_cstr(p);
 
     char* endp;
     long double result = strtold(str, &endp);
@@ -2500,7 +2489,7 @@ static int dstr_replace_all_imp(DSTR dest,
         dstr_swap(&tmp, dest);
     }
 
-    dstr_clean_data(&tmp);
+    DONE_DSTR(tmp);
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
@@ -2634,7 +2623,7 @@ int dstr_expand_tabs(DSTR dest, size_t width)
     }
 
     dstr_swap(&tmp, dest);
-    dstr_clean_data(&tmp);
+    DONE_DSTR(tmp);
     return DSTR_SUCCESS;
 
 fail:
@@ -2762,7 +2751,7 @@ int dstr_multiply(DSTR dest, size_t n)
     }
 
     dstr_swap(&tmp, dest);
-    dstr_clean_data(&tmp);
+    DONE_DSTR(tmp);
 
     dstr_assert_valid(dest);
     return DSTR_SUCCESS;

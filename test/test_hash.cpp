@@ -34,7 +34,7 @@ public:
         auto end = Clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         std::cout << name << " took "
-                  << elapsed.count() << " µs ("
+                  << elapsed.count() << " micro-seconds ("
                   << Duration(end - start).count() << " seconds)\n";
     }
 
@@ -112,8 +112,6 @@ void hash_std()
            collision_count,
            double(collision_count) / word_count);
 }
-
-
 
 int main()
 {

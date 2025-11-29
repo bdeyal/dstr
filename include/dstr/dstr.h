@@ -23,16 +23,17 @@
 //
 #if UINTPTR_MAX > UINT32_MAX
 #define DSTR_64BIT
+#define DSTR_INITIAL_CAPACITY (32U) //(48U)
 #elif UINTPTR_MAX == UINT32_MAX
 #define DSTR_32BIT
+#define DSTR_INITIAL_CAPACITY (16U) //(20U)
 #else
 #error "Uknown pointer size"
 #endif
 
-#define DSTR_INITIAL_CAPACITY (16U)
 
 // First two members in DSTR_VIEW and DSTR_TYPE must be identical
-// in type and order. In 64 bit a 4 byte size added for padding
+// in type and order.
 //
 typedef struct DSTR_VIEW
 {
@@ -69,7 +70,7 @@ extern "C" {
 #endif
 
 /* create an empty DSTR*/
-DSTR dstr_create(void);
+DSTR dstr_create_empty(void);
 
 /* create an empty DSTR with at least LEN reserved storage*/
 DSTR dstr_create_reserve(size_t len);
@@ -127,7 +128,7 @@ int dstr_insert_ds(DSTR dest, size_t index, CDSTR src);
 int dstr_insert_bl(DSTR dest, size_t index, const char* buff, size_t len);
 int dstr_insert_range(DSTR dest, size_t index, const char* first, const char* last);
 
-int dstr_append_c(DSTR dest, char c);
+int dstr_grow_append_c(DSTR dest, char c);
 int dstr_append_cc(DSTR dest, char c, size_t count);
 int dstr_append_sz(DSTR dest, const char* value);
 int dstr_append_ds(DSTR dest, CDSTR src);
@@ -180,7 +181,7 @@ void dstr_swap(DSTR d1, DSTR d2);
 void dstr_reverse(DSTR p);
 void dstr_trim_right(DSTR p);
 void dstr_trim_left(DSTR p);
-void dstr_trim_both(DSTR p);
+void dstr_trim(DSTR p);
 
 /*
  *  Remove functions
@@ -386,7 +387,7 @@ static inline DSTR_BOOL dstr_isempty(CDSTR p)
     return (dstr_length(p) == 0);
 }
 
-static inline const char* dstr_cstring(CDSTR p)
+static inline const char* dstr_cstr(CDSTR p)
 {
     return p->data;
 }
@@ -431,16 +432,16 @@ static inline void dstr_putchar_safe(DSTR p, long pos, char c)
         dstr_putchar(p, pos, c);
 }
 
-static inline int dstr_append_inline(DSTR p, char c)
+static inline int dstr_append_char(DSTR p, char c)
 {
-    if (c == '\0') return DSTR_SUCCESS;
-
-    if (p->length + 1 == p->capacity)
-        return dstr_append_c(p, c);
-
-    p->data[p->length] = c;
-    p->data[++p->length] = '\0';
-    return DSTR_SUCCESS;
+    if (c == '\0') {
+        return DSTR_SUCCESS; }
+    else if (p->length + 1 < p->capacity) {
+        p->data[p->length] = c;
+        p->data[++p->length] = '\0';
+        return DSTR_SUCCESS;  }
+    else {
+        return dstr_grow_append_c(p, c); }
 }
 
 static inline void dstr_init_data(DSTR p)
@@ -494,14 +495,59 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #endif
 
 /*
- *  Alternative shorter names
+ *  Alternative shorter names and convenience macros
  */
 #if !defined(DSTR_CLEAN_NAMESPACE)
 
+/* Stack base init */
+#define INIT_DSTR(identifier)    \
+    struct DSTR_TYPE identifier; \
+    dstr_init_data(&identifier)
+
+#define DONE_DSTR(identifier)    \
+    dstr_clean_data(&identifier)
+
+// Default name without type are for NULL teminated C strings
+//
+#define   dstr_create       dstr_create_sz
+#define   dstr_find         dstr_find_sz
+#define   dstr_ifind        dstr_ifind_sz
+#define   dstr_rfind        dstr_rfind_sz
+#define   dstr_irfind       dstr_irfind_sz
+#define   dstr_count        dstr_count_sz
+#define   dstr_icount       dstr_icount_sz
+#define   dstr_contains     dstr_contains_sz
+#define   dstr_icontains    dstr_icontains_sz
+#define   dstr_suffix       dstr_suffix_sz
+#define   dstr_isuffix      dstr_isuffix_sz
+#define   dstr_prefix       dstr_prefix_sz
+#define   dstr_iprefix      dstr_iprefix_sz
+#define   dstr_ffo          dstr_ffo_sz
+#define   dstr_ffno         dstr_ffno_sz
+#define   dstr_flo          dstr_flo_sz
+#define   dstr_flno         dstr_flno_sz
+#define   dstr_compare      dstr_compare_sz
+#define   dstr_icompare     dstr_icompare_sz
+#define   dstr_equal        dstr_equal_sz
+#define   dstr_iequal       dstr_iequal_sz
+#define   dstr_append       dstr_append_sz
+#define   dstr_assign       dstr_assign_sz
+#define   dstr_replace      dstr_replace_sz
+#define   dstr_replace_all  dstr_replace_all_sz
+#define   dstr_insert       dstr_insert_sz
+#define   dstr_lstrip       dstr_lstrip_sz
+#define   dstr_rstrip       dstr_rstrip_sz
+
+/* * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * Short C-Style names for above functions
+ *
+ * * * * * * * * * * * * * * * * * * * * * * */
+
 /* Creation functions. DSTR returned by value */
-#define dstrnew             dstr_create
+#define dstrnew_empty       dstr_create_empty
 #define dstrnew_reserve     dstr_create_reserve
-#define dstrnew_sz          dstr_create_sz
+#define dstrnew             dstr_create_sz
 #define dstrnew_bl          dstr_create_bl
 #define dstrnew_rng         dstr_create_range
 #define dstrnew_cc          dstr_create_cc
@@ -511,7 +557,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrnew_substr      dstr_create_substr
 #define dstrnew_slurp       dstr_create_fromfile
 
-#define dstrdata            dstr_cstring
+#define dstrdata            dstr_cstr
 #define dstrempty           dstr_isempty
 #define dstrlen             dstr_length
 #define dstrcap             dstr_capacity
@@ -542,21 +588,21 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstartswith_i       dstr_iprefix_sz
 #define dindex_ok           dstr_valid_index
 
-#define dstrffo_sz          dstr_ffo_sz
+#define dstrffo             dstr_ffo_sz
+#define dstrffno            dstr_ffno_sz
 #define dstrffo_ds          dstr_ffo_ds
-#define dstrffno_sz         dstr_ffno_sz
 #define dstrffno_ds         dstr_ffno_ds
 
-#define dstrflo_sz          dstr_flo_sz
+#define dstrflo             dstr_flo_sz
+#define dstrflno            dstr_flno_sz
 #define dstrflo_ds          dstr_flo_ds
-#define dstrflno_sz         dstr_flno_sz
 #define dstrflno_ds         dstr_flno_ds
 
-#define dstrcmp_sz          dstr_compare_sz
-#define dstricmp_sz         dstr_icompare_sz
+#define dstrcmp             dstr_compare_sz
+#define dstricmp            dstr_icompare_sz
 #define dstrcmp_ds          dstr_compare_ds
 #define dstricmp_ds         dstr_icompare_ds
-#define dstreq_sz           dstr_equal_sz
+#define dstreq              dstr_equal_sz
 #define dstreq_i            dstr_iequal_sz
 #define dstreq_ds           dstr_equal_ds
 #define dstreq_ids          dstr_iequal_ds
@@ -570,7 +616,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrgetc_s          dstr_getchar_safe
 
 #define dstrcpy_cc          dstr_assign_cc
-#define dstrcpy_sz          dstr_assign_sz
+#define dstrcpy             dstr_assign_sz
 #define dstrcpy_bl          dstr_assign_bl
 #define dstrcpy_rng         dstr_assign_range
 #define dstrcpy_ds          dstr_assign_ds
@@ -583,9 +629,9 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrcpy_left        dstr_assign_left
 #define dstrcpy_mid         dstr_assign_mid
 
-#define dstrcat_sz          dstr_append_sz
+#define dstrcat             dstr_append_sz
 #define dstrcat_cc          dstr_append_cc
-#define dstrcat_c           dstr_append_inline
+#define dstrcat_c           dstr_append_char
 #define dstrcat_ds          dstr_append_ds
 #define dstrcat_bl          dstr_append_bl
 #define dstrcat_rng         dstr_append_range
@@ -616,28 +662,28 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrmult            dstr_multiply
 
 #define dreplace_cc         dstr_replace_cc
-#define dreplace_sz         dstr_replace_sz
+#define dreplace            dstr_replace_sz
 #define dreplace_ds         dstr_replace_ds
 #define dreplace_bl         dstr_replace_bl
 #define dreplace_rng        dstr_replace_range
-#define dreplaceall_sz      dstr_replace_all_sz
+#define dreplaceall         dstr_replace_all_sz
 #define dreplaceall_ds      dstr_replace_all_ds
 #define dexpandtabs         dstr_expand_tabs
 #define dzfill              dstr_zfill
 
 #define dinsert_cc          dstr_insert_cc
-#define dinsert_sz          dstr_insert_sz
+#define dinsert             dstr_insert_sz
 #define dinsert_ds          dstr_insert_ds
 #define dinsert_bl          dstr_insert_bl
 #define dinsert_rng         dstr_insert_range
 
-#define dstrtrim            dstr_trim_both
+#define dstrtrim            dstr_trim
 #define dstrtrim_r          dstr_trim_right
 #define dstrtrim_l          dstr_trim_left
-#define dstrlstrip_c        dstr_lstrip_c
-#define dstrrstrip_c        dstr_rstrip_c
-#define dstrlstrip_sz       dstr_lstrip_sz
-#define dstrlstrip_sz       dstr_lstrip_sz
+#define dlstrip_c           dstr_lstrip_c
+#define drstrip_c           dstr_rstrip_c
+#define dlstrip             dstr_lstrip_sz
+#define drstrip             dstr_rstrip_sz
 #define dstrupper           dstr_ascii_upper
 #define dstrlower           dstr_ascii_lower
 #define dstrswapcase        dstr_ascii_swapcase
@@ -680,7 +726,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 
 #define dstrtrans           dstr_translate
 #define dstrsqz             dstr_squeeze
-#define dstrtrsqz           dstr_translate_squeeze
+#define dstrtr_s            dstr_translate_squeeze
 
 #define dstrpart            dstr_partition
 #define dstrrpart           dstr_rpartition

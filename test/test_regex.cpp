@@ -147,6 +147,24 @@ void test_dstring_match()
     //s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
     s = "alice@foo.com";
     assert(s.match(R"(([\w\.-]+)@([\w\.-]+\.\w+))"));
+
+    s = "true";
+    assert(s.match("yes|on|true|1"));
+
+    s = "true";
+    assert(s.match("yes|on|true|1"));
+
+    s = "yes";
+    assert(s.match("yes|on|true|1"));
+
+    s = "on";
+    assert(s.match("yes|on|true|1"));
+
+    s = "1";
+    assert(s.match("yes|on|true|1"));
+
+    s = "Hmmm...";
+    assert(!s.match("yes|on|true|1"));
 }
 //--------------------------------------------------------------------------------
 
