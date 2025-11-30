@@ -50,6 +50,15 @@ enum {
     REGEX_NO_VARS         = 0x20000000  /// treat dollar in replacement string as ordinary character [subst]
 };
 
+// Declared friend at DString. Cannot be in an unnamed namespace
+//
+struct DSTR_Regex_ExposeImp
+{
+    DSTR_Regex_ExposeImp(DString& s) : pimp(s.pImp()) {}
+    DSTR pimp;
+};
+//--------------------------------------------------------------------
+
 namespace {
 
 // Encapsulates a PCRE2 regular expression object
@@ -63,13 +72,25 @@ public:
     // Implemented out of line below
     //
     bool match(DStringView subject, size_t offset, int options) const;
+
     int  match(DStringView s, size_t off, DString::Match& m, int opts) const;
+
     int  match_groups(DStringView s, size_t off, DString::MatchVector& m,
                       int opts) const;
+
     int capture(DStringView subject, size_t offset,
                 DString& result, int options) const;
+
     int capture(DStringView subject, size_t offset,
                 std::vector<DString>& strings, int options) const;
+
+    // DSTR to support C API,
+    //
+    int subst(DSTR subject, size_t offset, DStringView replacement,
+              int options) const;
+
+    // Calls above function with DSTR internal object
+    //
     int subst(DString& subject, size_t offset, DStringView repl,
               int options) const;
 
@@ -308,7 +329,6 @@ bool DStringRegex::match(DStringView subject, size_t offset, int options) const
 {
     DString::Match mtch;
     match(subject, offset, mtch, options);
-    // printf("Match offset: %zu, len: %zu\n",  mtch.offset,  mtch.length);
     return
         mtch.offset == offset &&
         mtch.length == subject.length() - offset;
@@ -354,10 +374,10 @@ int DStringRegex::match_groups(DStringView subject, size_t offset,
         // Set group name of match
         //
         if (const char* name = find_group_name(i)) {
-            m.name = name;
+            strncpy(m.name, name, sizeof(m.name) - 1);
         }
         else {
-            m.name = "";
+            m.name[0] = '\0';
         }
 
         mvec.push_back(m);
@@ -419,11 +439,11 @@ int DStringRegex::capture(DStringView subject, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-int DStringRegex::subst(DString& subject, size_t offset,
+int DStringRegex::subst(DSTR subject, size_t offset,
                         DStringView replacement,
                         int options) const
 {
-    if (offset > subject.length())
+    if (offset > dstr_length(subject))
         return 0;
 
     // we try substitution on a stack buffer first
@@ -441,7 +461,7 @@ int DStringRegex::subst(DString& subject, size_t offset,
     // First call - try with local stack buffer
     //
     int rc = pcre2_substitute(_pRE,
-                              (PCRE2_SPTR)subject.c_str(), subject.length(),
+                              (PCRE2_SPTR)dstr_cstr(subject), dstr_length(subject),
                               offset,
                               pcre_opts | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH,
                               NULL, NULL, (PCRE2_SPTR)replacement.c_str(),
@@ -452,7 +472,7 @@ int DStringRegex::subst(DString& subject, size_t offset,
         return 0;
     }
     else if (rc > 0) {
-        subject.assign((char*) outbuf, outlen);
+        dstr_assign_bl(subject, (char*) outbuf, outlen);
         return rc;
     }
     else if (rc == PCRE2_ERROR_NOMEMORY) {
@@ -461,13 +481,13 @@ int DStringRegex::subst(DString& subject, size_t offset,
         std::vector<uint8_t> v;
         v.reserve(outlen);
         rc = pcre2_substitute(_pRE,
-                              (PCRE2_SPTR)subject.c_str(),  subject.length(),
+                              (PCRE2_SPTR)dstr_cstr(subject), dstr_length(subject),
                               offset, pcre_opts, NULL, NULL,
                               (PCRE2_SPTR)replacement.c_str(),
                               replacement.length(), v.data(), &outlen);
 
         if (rc > 0) {
-            subject.assign((char*)v.data());
+            dstr_assign_sz(subject, (char*)v.data());
             return rc;
         }
     }
@@ -481,6 +501,15 @@ int DStringRegex::subst(DString& subject, size_t offset,
     }
 
     return rc;
+}
+/*-------------------------------------------------------------------------------*/
+
+inline int DStringRegex::subst(DString& subject, size_t offset,
+                               DStringView replacement,
+                               int options) const
+{
+    DSTR_Regex_ExposeImp s(subject);
+    return subst(s.pimp, offset, replacement, options);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -793,14 +822,13 @@ int dstr_regex_match(CDSTR p, const char* pattern, size_t offset,
     const auto& re = re_cache.get_RE(pattern, options);
 
     DStringView vw(dstr_cstr(p), dstr_length(p));
-    DString::Match m;
-    int result = re.match(vw, offset, m, options);
+    int result;
+    if (!c_match) {
+        DString::Match m;
+        result = re.match(vw, offset, m, options); }
+    else {
+        result = re.match(vw, offset, *c_match, options); }
 
-    if (c_match) {
-        c_match->offset = m.offset;
-        c_match->length = m.length;
-        strncpy(c_match->name, m.name.c_str(), sizeof(c_match->name) - 1);
-    }
     return result;
 }
 catch (...) {
@@ -813,9 +841,7 @@ int dstr_regex_substitute(DSTR p, const char* pattern, size_t offset,
 {
     int options = parse_regex_options(opts);
     const auto& re = re_cache.get_RE(pattern, options);
-
-    DString& subject = *((DString*)(p));
-    return re.subst(subject, offset, replacement, options);
+    return re.subst(p, offset, replacement, options);
 }
 catch (...) {
     return -1;
@@ -834,14 +860,10 @@ int dstr_regex_match_groups(CDSTR p, const char* pattern, size_t offset,
     int result = re.match_groups(vw, offset, mv, options);
     if (result <= 0) return result;
 
-    size_t count = 0;
-    for (const auto& m : mv) {
-        auto& c_m = matches[count];
-        c_m.offset = m.offset;
-        c_m.length = m.length;
-        strncpy(c_m.name, m.name.c_str(), sizeof(c_m.name) - 1);
-        if (++count == mlen) break;
-    }
+    // POD type. memcpy safe here
+    //
+    size_t count = std::min(mlen, mv.size());
+    memcpy(matches, mv.data(), count * sizeof(DSTR_Regex_Match));
     return result;
 }
 catch (...) {

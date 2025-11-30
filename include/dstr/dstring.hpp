@@ -1373,10 +1373,15 @@ public:
     //
     ///////////////////////////////////////////////////
 
-    // Regexp Match type: forward declaration
+    // We don't want to expose pImp() but we need it in Regexp
+    // Code (which is still internal to this class)
     //
-    typedef struct DStringMatch Match;
-    typedef DSMatchVector       MatchVector;
+    friend struct DSTR_Regex_ExposeImp;
+
+    // Regexp Match type
+    //
+    typedef DSTR_Regex_Match  Match;
+    typedef DSMatchVector     MatchVector;
 
     // *this is an exact match
     //
@@ -1500,19 +1505,6 @@ private:
         m_imp.length = count;
         m_imp.data[count] = '\0';
     }
-};
-/*-------------------------------------------------------------------------------*/
-
-struct DStringMatch
-{
-    // zero based offset (NPOS for no match)
-    size_t offset;
-
-    // length of substring
-    size_t length;
-
-    // name of group
-    DString name;
 };
 /*-------------------------------------------------------------------------------*/
 

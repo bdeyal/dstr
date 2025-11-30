@@ -117,7 +117,7 @@ void test_dstr_group_patterns()
     for (;;) {
         DSTR_Regex_Match matches[20];
         int n = dre_groups(subject, pattern, offset, matches, 20, NULL);
-        if (n == 0) break;
+        if (n <= 0) break;
 
         printf("Found %d matches:\n", n);
         for (int i = 0; i < n; ++i) {

@@ -13,9 +13,8 @@
 
 // Forward declaratons
 //
-class    DString;
-struct   DStringMatch;
-typedef  std::vector<DStringMatch> DSMatchVector;
+class DString;
+typedef  std::vector<DSTR_Regex_Match> DSMatchVector;
 //-----------------------------------------------
 
 class DStringView {
@@ -519,10 +518,10 @@ public:
     // store match info in Match parameter
     //
     int match(DStringView ptrn,
-              size_t offset, DStringMatch& m,
+              size_t offset, DSTR_Regex_Match& m,
               const char* opts = nullptr) const;
 
-    int match(DStringView pattern, DStringMatch& mtch, const char* options = nullptr) const
+    int match(DStringView pattern, DSTR_Regex_Match& mtch, const char* options = nullptr) const
     {
         return match(pattern, 0, mtch, options);
     }
