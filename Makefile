@@ -147,7 +147,7 @@ test_various: ./test/dstr_test.sh
 
 clean:
 	rm -rf ./lib64
-	rm -f ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o
+	rm -f ./test/*.o ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o
 	rm -f ./test/test_file.txt ./test/test_various.txt $(PROGRAMS)
 	rm -f ./test/*.exe
 
