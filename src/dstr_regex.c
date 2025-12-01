@@ -11,8 +11,9 @@
  */
 #include <assert.h>
 #include <stdint.h>
-#include <dstr/dstr.h>
+#include <threads.h>
 
+#include <dstr/dstr.h>
 #include "dstr_regex_common.h"
 
 typedef struct GroupInfo {
@@ -319,20 +320,22 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 }
 /*-------------------------------------------------------------------------------*/
 
-// Not thread safe for now
-//
 // TODO:
-// 1. Thread safe
-// 2. LRU
+// 1. LRU
 //
 #define DSTR_CACHE_SIZE 20
 #define HALF_CACHE_SIZE (DSTR_CACHE_SIZE / 2)
-static Compiled_Regex* re_cache[DSTR_CACHE_SIZE] = { 0 };
-static size_t cache_index = 0;
-static bool set_cleanup = false;
 
-static void cache_cleanup(void)
+static _Thread_local Compiled_Regex* re_cache[DSTR_CACHE_SIZE] = { 0 };
+
+static tss_t     tss_cache_key;
+static once_flag tss_cache_once = ONCE_FLAG_INIT;
+/*-------------------------------------------------------------------------------*/
+
+static void cache_cleanup(void* unused)
 {
+    ((void)unused);
+
     for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
         if (re_cache[i]) {
             destroy_compiled_regex(re_cache[i]);
@@ -342,12 +345,31 @@ static void cache_cleanup(void)
 }
 /*-------------------------------------------------------------------------------*/
 
+static void create_cache_key()
+{
+    if (tss_create(&tss_cache_key, cache_cleanup) != thrd_success) {
+        fprintf(stderr, "Error: Failed to create TSS key.\n");
+        abort();
+    }
+
+    typedef void(*voidproc)(void);
+    atexit((voidproc)cache_cleanup);
+}
+/*-------------------------------------------------------------------------------*/
+
+static void registr_automatic_exit_cleanup(void)
+{
+    call_once(&tss_cache_once, create_cache_key);
+    if (tss_get(tss_cache_key) == NULL)
+        tss_set(tss_cache_key, (void*)1);
+}
+/*-------------------------------------------------------------------------------*/
+
 static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
 {
-    if (!set_cleanup) {
-        atexit(cache_cleanup);
-        set_cleanup = true;
-    }
+    registr_automatic_exit_cleanup();
+
+    static _Thread_local size_t cache_index = 0;
 
     for (size_t i = 0; i < cache_index; ++i) {
         if (dstreq(re_cache[i]->pattern, pattern) &&
