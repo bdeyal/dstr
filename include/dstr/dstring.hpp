@@ -1373,11 +1373,6 @@ public:
     //
     ///////////////////////////////////////////////////
 
-    // We don't want to expose pImp() but we need it in Regexp
-    // Code (which is still internal to this class)
-    //
-    friend struct DSTR_Regex_ExposeImp;
-
     // Regexp Match type
     //
     typedef DSTR_Regex_Match  Match;
@@ -1389,7 +1384,7 @@ public:
 
     // pattern appears somewhere in *this. Returns position or NPOS
     //
-    size_t match_within(DStringView pattern, size_t offset = 0) const;
+    size_t match_contains(DStringView pattern, size_t offset = 0) const;
 
     // store match info in Match parameter
     //

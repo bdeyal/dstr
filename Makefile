@@ -93,18 +93,26 @@ all: $(PROGRAMS)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
 
 ./test/test_regex_c: ./test/test_regex_c.c   $(LIB) $(DEPS_PP)
-	$(CC) $(CFLAGS) -c -o ./test/test_regex_c.o ./test/test_regex_c.c
-	$(CXX) $(CXXFLAGS) -o $@ ./test/test_regex_c.o $(LDFLAGS) -ldstr -lpcre2-8
+	$(CC) $(CFLAGS) -o $@ ./test/test_regex_c.c $(LDFLAGS) -ldstr -lpcre2-8
 
 ./test/test_view: ./test/test_view.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-$(LIB): ./src/dstring_regex.cpp ./src/dstring.cpp ./src/dstr.c $(DEPS_PP) Makefile
+$(LIB): ./src/dstring_regex.o ./src/dstr_regex.o ./src/dstring.o ./src/dstr.o
 	mkdir -p ./lib64
+	$(AR) rcs $(LIB) ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o ./src/dstr_regex.o
+
+./src/dstr.o: ./src/dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ./src/dstr.c -o ./src/dstr.o
+
+./src/dstr_regex.o: ./src/dstr_regex.c $(DEPS)
+	$(CC) -c $(CFLAGS) -DNDEBUG ./src/dstr_regex.c -o ./src/dstr_regex.o
+
+./src/dstring.o: ./src/dstring.cpp $(DEPS_PP)
 	$(CXX) -c $(CXXFLAGS) -DNDEBUG ./src/dstring.cpp -o ./src/dstring.o
+
+./src/dstring_regex.o: ./src/dstring_regex.cpp $(DEPS_PP)
 	$(CXX) -c $(CXXFLAGS) -DNDEBUG ./src/dstring_regex.cpp -o ./src/dstring_regex.o
-	$(AR) rcs $(LIB) ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o
 
 .PHONY: testall
 testall: test testvg test_various
@@ -147,7 +155,7 @@ test_various: ./test/dstr_test.sh
 
 clean:
 	rm -rf ./lib64
-	rm -f ./test/*.o ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o
+	rm -f ./test/*.o ./src/*.o
 	rm -f ./test/test_file.txt ./test/test_various.txt $(PROGRAMS)
 	rm -f ./test/*.exe
 

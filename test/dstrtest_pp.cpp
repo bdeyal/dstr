@@ -21,7 +21,6 @@
 #include <dstr/dstring.hpp>
 #include <dstr/dstringstream.hpp>
 
-
 #if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER <= 1200))
 #define TRACE_FN() printf("%d\n", __LINE__)
 #else

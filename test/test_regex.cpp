@@ -168,23 +168,23 @@ void test_dstring_match()
 }
 //--------------------------------------------------------------------------------
 
-void test_dstring_match_within()
+void test_dstring_match_contains()
 {
     TRACE_FN();
 
     DString s = "123";
-    assert(s.match_within("[0-9]+") <= s.length());
+    assert(s.match_contains("[0-9]+") <= s.length());
 
     s = "abc";
-    assert(s.match_within("[0-9]+") == DString::NPOS);
+    assert(s.match_contains("[0-9]+") == DString::NPOS);
 
     s = "abc123";
-    assert(s.match_within("[0-9]+") <= s.length());
+    assert(s.match_contains("[0-9]+") <= s.length());
     assert(!s.match("[0-9]+"));
     assert(s.match("[0-9]+", 3));
 
     s = "Emails: alice@foo.com, bob@bar.org, charlie@baz.net";
-    assert(s.match_within(R"(([\w\.-]+)@([\w\.-]+\.\w+))") <= s.length());
+    assert(s.match_contains(R"(([\w\.-]+)@([\w\.-]+\.\w+))") <= s.length());
 }
 //--------------------------------------------------------------------------------
 
@@ -368,7 +368,7 @@ int main()
 {
     try {
         test_dstring_match();
-        test_dstring_match_within();
+        test_dstring_match_contains();
         test_dstring_capture();
         test_dstring_match_struct();
         test_dstring_replace_all();

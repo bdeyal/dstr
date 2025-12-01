@@ -325,7 +325,7 @@ long double        dstr_to_ldouble(CDSTR p, size_t* index);
  *  Regexp functions
  */
 typedef struct DSTR_Regex_Match {
-    // zero based offset (NPOS for no match)
+    // zero based offset (DSTR_NPOS for no match)
     size_t offset;
 
     // length of substring
@@ -336,7 +336,7 @@ typedef struct DSTR_Regex_Match {
 } DSTR_Regex_Match;
 
 bool   dstr_regex_exact(CDSTR p, const char* pattern, size_t offset);
-size_t dstr_regex_within(CDSTR p, const char* pattern, size_t offset);
+size_t dstr_regex_contains(CDSTR p, const char* pattern, size_t offset);
 
 int dstr_regex_match(CDSTR p, const char* pattern, size_t offset,
                      DSTR_Regex_Match* match, const char* options);
