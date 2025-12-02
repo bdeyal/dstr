@@ -11,10 +11,26 @@
  */
 #include <assert.h>
 #include <stdint.h>
-#include <threads.h>
 
+// Regular expression cache uses thread local storage using ISO-C11 tss* functions
+// or pthread equivalent if not available
+//
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+   #if defined(__MINGW32__) || defined(__MINGW64__)
+      #include <pthread.h>
+      #define RE_CACHE_USE_PTHREAD 1
+   #else
+      #include <threads.h>
+   #endif
+#else
+    #error "dstr_regex.c Must have at least a C11 compiler"
+#endif
+
+// Our headers
+//
 #include <dstr/dstr.h>
 #include "dstr_regex_common.h"
+/*---------------------------------------------------------------------*/
 
 typedef struct GroupInfo {
     long        group_number;
@@ -321,12 +337,24 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 /*-------------------------------------------------------------------------------*/
 
 // TODO:
-// 1. LRU
+// LRU
 //
-#define DSTR_CACHE_SIZE 20
+#define DSTR_CACHE_SIZE 30
 #define HALF_CACHE_SIZE (DSTR_CACHE_SIZE / 2)
 
+#if defined(RE_CACHE_USE_PTHREAD)
+   typedef pthread_key_t    tss_t;
+   typedef pthread_once_t   once_flag;
+   #define ONCE_FLAG_INIT   PTHREAD_ONCE_INIT
+   #define tss_create       pthread_key_create
+   #define tss_get          pthread_getspecific
+   #define tss_set          pthread_setspecific
+   #define call_once        pthread_once
+   #define thrd_success     0
+#endif
+
 static _Thread_local Compiled_Regex* re_cache[DSTR_CACHE_SIZE] = { 0 };
+static _Thread_local size_t cache_index = 0;
 
 static tss_t     tss_cache_key;
 static once_flag tss_cache_once = ONCE_FLAG_INIT;
@@ -368,8 +396,6 @@ static void registr_automatic_exit_cleanup(void)
 static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
 {
     registr_automatic_exit_cleanup();
-
-    static _Thread_local size_t cache_index = 0;
 
     for (size_t i = 0; i < cache_index; ++i) {
         if (dstreq(re_cache[i]->pattern, pattern) &&
