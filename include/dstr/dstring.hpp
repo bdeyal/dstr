@@ -1358,6 +1358,11 @@ public:
         return r;
     }
 
+    static void puts(DStringView vw)
+    {
+        ::puts(vw.c_str());
+    }
+
     // C++ algorithms support : functions
     //
     size_type      size()  const { return length(); }

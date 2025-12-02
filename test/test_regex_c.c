@@ -5,6 +5,8 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <assert.h>
+#include <stdlib.h>
+
 #include <dstr/dstr.h>
 
 
@@ -96,6 +98,17 @@ void test_dstr_subst()
     dre_subst(hello, "(?<vowel>[aeiou])", 0, "${vowel}${vowel}", "/g");
     assert(dstreq(hello, "heelloo"));
 
+    dstrcpy(hello, "field1:Rest of text");
+    dre_subst(hello, ".*:", 0, "", "/gA");
+    assert(dstreq(hello, "Rest of text"));
+
+    // One "\\" for C, other "\\" for PCRE engine
+    //
+    dstrcpy(hello, "/this/is/a/linux/path/name");
+    dre_subst(hello, "/", 0, "\\\\", "/g");
+    dre_subst(hello, "\\bis\\b", 0, "is_NOT", "");
+    assert(dstreq(hello, "\\this\\is_NOT\\a\\linux\\path\\name"));
+
     dstrfree(hello);
     dstrfree(s);
 }
@@ -167,11 +180,32 @@ void test_dstr_group_extract()
 }
 //--------------------------------------------------------------------------------
 
+void test_exact_match()
+{
+    TRACE_FN();
+
+    const char* pattern = "reg(ex|ular\\sexpressions?)";
+
+    DSTR p = dstrnew("regex");
+    assert(dre_exact(p, pattern, 0));
+
+    dstrcpy(p, "regular expression");
+    assert(dre_exact(p, pattern, 0));
+
+    dstrcpy(p, "regular expressions");
+    assert(dre_exact(p, pattern, 0));
+
+    puts("OK");
+}
+//--------------------------------------------------------------------------------
+
+
 int main()
 {
     test_ip_address();
     test_dstr_subst();
     test_dstr_group_patterns();
     test_dstr_group_extract();
+    test_exact_match();
 }
 //--------------------------------------------------------------------------------

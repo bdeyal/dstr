@@ -345,6 +345,13 @@ void test_dstring_subst()
     assert(s == "abcXYZdefXYZghi");
     assert(hello.subst("(?<vowel>[aeiou])", "${vowel}${vowel}", "/g") == "heelloo");
     assert(DString("aaaa").subst("a*", "X", "/g") == "XX");
+
+    hello = "/this/IS/a/linux/path/name";
+    hello.subst_inplace("/", "\\\\", "/g");
+    puts(hello.data());
+    hello.subst_inplace("IS", "is_NOT");
+    puts(hello.data());
+    assert(hello == "\\this\\is_NOT\\a\\linux\\path\\name");
 }
 //--------------------------------------------------------------------------------
 

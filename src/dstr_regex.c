@@ -103,8 +103,8 @@ static Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int*
     GroupInfo* gInfo = NULL;
     if (name_count) {
         gInfo = (GroupInfo*) malloc(name_count * sizeof(GroupInfo));
-        if (!gInfo)
-            goto error_clean_pcre;
+        if (!gInfo) goto error_clean_pcre;
+
         for (uint32_t i = 0; i < name_count; i++)
         {
             unsigned char* group = name_table + 2 + (name_entry_size * i);
@@ -115,8 +115,7 @@ static Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int*
     }
 
     Compiled_Regex* result = (Compiled_Regex*) malloc(sizeof(Compiled_Regex));
-    if (!result)
-        goto error_clean_groups;
+    if (!result) goto error_clean_groups;
     result->_pRE = _pRE;
     result->p_groups = gInfo;
     result->n_groups = name_count;
@@ -523,5 +522,28 @@ int dstr_regex_match_groups(CDSTR subject, const char* pattern, size_t offset,
         return errcode;
 
     return dstr_regex_match_groups_aux(cr, subject, offset, matches, mlen, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_regex_perror(int rc)
+{
+    if (rc >= 0) {
+        fprintf(stderr, "DSTR Regex: No Error\n"); }
+    else {
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(rc, buffer, sizeof(buffer));
+        fprintf(stderr, "DSTR Regex: %s (%d)\n", (char*)buffer, rc); }
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_regex_strerror(DSTR dest, int rc)
+{
+    if (rc >= 0) {
+        dstrcpy(dest, "DSTR Regex: No Error\n"); }
+    else {
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(rc, buffer, sizeof(buffer));
+        dsprintf(dest, "DSTR Regex: %s (%d)\n", (char*)buffer, rc); }
+
 }
 /*-------------------------------------------------------------------------------*/

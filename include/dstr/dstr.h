@@ -335,6 +335,8 @@ typedef struct DSTR_Regex_Match {
     char name[64];
 } DSTR_Regex_Match;
 
+void   dstr_regex_perror(int rc);
+void   dstr_regex_strerror(DSTR dest, int rc);
 bool   dstr_regex_exact(CDSTR p, const char* pattern, size_t offset);
 size_t dstr_regex_contains(CDSTR p, const char* pattern, size_t offset);
 
@@ -767,6 +769,8 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dre_match           dstr_regex_match
 #define dre_groups          dstr_regex_match_groups
 #define dre_subst           dstr_regex_substitute
+#define dre_perror          dstr_regex_perror
+#define dre_strerror        dstr_regex_strerror
 
 /* clean namespace */
 #endif
