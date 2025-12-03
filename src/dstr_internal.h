@@ -8,6 +8,7 @@ extern "C" {
 // Only the C++ wrapper ever touches this
 //
 extern void (*g_dstr_oom_handler)(void);
+extern void (*g_dstr_regex_handler)(int);
 
 #ifdef __cplusplus
 }

@@ -513,7 +513,7 @@ public:
 
     // pattern appears somewhere in *this. Returns position or NPOS
     //
-    size_t match_within(DStringView pattern, size_t offset = 0) const;
+    size_t match_contains(DStringView pattern, size_t offset = 0) const;
 
     // store match info in Match parameter
     //

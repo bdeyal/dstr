@@ -1889,13 +1889,13 @@ void test_split()
 #define DSTRTRANS(s1, a1, a2, r) do {               \
         DString dd(s1);                             \
         dd.tr((a1), (a2));                          \
-        DString::puts(dd);                          \
+        puts(dd);                                   \
         assert(dd == (r)); } while (0)
 
 #define DSTRTRSQZ(s1, a1, a2, r) do {               \
         DString dd(s1);                             \
         dd.tr_s((a1), (a2));                        \
-        DString::puts(dd);                          \
+        puts(dd);                                   \
         assert(dd == (r)); } while (0)
 
 void test_translate()

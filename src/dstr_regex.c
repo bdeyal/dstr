@@ -26,11 +26,128 @@
     #error "dstr_regex.c Must have at least a C11 compiler"
 #endif
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 // Our headers
 //
 #include <dstr/dstr.h>
-#include "dstr_regex_common.h"
+#include "dstr_internal.h"
 /*---------------------------------------------------------------------*/
+
+// Constants for options (based on POCO)
+//
+enum {
+    REGEX_CASELESS        = 0x00000001, /// case insensitive matching (/i) [ctor]
+    REGEX_MULTILINE       = 0x00000002, /// enable multi-line mode; affects ^ and $ (/m) [ctor]
+    REGEX_DOTALL          = 0x00000004, /// dot matches all characters, including newline (/s) [ctor]
+    REGEX_EXTENDED        = 0x00000008, /// totally ignore whitespace (/x) [ctor]
+    REGEX_ANCHORED        = 0x00000010, /// treat pattern as if it starts with a ^ [ctor, match]
+    REGEX_DOLLAR_ENDONLY  = 0x00000020, /// dollar matches end-of-string only, not last newline in string [ctor]
+    REGEX_EXTRA           = 0x00000040, /// enable optional PCRE functionality [ctor]
+    REGEX_NOTBOL          = 0x00000080, /// circumflex does not match beginning of string [match]
+    REGEX_NOTEOL          = 0x00000100, /// $ does not match end of string [match]
+    REGEX_UNGREEDY        = 0x00000200, /// make quantifiers ungreedy [ctor]
+    REGEX_NOTEMPTY        = 0x00000400, /// empty string never matches [match]
+    REGEX_UTF8            = 0x00000800, /// assume pattern and subject is UTF-8 encoded [ctor]
+    REGEX_NO_AUTO_CAPTURE = 0x00001000, /// disable numbered capturing parentheses [ctor, match]
+    REGEX_NO_UTF8_CHECK   = 0x00002000, /// do not check validity of UTF-8 code sequences [match]
+    REGEX_FIRSTLINE       = 0x00040000, /// an  unanchored  pattern  is  required  to  match
+    REGEX_DUPNAMES        = 0x00080000, /// names used to identify capturing  subpatterns need not be unique [ctor]
+    REGEX_NEWLINE_CR      = 0x00100000, /// assume newline is CR ('\r'), the default [ctor]
+    REGEX_NEWLINE_LF      = 0x00200000, /// assume newline is LF ('\n') [ctor]
+    REGEX_NEWLINE_CRLF    = 0x00300000, /// assume newline is CRLF ("\r\n") [ctor]
+    REGEX_NEWLINE_ANY     = 0x00400000, /// assume newline is any valid Unicode newline character [ctor]
+    REGEX_NEWLINE_ANYCRLF = 0x00500000, /// assume newline is any of CR, LF, CRLF [ctor]
+    REGEX_GLOBAL          = 0x10000000, /// replace all occurences (/g) [subst]
+    REGEX_NO_VARS         = 0x20000000  /// treat dollar in replacement string as ordinary character [subst]
+};
+
+static int compile_options(int options)
+{
+    int pcre_opts = 0;
+
+    if (options & REGEX_CASELESS)
+        pcre_opts |= PCRE2_CASELESS;
+    if (options & REGEX_MULTILINE)
+        pcre_opts |= PCRE2_MULTILINE;
+    if (options & REGEX_DOTALL)
+        pcre_opts |= PCRE2_DOTALL;
+    if (options & REGEX_EXTENDED)
+        pcre_opts |= PCRE2_EXTENDED;
+    if (options & REGEX_ANCHORED)
+        pcre_opts |= PCRE2_ANCHORED;
+    if (options & REGEX_DOLLAR_ENDONLY)
+        pcre_opts |= PCRE2_DOLLAR_ENDONLY;
+    if (options & REGEX_UNGREEDY)
+        pcre_opts |= PCRE2_UNGREEDY;
+    if (options & REGEX_UTF8)
+        pcre_opts |= PCRE2_UTF | PCRE2_UCP;
+    if (options & REGEX_NO_AUTO_CAPTURE)
+        pcre_opts |= PCRE2_NO_AUTO_CAPTURE;
+    if (options & REGEX_FIRSTLINE)
+        pcre_opts |= PCRE2_FIRSTLINE;
+    if (options & REGEX_DUPNAMES)
+        pcre_opts |= PCRE2_DUPNAMES;
+
+    return pcre_opts;
+}
+/*-------------------------------------------------------------------------------*/
+
+static int match_options(int options)
+{
+    int pcre_opts = 0;
+
+    if (options & REGEX_ANCHORED)
+        pcre_opts |= PCRE2_ANCHORED;
+    if (options & REGEX_NOTBOL)
+        pcre_opts |= PCRE2_NOTBOL;
+    if (options & REGEX_NOTEOL)
+        pcre_opts |= PCRE2_NOTEOL;
+    if (options & REGEX_NOTEMPTY)
+        pcre_opts |= PCRE2_NOTEMPTY;
+    if (options & REGEX_NO_AUTO_CAPTURE)
+        pcre_opts |= PCRE2_NO_AUTO_CAPTURE;
+    if (options & REGEX_NO_UTF8_CHECK)
+        pcre_opts |= PCRE2_NO_UTF_CHECK;
+
+    return pcre_opts;
+}
+/*-------------------------------------------------------------------------------*/
+
+static int parse_regex_options(const char* str)
+{
+    if (!str || !*str)
+        return 0;
+
+    int opts = 0;
+    for (; *str; ++str) {
+        switch (*str) {
+        case ' ' :
+        case '/' : break;
+        case 'g' : opts |= REGEX_GLOBAL;          break;
+        case 'i' : opts |= REGEX_CASELESS;        break;
+        case 'm' : opts |= REGEX_MULTILINE;       break;
+        case 's' : opts |= REGEX_DOTALL;          break;
+        case 'x' : opts |= REGEX_EXTENDED;        break;
+        case 'X' : opts |= REGEX_EXTRA;           break;
+        case 'U' : opts |= REGEX_UNGREEDY;        break;
+        case 'D' : opts |= REGEX_DOLLAR_ENDONLY;  break;
+        case 'd' : opts |= REGEX_NOTEOL;          break;
+        case 'E' : opts |= REGEX_NOTEMPTY;        break;
+        case 'n' : opts |= REGEX_NO_AUTO_CAPTURE; break;
+        case 'F' : opts |= REGEX_FIRSTLINE;       break;
+        case 'A' : opts |= REGEX_ANCHORED;        break;
+        case 't' : opts |= REGEX_DUPNAMES;        break;
+        case '$' : opts |= REGEX_NO_VARS;         break;
+        case '\n': opts |= REGEX_NEWLINE_LF;      break;
+        case '\r': opts |= REGEX_NEWLINE_CR;      break;
+        default: break;
+        }
+    }
+    return opts;
+}
+/*-------------------------------------------------------------------------------*/
 
 typedef struct GroupInfo {
     long        group_number;
@@ -57,11 +174,40 @@ static const char* find_group_name(Compiled_Regex* cr, int n)
 }
 /*-------------------------------------------------------------------------------*/
 
-static Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* errcode)
+// This can be set in the C++ side to throw an exception.
+// In pure C it is NULL
+//
+void (*g_dstr_regex_handler)(int) = NULL;
+
+static void on_regex_error(int rc)
+{
+    if (g_dstr_regex_handler)
+        g_dstr_regex_handler(rc);
+}
+/*-------------------------------------------------------------------------------*/
+
+static void on_malloc_error()
+{
+    // set by C++ DString wrapper
+    //
+    if (g_dstr_oom_handler)
+        g_dstr_oom_handler();
+
+    // C code goes here
+    //
+    fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
+    abort();
+}
+/*-------------------------------------------------------------------------------*/
+
+static
+Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 {
     pcre2_compile_context* context = pcre2_compile_context_create(NULL);
-    if (!context)
+    if (!context) {
+        on_malloc_error();
         return NULL;
+    }
 
     if (options & REGEX_NEWLINE_LF)
         pcre2_set_newline(context, PCRE2_NEWLINE_LF);
@@ -87,7 +233,8 @@ static Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int*
 
     if (!_pRE)
     {
-        if (errcode) *errcode = error_code;
+        if (err) *err = error_code;
+        on_regex_error(error_code);
         return NULL;
     }
 
@@ -127,6 +274,7 @@ error_clean_groups:
     if (gInfo) free(gInfo);
 error_clean_pcre:
     pcre2_code_free(_pRE);
+    on_malloc_error();
     return NULL;
 }
 /*-------------------------------------------------------------------------------*/
@@ -177,6 +325,7 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
     }
     else if (rc <= 0) {
         pcre2_match_data_free(mdata);
+        on_regex_error(rc);
         return rc;
     }
 
@@ -217,7 +366,7 @@ static bool dstr_regex_exact_aux(Compiled_Regex* cr,
 static int
 dstr_regex_match_groups_aux(Compiled_Regex* cr,
                             CDSTR subject, size_t offset,
-                            DSTR_Regex_Match matches[], size_t mlen,
+                            DSTR_Match_Vector* vec,
                             int options)
 {
     assert (offset <= dstrlen(subject));
@@ -233,38 +382,43 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
                          mdata,
                          NULL);
 
-    if (rc <= 0) {
+    if (rc <= 0 || vec == NULL) {
         pcre2_match_data_free(mdata);
-        return rc;
-    }
+        if (rc == PCRE2_ERROR_NOMATCH) {
+            return 0;  }
+        else {
+            on_regex_error(rc);
+            return rc; } }
 
     PCRE2_SIZE* ovec = pcre2_get_ovector_pointer(mdata);
 
-    for (int i = 0; i < rc; ++i) {
-        // Don't write more than supplied
-        //
-        if (i == (int)mlen)
-            break;
+    vec->matches_len = (size_t) rc;
+    vec->matches = (DSTR_Regex_Match*) malloc((vec->matches_len) * sizeof(DSTR_Regex_Match));
+    if (!vec->matches) {
+        on_malloc_error();
+        return rc;
+    }
 
+    for (int i = 0; i < rc; ++i) {
         // Set offset and length
         //
         if (ovec[2 * i] == PCRE2_UNSET) {
-            matches[i].offset = DSTR_NPOS;
-            matches[i].length = 0;
+            vec->matches[i].offset = DSTR_NPOS;
+            vec->matches[i].length = 0;
         }
         else {
-            matches[i].offset = ovec[2 * i];
-            matches[i].length = ovec[2 * i + 1] - matches[i].offset;
+            vec->matches[i].offset = ovec[2 * i];
+            vec->matches[i].length = ovec[2 * i + 1] - vec->matches[i].offset;
         }
 
         // Set group name of match
         //
         const char* name = find_group_name(cr, i);
         if (name) {
-            strncpy(matches[i].name, name, sizeof(matches[i].name) - 1);
+            strncpy(vec->matches[i].name, name, sizeof(vec->matches[i].name) - 1);
         }
         else {
-            matches[i].name[0] = '\0';
+            vec->matches[i].name[0] = '\0';
         }
     }
 
@@ -331,6 +485,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
         }
     }
 
+    on_regex_error(rc);
     return rc;
 }
 /*-------------------------------------------------------------------------------*/
@@ -338,7 +493,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 // TODO:
 // LRU
 //
-#define DSTR_CACHE_SIZE 30
+#define DSTR_CACHE_SIZE 40
 #define HALF_CACHE_SIZE (DSTR_CACHE_SIZE / 2)
 
 #if defined(RE_CACHE_USE_PTHREAD)
@@ -472,7 +627,7 @@ size_t dstr_regex_contains(CDSTR subject, const char* pattern, size_t offset)
     if (!cr) {
         return DSTR_NPOS; }
 
-    DSTR_Regex_Match mtch;
+    DSTR_Regex_Match mtch = { DSTR_NPOS, 0, { 0 } };
     dstr_regex_match_aux(cr, subject, offset, &mtch, match_opts);
     return mtch.offset;
 }
@@ -498,10 +653,23 @@ int dstr_regex_match(CDSTR subject, const char* pattern, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
+int dstr_regex_match_groups(CDSTR subject, const char* pattern, size_t offset,
+                            DSTR_Match_Vector* matches, const char* opts)
+{
+    int errcode = 0;
+    int options = parse_regex_options(opts);
+    Compiled_Regex* cr = get_RE(pattern, options, &errcode);
+    if (!cr)
+        return errcode;
+
+    return dstr_regex_match_groups_aux(cr, subject, offset, matches, options);
+}
+/*-------------------------------------------------------------------------------*/
+
 int dstr_regex_substitute(DSTR subject, const char* pattern, size_t offset,
                           const char* replacement, const char* opts)
 {
-    int errcode;
+    int errcode = 0;
     int options = parse_regex_options(opts);
     Compiled_Regex* cr = get_RE(pattern, options, &errcode);
     if (!cr)
@@ -511,39 +679,18 @@ int dstr_regex_substitute(DSTR subject, const char* pattern, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-int dstr_regex_match_groups(CDSTR subject, const char* pattern, size_t offset,
-                            DSTR_Regex_Match matches[], size_t mlen,
-                            const char* opts)
-{
-    int errcode;
-    int options = parse_regex_options(opts);
-    Compiled_Regex* cr = get_RE(pattern, options, &errcode);
-    if (!cr)
-        return errcode;
-
-    return dstr_regex_match_groups_aux(cr, subject, offset, matches, mlen, options);
-}
-/*-------------------------------------------------------------------------------*/
-
 void dstr_regex_perror(int rc)
 {
-    if (rc >= 0) {
-        fprintf(stderr, "DSTR Regex: No Error\n"); }
-    else {
-        PCRE2_UCHAR buffer[256];
-        pcre2_get_error_message(rc, buffer, sizeof(buffer));
-        fprintf(stderr, "DSTR Regex: %s (%d)\n", (char*)buffer, rc); }
+    PCRE2_UCHAR buffer[256];
+    pcre2_get_error_message(rc, buffer, sizeof(buffer));
+    fprintf(stderr, "DSTR Regex: %s (%d)\n", (char*)buffer, rc);
 }
 /*-------------------------------------------------------------------------------*/
 
 void dstr_regex_strerror(DSTR dest, int rc)
 {
-    if (rc >= 0) {
-        dstrcpy(dest, "DSTR Regex: No Error\n"); }
-    else {
-        PCRE2_UCHAR buffer[256];
-        pcre2_get_error_message(rc, buffer, sizeof(buffer));
-        dsprintf(dest, "DSTR Regex: %s (%d)\n", (char*)buffer, rc); }
-
+    char buffer[256];
+    pcre2_get_error_message(rc, (PCRE2_UCHAR*) buffer, sizeof(buffer));
+    dsprintf(dest, "DSTR Regex (pcre2 error): %s (%d)\n", buffer, rc);
 }
 /*-------------------------------------------------------------------------------*/

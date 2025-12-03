@@ -335,8 +335,15 @@ typedef struct DSTR_Regex_Match {
     char name[64];
 } DSTR_Regex_Match;
 
+// Must call free on matches field
+//
+typedef struct DSTR_Match_Vector {
+    DSTR_Regex_Match* matches;
+    size_t            matches_len;
+} DSTR_Match_Vector;
+
 void   dstr_regex_perror(int rc);
-void   dstr_regex_strerror(DSTR dest, int rc);
+void   dstr_regex_strerror(DSTR p, int rc);
 bool   dstr_regex_exact(CDSTR p, const char* pattern, size_t offset);
 size_t dstr_regex_contains(CDSTR p, const char* pattern, size_t offset);
 
@@ -344,8 +351,7 @@ int dstr_regex_match(CDSTR p, const char* pattern, size_t offset,
                      DSTR_Regex_Match* match, const char* options);
 
 int dstr_regex_match_groups(CDSTR p, const char* pattern, size_t offset,
-                            DSTR_Regex_Match match[], size_t matchlen,
-                            const char* options);
+                            DSTR_Match_Vector* matches, const char* options);
 
 int dstr_regex_substitute(DSTR p, const char* pattern, size_t offset,
                           const char* replacement, const char* options);

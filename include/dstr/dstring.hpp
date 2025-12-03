@@ -90,7 +90,7 @@ public:
     }
 
 #if __cplusplus >= 201103L
-    DString(DString&& rhs)
+    DString(DString&& rhs) noexcept
     {
         // shallow copy data from rhs (+ sso_buffer fix if needed)
         //
@@ -655,7 +655,8 @@ public:
     DString succ() const
     {
         DString res(*this);
-        return res.succ_inplace();
+        res.succ_inplace();
+        return res;
     }
 
     // split: empty string between separator character or string
@@ -741,7 +742,8 @@ public:
     DString upper() const
     {
         DString r(*this);
-        return r.upper_inplace();
+        r.upper_inplace();
+        return r;
     }
 
     DString& lower_inplace()
@@ -753,7 +755,8 @@ public:
     DString lower() const
     {
         DString r(*this);
-        return r.lower_inplace();
+        r.lower_inplace();
+        return r;
     }
 
     DString& swapcase_inplace()
@@ -765,7 +768,8 @@ public:
     DString swapcase() const
     {
         DString r(*this);
-        return r.swapcase_inplace();
+        r.swapcase_inplace();
+        return r;
     }
 
     DString& reverse_inplace()
@@ -777,7 +781,8 @@ public:
     DString reverse() const
     {
         DString r(*this);
-        return r.reverse_inplace();
+        r.reverse_inplace();
+        return r;
     }
 
     DString& trim_right_inplace()
@@ -788,7 +793,8 @@ public:
 
     DString trim_right() const {
         DString r(*this);
-        return r.trim_right_inplace();
+        r.trim_right_inplace();
+        return r;
     }
 
     DString& trim_left_inplace()
@@ -799,7 +805,8 @@ public:
 
     DString trim_left() const {
         DString r(*this);
-        return r.trim_left_inplace();
+        r.trim_left_inplace();
+        return r;
     }
 
     DString& trim_inplace()
@@ -810,7 +817,8 @@ public:
 
     DString trim() const {
         DString r(*this);
-        return r.trim_inplace();
+        r.trim_inplace();
+        return r;
     }
 
     DString& lstrip_inplace(char c)
@@ -850,37 +858,43 @@ public:
     DString lstrip(char c) const
     {
         DString result(*this);
-        return result.lstrip_inplace(c);
+        result.lstrip_inplace(c);
+        return result;
     }
 
     DString lstrip(const char* sz) const
     {
         DString result(*this);
-        return result.lstrip_inplace(sz);
+        result.lstrip_inplace(sz);
+        return result;
     }
 
     DString rstrip(char c) const
     {
         DString result(*this);
-        return result.rstrip_inplace(c);
+        result.rstrip_inplace(c);
+        return result;
     }
 
     DString rstrip(const char* sz) const
     {
         DString result(*this);
-        return result.rstrip_inplace(sz);
+        result.rstrip_inplace(sz);
+        return result;
     }
 
     DString strip(char c) const
     {
         DString result(*this);
-        return result.strip_inplace(c);
+        result.strip_inplace(c);
+        return result;
     }
 
     DString strip(const char* sz) const
     {
         DString result(*this);
-        return result.strip_inplace(sz);
+        result.strip_inplace(sz);
+        return result;
     }
 
     void clear()
@@ -933,37 +947,43 @@ public:
     DString remove(char c) const
     {
         DString res(*this);
-        return res.remove_inplace(c);
+        res.remove_inplace(c);
+        return res;
     }
 
     DString remove_any(DStringView selectors) const
     {
         DString res(*this);
-        return res.remove_any_inplace(selectors);
+        res.remove_any_inplace(selectors);
+        return res;
     }
 
     DString remove_prefix(DStringView prefix) const
     {
         DString res(*this);
-        return res.remove_prefix_inplace(prefix);
+        res.remove_prefix_inplace(prefix);
+        return res;
     }
 
     DString remove_suffix(DStringView suffix) const
     {
         DString res(*this);
-        return res.remove_suffix_inplace(suffix);
+        res.remove_suffix_inplace(suffix);
+        return res;
     }
 
     DString iremove_prefix(DStringView prefix) const
     {
         DString res(*this);
-        return res.iremove_prefix_inplace(prefix);
+        res.iremove_prefix_inplace(prefix);
+        return res;
     }
 
     DString iremove_suffix(DStringView suffix) const
     {
         DString res(*this);
-        return res.iremove_suffix_inplace(suffix);
+        res.iremove_suffix_inplace(suffix);
+        return res;
     }
 
     void swap(DString& rhs)
@@ -1358,11 +1378,6 @@ public:
         return r;
     }
 
-    static void puts(DStringView vw)
-    {
-        ::puts(vw.c_str());
-    }
-
     // C++ algorithms support : functions
     //
     size_type      size()  const { return length(); }
@@ -1468,6 +1483,9 @@ public:
     {
         return subst(pattern, 0, r, options);
     }
+
+    static void on_regex_error(int rc);
+
 #endif // NO_DSTRING_REGEX
 
 private:
@@ -1526,10 +1544,8 @@ struct DString_NoCase {
 class DStringError : public std::exception
 {
 public:
-#if __cplusplus >= 201103L
-    DStringError(DString&& s) : m_s(s) {}
-#endif
-    DStringError(DStringView s) : m_s(s) {}
+    DStringError(const DString& s) : m_s(s) {}
+    //DStringError(DStringView s) : m_s(s) {}
     DStringError(const char* s) : m_s(s) {}
     const char* what() const noexcept { return m_s.c_str(); }
 private:
@@ -1575,12 +1591,17 @@ inline DString operator+(const char* sz, DStringView rhs)
 }
 //----------------------------------------------------------------
 
-// DString and iostream
+// IO
 //
 std::ostream& operator<<(std::ostream& out, DStringView s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
 //----------------------------------------------------------------
+
+inline void puts(DStringView vw, FILE* fp=stdout)
+{
+    fprintf(fp, "%s\n", vw.c_str());
+}
 
 //////////////////////////////////////////////////////
 //
@@ -1689,140 +1710,160 @@ inline DString DStringView::zfill(size_t width) const
 inline DString DStringView::lstrip(char c) const
 {
     DString result(*this);
-    return result.lstrip_inplace(c);
+    result.lstrip_inplace(c);
+    return result;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::lstrip(const char* sz) const
 {
     DString result(*this);
-    return result.lstrip_inplace(sz);
+    result.lstrip_inplace(sz);
+    return result;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::rstrip(char c) const
 {
     DString result(*this);
-    return result.rstrip_inplace(c);
+    result.rstrip_inplace(c);
+    return result;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::rstrip(const char* sz) const
 {
     DString result(*this);
-    return result.rstrip_inplace(sz);
+    result.rstrip_inplace(sz);
+    return result;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::strip(char c) const
 {
     DString result(*this);
-    return result.strip_inplace(c);
+    result.strip_inplace(c);
+    return result;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::strip(const char* sz) const
 {
     DString result(*this);
-    return result.strip_inplace(sz);
+    result.strip_inplace(sz);
+    return result;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::upper() const
 {
     DString r(*this);
-    return r.upper_inplace();
+    r.upper_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::lower() const
 {
     DString r(*this);
-    return r.lower_inplace();
+    r.lower_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::swapcase() const
 {
     DString r(*this);
-    return r.swapcase_inplace();
+    r.swapcase_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::reverse() const
 {
     DString r(*this);
-    return r.reverse_inplace();
+    r.reverse_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::trim_right() const
 {
     DString r(*this);
-    return r.trim_right_inplace();
+    r.trim_right_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::trim_left() const
 {
     DString r(*this);
-    return r.trim_left_inplace();
+    r.trim_left_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::trim() const
 {
     DString r(*this);
-    return r.trim_inplace();
+    r.trim_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::succ() const
 {
     DString r(*this);
-    return r.succ_inplace();
+    r.succ_inplace();
+    return r;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::remove(char c) const
 {
     DString res(*this);
-    return res.remove_inplace(c);
+    res.remove_inplace(c);
+    return res;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::remove_any(DStringView selectors) const
 {
     DString res(*this);
-    return res.remove_any_inplace(selectors);
+    res.remove_any_inplace(selectors);
+    return res;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::remove_prefix(DStringView prefix) const
 {
     DString res(*this);
-    return res.remove_prefix_inplace(prefix);
+    res.remove_prefix_inplace(prefix);
+    return res;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::remove_suffix(DStringView suffix) const
 {
     DString res(*this);
-    return res.remove_suffix_inplace(suffix);
+    res.remove_suffix_inplace(suffix);
+    return res;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::iremove_prefix(DStringView prefix) const
 {
     DString res(*this);
-    return res.iremove_prefix_inplace(prefix);
+    res.iremove_prefix_inplace(prefix);
+    return res;
 }
 //----------------------------------------------------------------
 
 inline DString DStringView::iremove_suffix(DStringView suffix) const
 {
     DString res(*this);
-    return res.iremove_suffix_inplace(suffix);
+    res.iremove_suffix_inplace(suffix);
+    return res;
 }
 //----------------------------------------------------------------
 

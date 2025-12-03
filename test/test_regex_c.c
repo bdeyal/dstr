@@ -128,18 +128,19 @@ void test_dstr_group_patterns()
     size_t offset = 8;
     DSTR mstr = dstrnew_empty();
     for (;;) {
-        DSTR_Regex_Match matches[20];
-        int n = dre_groups(subject, pattern, offset, matches, 20, NULL);
+        DSTR_Match_Vector vec;
+        int n = dre_groups(subject, pattern, offset, &vec, NULL);
         if (n <= 0) break;
 
         printf("Found %d matches:\n", n);
         for (int i = 0; i < n; ++i) {
-            printf("  Offset: %zu, Length: %zu ==> ", matches[i].offset, matches[i].length);
-            dstrcpy_substr(mstr, subject, matches[i].offset, matches[i].length);
+            printf("  Offset: %zu, Length: %zu ==> ", vec.matches[i].offset, vec.matches[i].length);
+            dstrcpy_substr(mstr, subject, vec.matches[i].offset, vec.matches[i].length);
             printf("\"%s\"\n", dstrdata(mstr));
         }
+        offset = vec.matches[0].offset + vec.matches[0].length;
 
-        offset = matches[0].offset + matches[0].length;
+        free(vec.matches);
     }
 
     dstrfree(subject);
@@ -157,22 +158,24 @@ void test_dstr_group_extract()
     size_t offset = 0;
     DSTR mstr = dstrnew_empty();
     for (;;) {
-        DSTR_Regex_Match matches[20];
-        int n = dre_groups(subject, pattern, offset, matches, 20, NULL);
+        DSTR_Match_Vector vec;
+        int n = dre_groups(subject, pattern, offset, &vec, NULL);
         if (n <= 0) break;
 
         printf("Found %d matches:\n", n);
         for (int i = 0; i < n; ++i) {
+            DSTR_Regex_Match* m = &vec.matches[i];
             printf("  Offset: %zu, Length: %zu, Name: %s ==> ",
-                   matches[i].offset,
-                   matches[i].length,
-                   matches[i].name);
+                   m->offset,
+                   m->length,
+                   m->name);
 
-            dstrcpy_substr(mstr, subject, matches[i].offset, matches[i].length);
+            dstrcpy_substr(mstr, subject, m->offset, m->length);
             printf("\"%s\"\n", dstrdata(mstr));
         }
 
-        offset = matches[0].offset + matches[0].length;
+        offset = vec.matches[0].offset + vec.matches[0].length;
+        free(vec.matches);
     }
 
     dstrfree(mstr);
@@ -195,6 +198,7 @@ void test_exact_match()
     dstrcpy(p, "regular expressions");
     assert(dre_exact(p, pattern, 0));
 
+    dstrfree(p);
     puts("OK");
 }
 //--------------------------------------------------------------------------------

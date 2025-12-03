@@ -24,7 +24,6 @@ struct Init_OOM_Handler {
         g_dstr_oom_handler = &dstring_oom_error;
     }
 };
-
 static Init_OOM_Handler init_oom_handler;
 
 }

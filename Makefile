@@ -38,9 +38,9 @@ ifeq ($(COMP),clang)
 	LDFLAGS=-fuse-ld=lld
 endif
 
-CFLAGS +=-O2 $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++11
-LDFLAGS += -L./lib64 -s
+CFLAGS +=-O1 -g $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++20
+LDFLAGS += -L./lib64
 
 PROGRAMS = \
 	./test/dstrtest \
@@ -55,12 +55,13 @@ PROGRAMS = \
 	./test/test_regex_c \
 	./test/test_view
 
-DEPS = ./include/dstr/dstr.h
+DEPS = ./include/dstr/dstr.h Makefile
 DEPS_PP = \
 	./include/dstr/dstring.hpp \
 	./include/dstr/dstring_view.hpp \
 	./include/dstr/dstringstream.hpp \
-	./include/dstr/dstr.h
+	$(DEPS)
+
 LIB=./lib64/libdstr.a
 
 all: $(PROGRAMS)

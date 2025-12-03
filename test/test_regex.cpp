@@ -363,6 +363,8 @@ bool isIP(const DString& s)
 
 void test_ip_address()
 {
+    TRACE_FN();
+
     assert(isIP("1.2.3.4"));
     assert(isIP("192.168.1.26"));
     assert(!isIP("1922.168.1.26"));
@@ -370,6 +372,22 @@ void test_ip_address()
     assert(!isIP("192.168.1111.26"));
     assert(!isIP("192.168.1.2611"));
 }
+//--------------------------------------------------------------------------------
+
+void test_pattern()
+{
+    TRACE_FN();
+
+    try {
+        DString hello("hello");
+        hello.match("(a(b|c$");
+        abort();
+    }
+    catch (DStringError& ex) {
+        cerr << "*** Error: " << ex.what() << endl;
+    }
+}
+//--------------------------------------------------------------------------------
 
 int main()
 {
@@ -384,9 +402,14 @@ int main()
         test_dstring_group_patterns();
         test_dstring_extract_numbers();
         test_ip_address();
+        test_pattern();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;
+        return 1;
+    }
+    catch(...) {
+        cerr << "Kitchen sink\n";
         return 1;
     }
 }
