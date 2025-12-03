@@ -3219,8 +3219,10 @@ void dstr_remove_suffix(DSTR p, const char* s)
         return;
 
     ptrdiff_t pos = dstr_suffix_sz_imp(p, s, 0);
-    if (pos >= 0)
-        dstr_remove_imp(p, pos, DLEN(p));
+    if (pos >= 0) {
+        DLEN(p) = pos;
+        DVAL(p, pos) = '\0';
+    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -3230,7 +3232,9 @@ void dstr_iremove_suffix(DSTR p, const char* s)
         return;
 
     ptrdiff_t pos = dstr_suffix_sz_imp(p, s, 1);
-    if (pos >= 0)
-        dstr_remove_imp(p, pos, DLEN(p));
+    if (pos >= 0) {
+        DLEN(p) = pos;
+        DVAL(p, pos) = '\0';
+    }
 }
 /*--------------------------------------------------------------------------*/
