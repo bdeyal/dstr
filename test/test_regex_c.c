@@ -140,7 +140,7 @@ void test_dstr_group_patterns()
         }
         offset = vec.matches[0].offset + vec.matches[0].length;
 
-        free(vec.matches);
+        dre_mvfree(&vec);
     }
 
     dstrfree(subject);
@@ -175,7 +175,7 @@ void test_dstr_group_extract()
         }
 
         offset = vec.matches[0].offset + vec.matches[0].length;
-        free(vec.matches);
+        dre_mvfree(&vec);
     }
 
     dstrfree(mstr);

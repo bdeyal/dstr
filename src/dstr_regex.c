@@ -159,8 +159,10 @@ typedef struct Compiled_Regex
     pcre2_code* _pRE;
     GroupInfo*  p_groups;
     size_t      n_groups;
+    size_t      tick_count;
     DSTR        pattern;
     int         options;
+
 } Compiled_Regex;
 /*-------------------------------------------------------------------------------*/
 
@@ -179,6 +181,16 @@ static void on_malloc_error()
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
     abort();
 }
+/*-------------------------------------------------------------------------------*/
+
+static void* _re_malloc(size_t len)
+{
+    void* result = malloc(len);
+    if (!result)
+        on_malloc_error();
+    return result;
+}
+#define RE_MALLOC(TYPE, Nelem) ((TYPE*) _re_malloc((Nelem) * sizeof(TYPE)))
 /*-------------------------------------------------------------------------------*/
 
 static
@@ -230,7 +242,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 
     GroupInfo* gInfo = NULL;
     if (name_count) {
-        gInfo = (GroupInfo*) malloc(name_count * sizeof(GroupInfo));
+        gInfo = RE_MALLOC(GroupInfo, name_count);
         if (!gInfo) goto error_clean_pcre;
 
         for (uint32_t i = 0; i < name_count; i++)
@@ -242,20 +254,21 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
         }
     }
 
-    Compiled_Regex* result = (Compiled_Regex*) malloc(sizeof(Compiled_Regex));
+    Compiled_Regex* result = RE_MALLOC(Compiled_Regex, 1);
     if (!result) goto error_clean_groups;
+
     result->_pRE = _pRE;
     result->p_groups = gInfo;
     result->n_groups = name_count;
     result->pattern = dstrnew(pattern);
     result->options = options;
+    result->tick_count = 0;
     return result;
 
 error_clean_groups:
     if (gInfo) free(gInfo);
 error_clean_pcre:
     pcre2_code_free(_pRE);
-    on_malloc_error();
     return NULL;
 }
 /*-------------------------------------------------------------------------------*/
@@ -375,32 +388,33 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
     PCRE2_SIZE* ovec = pcre2_get_ovector_pointer(mdata);
 
     vec->matches_len = (size_t) rc;
-    vec->matches = (DSTR_Regex_Match*) malloc((vec->matches_len) * sizeof(DSTR_Regex_Match));
+    vec->matches = RE_MALLOC(DSTR_Regex_Match, vec->matches_len);
     if (!vec->matches) {
-        on_malloc_error();
         return rc;
     }
 
     for (int i = 0; i < rc; ++i) {
+        DSTR_Regex_Match* pM = &vec->matches[i];
+
         // Set offset and length
         //
         if (ovec[2 * i] == PCRE2_UNSET) {
-            vec->matches[i].offset = DSTR_NPOS;
-            vec->matches[i].length = 0;
+            pM->offset = DSTR_NPOS;
+            pM->length = 0;
         }
         else {
-            vec->matches[i].offset = ovec[2 * i];
-            vec->matches[i].length = ovec[2 * i + 1] - vec->matches[i].offset;
+            pM->offset = ovec[2 * i];
+            pM->length = ovec[2 * i + 1] - pM->offset;
         }
 
         // Set group name of match
         //
         const char* name = find_group_name(cr, i);
         if (name) {
-            strncpy(vec->matches[i].name, name, sizeof(vec->matches[i].name) - 1);
+            strncpy(pM->name, name, sizeof(pM->name) - 1);
         }
         else {
-            vec->matches[i].name[0] = '\0';
+            pM->name[0] = '\0';
         }
     }
 
@@ -449,7 +463,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
     else if (rc == PCRE2_ERROR_NOMEMORY) {
         // increase memory to needed and retry
         //
-        uint8_t* buffer = (uint8_t*) malloc(outlen);
+        uint8_t* buffer = RE_MALLOC(uint8_t, outlen);
         if (!buffer) return rc;
         rc = pcre2_substitute(cr->_pRE,
                               (PCRE2_SPTR)dstrdata(subject),
@@ -460,22 +474,17 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
                               buffer,
                               &outlen);
 
-        if (rc > 0) {
+        if (rc > 0)
             dstrcpy(subject, (char*)buffer);
-            free(buffer);
-            return rc;
-        }
+
+        free(buffer);
     }
 
     return rc;
 }
 /*-------------------------------------------------------------------------------*/
 
-// TODO:
-// LRU
-//
 #define DSTR_CACHE_SIZE 40
-#define HALF_CACHE_SIZE (DSTR_CACHE_SIZE / 2)
 
 #if defined(RE_CACHE_USE_PTHREAD)
    typedef pthread_key_t    tss_t;
@@ -489,7 +498,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 #endif
 
 static _Thread_local Compiled_Regex* re_cache[DSTR_CACHE_SIZE] = { 0 };
-static _Thread_local size_t cache_index = 0;
+static _Thread_local size_t global_tick_count = 0;
 
 static tss_t     tss_cache_key;
 static once_flag tss_cache_once = ONCE_FLAG_INIT;
@@ -528,36 +537,71 @@ static void registr_automatic_exit_cleanup(void)
 }
 /*-------------------------------------------------------------------------------*/
 
+static void debug_display_cache(void)
+{
+    static int print = -1;
+    if (print < 0) {
+        print = (getenv("DSTR_PRINT_CACHE") == NULL) ? 0 : 1;
+    }
+
+    if (!print)
+        return;
+
+    for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
+        if (re_cache[i]) {
+            printf("Index:%02zu, T:%3zu, \"%s\", %d\n",
+                   i, re_cache[i]->tick_count,
+                   dstrdata(re_cache[i]->pattern),
+                   re_cache[i]->options);
+        }
+    }
+    putchar('\n');
+}
+/*-------------------------------------------------------------------------------*/
+
 static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
 {
     registr_automatic_exit_cleanup();
 
-    for (size_t i = 0; i < cache_index; ++i) {
-        if (dstreq(re_cache[i]->pattern, pattern) &&
-            re_cache[i]->options == options)
-        {
-            return re_cache[i];
+    global_tick_count++;
+
+    debug_display_cache();
+
+    for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
+        Compiled_Regex* pCR = re_cache[i];
+        if (!pCR) continue;
+        if (pCR->options == options && dstreq(pCR->pattern, pattern)) {
+            pCR->tick_count = global_tick_count;
+            return pCR;
         }
     }
 
     Compiled_Regex* newreg = dstr_compile_regex(pattern, options, errcode);
     if (!newreg) return NULL;
 
-    // If full, destroy first half, then move second half to first
+    newreg->tick_count = global_tick_count;
+
+    // Find an empty slot
     //
-    if (cache_index == DSTR_CACHE_SIZE)
-    {
-        for (size_t i = 0; i < HALF_CACHE_SIZE; ++i)
-        {
-            destroy_compiled_regex(re_cache[i]);
-            re_cache[i] = re_cache[i + HALF_CACHE_SIZE];
-            re_cache[i + HALF_CACHE_SIZE] = NULL;
+    for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
+        if (re_cache[i] == NULL) {
+            re_cache[i] = newreg;
+            return newreg;
         }
-        cache_index = HALF_CACHE_SIZE;
     }
 
-    re_cache[cache_index] = newreg;
-    ++cache_index;
+    // Cache full - destroy a victim
+    //
+    size_t victim_index = 0;
+    for (size_t i = 1; i < DSTR_CACHE_SIZE; ++i) {
+        if (re_cache[i]->tick_count < re_cache[victim_index]->tick_count)
+            victim_index = i;
+    }
+
+    // Kill the victim and replace it
+    //
+    destroy_compiled_regex(re_cache[victim_index]);
+    re_cache[victim_index] = newreg;
     return newreg;
 }
 /*-------------------------------------------------------------------------------*/
@@ -644,6 +688,15 @@ int dstr_regex_match_groups(CDSTR subject, const char* pattern, size_t offset,
         return errcode;
 
     return dstr_regex_match_groups_aux(cr, subject, offset, matches, options);
+}
+/*-------------------------------------------------------------------------------*/
+
+void dstr_regex_match_vector_free(DSTR_Match_Vector* vec)
+{
+    if (vec && vec->matches) {
+        free(vec->matches);
+        vec->matches = NULL;
+    }
 }
 /*-------------------------------------------------------------------------------*/
 

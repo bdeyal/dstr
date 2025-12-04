@@ -342,6 +342,7 @@ typedef struct DSTR_Match_Vector {
     size_t            matches_len;
 } DSTR_Match_Vector;
 
+void   dstr_regex_match_vector_free(DSTR_Match_Vector* pVec);
 void   dstr_regex_perror(int rc);
 void   dstr_regex_strerror(DSTR p, int rc);
 bool   dstr_regex_exact(CDSTR p, const char* pattern, size_t offset);
@@ -777,6 +778,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dre_subst           dstr_regex_substitute
 #define dre_perror          dstr_regex_perror
 #define dre_strerror        dstr_regex_strerror
+#define dre_mvfree          dstr_regex_match_vector_free
 
 /* clean namespace */
 #endif

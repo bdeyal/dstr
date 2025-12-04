@@ -56,7 +56,7 @@ int DStringView::match_groups(DStringView pattern, size_t offset,
 {
     struct MV_Wrapper : DSTR_Match_Vector {
         MV_Wrapper()  { matches = nullptr; matches_len = 0; }
-        ~MV_Wrapper() { if (matches) free(matches); }
+        ~MV_Wrapper() { dre_mvfree(this); }
     };
 
     MV_Wrapper vec;
