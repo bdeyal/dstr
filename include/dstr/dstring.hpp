@@ -17,8 +17,7 @@
 
 #include <dstr/dstr.h>
 
-// For DStringView. This is a helper header that should not
-// be included directly
+// For DStringView. This header that should not be included directly
 //
 #include "dstring_view.hpp"
 
@@ -1132,7 +1131,7 @@ public:
     bool isblank()      const { return dstr_isblank(pImp()); }
     bool isalnum()      const { return dstr_isalnum(pImp()); }
     bool isalpha()      const { return dstr_isalpha(pImp()); }
-    bool is_ascii()     const { return dstr_isascii(pImp()); }
+    bool isASCII()      const { return dstr_isascii(pImp()); }
 #if !defined(isascii)
     bool isascii()      const { return is_ascii();           }
 #endif
@@ -1395,8 +1394,8 @@ public:
 
     // Regexp Match type
     //
-    typedef DSTR_Regex_Match  Match;
-    typedef DSMatchVector     MatchVector;
+    typedef DSTR_Regex_Match              Match;
+    typedef std::vector<DSTR_Regex_Match> MatchVector;
 
     // *this is an exact match
     //

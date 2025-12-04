@@ -14,7 +14,6 @@
 // Forward declaratons
 //
 class DString;
-typedef  std::vector<DSTR_Regex_Match> DSMatchVector;
 //-----------------------------------------------
 
 class DStringView {
@@ -273,8 +272,8 @@ public:
     bool isblank()      const { return dstr_isblank(pImp()); }
     bool isalnum()      const { return dstr_isalnum(pImp()); }
     bool isalpha()      const { return dstr_isalpha(pImp()); }
-    bool is_ascii()     const { return dstr_isascii(pImp()); }
-#if !defined(_WIN32)
+    bool isASCII()     const { return dstr_isascii(pImp()); }
+#if !defined(isascii)
     bool isascii()      const { return is_ascii();           }
 #endif
     bool isdecimal()    const { return dstr_isdecimal(pImp()); }
@@ -529,11 +528,11 @@ public:
     // match groups into a vector of matches
     //
     int match_groups(DStringView pattern, size_t offset,
-                     DSMatchVector& matches,
+                     std::vector<DSTR_Regex_Match>& matches,
                      const char* options = nullptr) const;
 
     int match_groups(DStringView pattern,
-                     DSMatchVector& matches,
+                     std::vector<DSTR_Regex_Match>& matches,
                      const char* options = nullptr) const
     {
         return match_groups(pattern, 0, matches, options);
