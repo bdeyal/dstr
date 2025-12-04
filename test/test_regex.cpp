@@ -10,6 +10,7 @@
 #include <cassert>
 #include <functional>
 #include <unordered_map>
+#include <thread>
 
 #include <dstr/dstring.hpp>
 
@@ -33,8 +34,6 @@ std::ostream& operator<<(std::ostream& out, const std::vector<DString>& v)
     return out;
 }
 //--------------------------------------------------------------------------------
-
-
 
 using namespace std;
 
@@ -389,7 +388,29 @@ catch(DStringError& ex)
 {
     cerr << "Execption cought as expeted: " << ex.what() << endl;
 }
+//--------------------------------------------------------------------------------
 
+// To check that REGEX cache behaves nicely from different threads
+//
+void test_within_threads()
+{
+    std::vector<std::thread> threads;
+
+    threads.emplace_back([] { test_dstring_match(); });
+    threads.emplace_back([] { test_dstring_match_contains(); });
+    threads.emplace_back([] { test_dstring_capture(); });
+    threads.emplace_back([] { test_dstring_match_struct(); });
+    threads.emplace_back([] { test_dstring_replace_all(); });
+    threads.emplace_back([] { test_dstring_subst(); });
+    threads.emplace_back([] { test_dstring_group_extract(); });
+    threads.emplace_back([] { test_dstring_group_patterns(); });
+    threads.emplace_back([] { test_dstring_extract_numbers(); });
+    threads.emplace_back([] { test_ip_address(); });
+    threads.emplace_back([] { test_pattern(); });
+
+    for (auto& t : threads)
+        t.join();
+}
 //--------------------------------------------------------------------------------
 
 int main()
@@ -406,6 +427,8 @@ int main()
         test_dstring_extract_numbers();
         test_ip_address();
         test_pattern();
+
+        test_within_threads();
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;
