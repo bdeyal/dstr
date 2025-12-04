@@ -16,16 +16,6 @@ void DString::on_regex_error(int rc)
 }
 /*-------------------------------------------------------------------------------*/
 
-namespace {
-struct Init_Regex_Handler {
-    Init_Regex_Handler() {
-        g_dstr_regex_handler = &DString::on_regex_error;
-    }
-};
-static Init_Regex_Handler init_Regex_handler;
-//-----------------------------------------------------------
-}
-
 //////////////////////////////////////////////////////////
 //
 //   DStringView Regex - all constant, subject unchanged
@@ -47,7 +37,16 @@ size_t DStringView::match_contains(DStringView pattern, size_t offset) const
 int DStringView::match(DStringView pattern, size_t offset,
                        DString::Match& m, const char* opts) const
 {
-    return dstr_regex_match(pImp(), pattern.c_str(), offset, &m, opts);
+    int rc = dstr_regex_match(pImp(), pattern.c_str(), offset, &m, opts);
+    if (rc > REGEX_COMPILE_ERROR_BASE) {
+        DString::on_regex_error(rc);
+    }
+
+    if (rc < 0) {
+        DString::on_regex_error(rc);
+    }
+
+    return rc;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -64,6 +63,13 @@ int DStringView::match_groups(DStringView pattern, size_t offset,
     int rc = dstr_regex_match_groups(pImp(), pattern.c_str(),
                                      offset, &vec, opts);
 
+    if (rc > REGEX_COMPILE_ERROR_BASE) {
+        DString::on_regex_error(rc);
+    }
+    if (rc < 0) {
+        DString::on_regex_error(rc);
+    }
+
     DString::MatchVector tmp;
     for (size_t i = 0; i < vec.matches_len; ++i) {
         tmp.push_back(vec.matches[i]);
@@ -78,7 +84,7 @@ int DStringView::capture(DStringView pattern, size_t offset, DString& result,
                          const char* opts) const
 {
     DString::Match mtch;
-    int rc = dstr_regex_match(pImp(), pattern.c_str(), offset, &mtch, opts);
+    int rc = match(pattern, offset, mtch, opts);
 
     if (rc > 0 && mtch.offset != DString::NPOS)
         result = substr(mtch.offset, mtch.length);
@@ -160,7 +166,13 @@ int DString::match_groups(DStringView pattern, size_t offset,
 int DString::subst_inplace(DStringView pattern, size_t offset,
                            DStringView replacement, const char* opts)
 {
-    return dstr_regex_substitute(pImp(), pattern.c_str(),
-                                 offset, replacement.c_str(), opts);
+    int rc =  dstr_regex_substitute(pImp(), pattern.c_str(),
+                                    offset, replacement.c_str(), opts);
+
+    if (rc > REGEX_COMPILE_ERROR_BASE || rc < 0) {
+        DString::on_regex_error(rc);
+    }
+
+    return rc;
 }
 /*-------------------------------------------------------------------------------*/

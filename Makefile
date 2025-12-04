@@ -38,9 +38,9 @@ ifeq ($(COMP),clang)
 	LDFLAGS=-fuse-ld=lld
 endif
 
-CFLAGS +=-O1 -g $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+CFLAGS +=-O2 $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++20
-LDFLAGS += -L./lib64
+LDFLAGS += -L./lib64 -s
 
 PROGRAMS = \
 	./test/dstrtest \

@@ -374,19 +374,22 @@ void test_ip_address()
 }
 //--------------------------------------------------------------------------------
 
-void test_pattern()
+void test_pattern() try
 {
     TRACE_FN();
 
-    try {
-        DString hello("hello");
-        hello.match("(a(b|c$");
-        abort();
-    }
-    catch (DStringError& ex) {
-        cerr << "*** Error: " << ex.what() << endl;
-    }
+    DString hello("hello");
+    DString str = hello.capture("(a(b|c$");
+
+    // If we are here - exception was not thrown
+    //
+    abort();
 }
+catch(DStringError& ex)
+{
+    cerr << "Execption cought as expeted: " << ex.what() << endl;
+}
+
 //--------------------------------------------------------------------------------
 
 int main()
@@ -406,10 +409,6 @@ int main()
     }
     catch (const std::exception& ex) {
         cerr << "*** Error: " << ex.what() << endl;
-        return 1;
-    }
-    catch(...) {
-        cerr << "Kitchen sink\n";
         return 1;
     }
 }

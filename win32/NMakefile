@@ -48,7 +48,7 @@ PROGRAMS = \
 	test_regex_c.exe \
 	test_view.exe
 
-DEPS = ..\include\dstr\dstr.h ..\src\dstr_internal.h ..\src\dstr_regex_common.h
+DEPS = ..\include\dstr\dstr.h ..\src\dstr_internal.h
 DEPS_PP = \
 	..\include\dstr\dstring.hpp \
 	..\include\dstr\dstring_view.hpp \
@@ -80,17 +80,18 @@ test_algs.exe: ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
 
 # 'Platform' set by MSVC vcvarsall.bat script ('x86' or 'x64')
 #
-test_regex.exe: ..\test\test_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
+test_regex.exe: ..\test\test_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.cpp dstr.obj dstr_regex.obj $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -IC:\PCRE2\INCLUDE \
-	..\src\dstring_regex.cpp \
 	..\test\test_regex.cpp \
+	..\src\dstring_regex.cpp \
 	..\src\dstring.cpp \
+	dstr_regex.obj \
 	dstr.obj $(OUT)"$@" C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
-test_regex_c.exe: ..\test\test_regex_c.c ..\src\dstr_regex.c dstr.obj  $(DEPS)
+test_regex_c.exe: ..\test\test_regex_c.c ..\src\dstr_regex.c dstr.obj dstr_regex.obj $(DEPS)
 	$(CC) $(CFLAGS) -IC:\PCRE2\INCLUDE \
-	..\src\dstr_regex.c \
 	..\test\test_regex_c.c \
+	dstr_regex.obj \
 	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
 test_view.exe: ..\test\test_view.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
@@ -114,3 +115,6 @@ test: $(PROGRAMS)
 
 dstr.obj: ..\src\dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c -o $@
+
+dstr_regex.obj: ..\src\dstr_regex.c $(DEPS)
+	$(CC) -c -IC:\PCRE2\INCLUDE $(CFLAGS) -DNDEBUG ..\src\dstr_regex.c -o $@

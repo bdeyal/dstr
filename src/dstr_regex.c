@@ -174,27 +174,8 @@ static const char* find_group_name(Compiled_Regex* cr, int n)
 }
 /*-------------------------------------------------------------------------------*/
 
-// This can be set in the C++ side to throw an exception.
-// In pure C it is NULL
-//
-void (*g_dstr_regex_handler)(int) = NULL;
-
-static void on_regex_error(int rc)
-{
-    if (g_dstr_regex_handler)
-        g_dstr_regex_handler(rc);
-}
-/*-------------------------------------------------------------------------------*/
-
 static void on_malloc_error()
 {
-    // set by C++ DString wrapper
-    //
-    if (g_dstr_oom_handler)
-        g_dstr_oom_handler();
-
-    // C code goes here
-    //
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
     abort();
 }
@@ -233,8 +214,8 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 
     if (!_pRE)
     {
-        if (err) *err = error_code;
-        on_regex_error(error_code);
+        if (err) *err = (REGEX_COMPILE_ERROR_BASE + error_code);
+        dstr_regex_perror(error_code);
         return NULL;
     }
 
@@ -325,7 +306,6 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
     }
     else if (rc <= 0) {
         pcre2_match_data_free(mdata);
-        on_regex_error(rc);
         return rc;
     }
 
@@ -385,10 +365,12 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
     if (rc <= 0 || vec == NULL) {
         pcre2_match_data_free(mdata);
         if (rc == PCRE2_ERROR_NOMATCH) {
-            return 0;  }
+            return 0;
+        }
         else {
-            on_regex_error(rc);
-            return rc; } }
+            return rc;
+        }
+    }
 
     PCRE2_SIZE* ovec = pcre2_get_ovector_pointer(mdata);
 
@@ -485,7 +467,6 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
         }
     }
 
-    on_regex_error(rc);
     return rc;
 }
 /*-------------------------------------------------------------------------------*/
@@ -679,18 +660,30 @@ int dstr_regex_substitute(DSTR subject, const char* pattern, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
+static void dstr_regex_perror_aux(int rc, DSTR p)
+{
+    char buffer[512];
+
+    if (rc > REGEX_COMPILE_ERROR_BASE)
+        rc -= REGEX_COMPILE_ERROR_BASE;
+
+    pcre2_get_error_message(rc, (PCRE2_UCHAR*) buffer, sizeof(buffer));
+
+    if (p == NULL) {
+        fprintf(stderr, "DSTR Regex (pcre2 error): %s (%d)\n", buffer, rc); }
+    else {
+        dsprintf(p, "DSTR Regex (pcre2 error): %s (%d)\n", buffer, rc); }
+}
+/*-------------------------------------------------------------------------------*/
+
 void dstr_regex_perror(int rc)
 {
-    PCRE2_UCHAR buffer[256];
-    pcre2_get_error_message(rc, buffer, sizeof(buffer));
-    fprintf(stderr, "DSTR Regex: %s (%d)\n", (char*)buffer, rc);
+    dstr_regex_perror_aux(rc, NULL);
 }
 /*-------------------------------------------------------------------------------*/
 
 void dstr_regex_strerror(DSTR dest, int rc)
 {
-    char buffer[256];
-    pcre2_get_error_message(rc, (PCRE2_UCHAR*) buffer, sizeof(buffer));
-    dsprintf(dest, "DSTR Regex (pcre2 error): %s (%d)\n", buffer, rc);
+    dstr_regex_perror_aux(rc, dest);
 }
 /*-------------------------------------------------------------------------------*/

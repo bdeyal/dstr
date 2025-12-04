@@ -138,21 +138,8 @@ static inline const char* dstr_end_of_storage(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-// This can be set in the C++ side to throw an exception.
-// In pure C it is NULL
-//
-void (*g_dstr_oom_handler)(void) = NULL;
-
 static void dstr_out_of_memory(void)
 {
-    // set by C++ DString wrapper
-    //
-    if (g_dstr_oom_handler) {
-        g_dstr_oom_handler();
-    }
-
-    // C code goes here
-    //
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
     abort();
 }
