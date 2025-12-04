@@ -1133,7 +1133,7 @@ public:
     bool isalpha()      const { return dstr_isalpha(pImp()); }
     bool isASCII()      const { return dstr_isascii(pImp()); }
 #if !defined(isascii)
-    bool isascii()      const { return is_ascii();           }
+    bool isascii()      const { return isASCII();            }
 #endif
     bool isdecimal()    const { return dstr_isdecimal(pImp()); }
     bool isidentifier() const { return dstr_isidentifier(pImp()); }

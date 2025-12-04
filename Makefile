@@ -3,12 +3,19 @@
 PREFIX=/usr/local
 ARCH=x86-64-v3
 
+OS := $(shell uname)
+
 ifeq ($(COMP),)
-	COMP=gcc
+	COMP=cc
 endif
 
 ifeq ($(SANITIZE),1)
 	SAN=-fsanitize=address
+endif
+
+ifeq ($(COMP),cc)
+	CC=cc
+	CXX=c++
 endif
 
 ifeq ($(COMP),gcc)
@@ -38,9 +45,13 @@ ifeq ($(COMP),clang)
 	LDFLAGS=-fuse-ld=lld
 endif
 
-CFLAGS +=-O2 $(SAN) -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-CXXFLAGS += $(CFLAGS) -pedantic -std=c++20
+CFLAGS +=-O2 $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+CXXFLAGS += $(CFLAGS) -pthread -pedantic -std=c++20
 LDFLAGS += -L./lib64 -s
+
+ifeq ($(OS),FreeBSD)
+LDFLAGS += -lstdthreads
+endif
 
 PROGRAMS = \
 	./test/dstrtest \
