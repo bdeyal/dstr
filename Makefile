@@ -46,12 +46,14 @@ ifeq ($(COMP),clang)
 endif
 
 CFLAGS +=-O2 $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-CXXFLAGS += $(CFLAGS) -pthread -pedantic -std=c++20
 LDFLAGS += -L./lib64 -s
 
 ifeq ($(OS),FreeBSD)
-LDFLAGS += -lstdthreads
+LDFLAGS += -L/usr/local/lib -lstdthreads
+CFLAGS += -I/usr/local/include
 endif
+
+CXXFLAGS += $(CFLAGS) -pthread -pedantic -std=c++20
 
 PROGRAMS = \
 	./test/dstrtest \
