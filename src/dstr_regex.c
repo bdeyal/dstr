@@ -38,30 +38,99 @@
 // Constants for options (based on POCO)
 //
 enum {
-    REGEX_CASELESS        = 0x00000001, /// case insensitive matching (/i) [ctor]
-    REGEX_MULTILINE       = 0x00000002, /// enable multi-line mode; affects ^ and $ (/m) [ctor]
-    REGEX_DOTALL          = 0x00000004, /// dot matches all characters, including newline (/s) [ctor]
-    REGEX_EXTENDED        = 0x00000008, /// totally ignore whitespace (/x) [ctor]
-    REGEX_ANCHORED        = 0x00000010, /// treat pattern as if it starts with a ^ [ctor, match]
-    REGEX_DOLLAR_ENDONLY  = 0x00000020, /// dollar matches end-of-string only, not last newline in string [ctor]
-    REGEX_EXTRA           = 0x00000040, /// enable optional PCRE functionality [ctor]
-    REGEX_NOTBOL          = 0x00000080, /// circumflex does not match beginning of string [match]
-    REGEX_NOTEOL          = 0x00000100, /// $ does not match end of string [match]
-    REGEX_UNGREEDY        = 0x00000200, /// make quantifiers ungreedy [ctor]
-    REGEX_NOTEMPTY        = 0x00000400, /// empty string never matches [match]
-    REGEX_UTF8            = 0x00000800, /// assume pattern and subject is UTF-8 encoded [ctor]
-    REGEX_NO_AUTO_CAPTURE = 0x00001000, /// disable numbered capturing parentheses [ctor, match]
-    REGEX_NO_UTF8_CHECK   = 0x00002000, /// do not check validity of UTF-8 code sequences [match]
-    REGEX_FIRSTLINE       = 0x00040000, /// an  unanchored  pattern  is  required  to  match
-    REGEX_DUPNAMES        = 0x00080000, /// names used to identify capturing  subpatterns need not be unique [ctor]
-    REGEX_NEWLINE_CR      = 0x00100000, /// assume newline is CR ('\r'), the default [ctor]
-    REGEX_NEWLINE_LF      = 0x00200000, /// assume newline is LF ('\n') [ctor]
-    REGEX_NEWLINE_CRLF    = 0x00300000, /// assume newline is CRLF ("\r\n") [ctor]
-    REGEX_NEWLINE_ANY     = 0x00400000, /// assume newline is any valid Unicode newline character [ctor]
-    REGEX_NEWLINE_ANYCRLF = 0x00500000, /// assume newline is any of CR, LF, CRLF [ctor]
-    REGEX_GLOBAL          = 0x10000000, /// replace all occurences (/g) [subst]
-    REGEX_NO_VARS         = 0x20000000  /// treat dollar in replacement string as ordinary character [subst]
+    // case insensitive matching (/i) [ctor]
+    //
+    REGEX_CASELESS = 0x00000001,
+
+    // enable multi-line mode; affects ^ and $ (/m) [ctor]
+    //
+    REGEX_MULTILINE = 0x00000002,
+
+    // dot matches all characters, including newline (/s) [ctor]
+    //
+    REGEX_DOTALL = 0x00000004,
+
+    // totally ignore whitespace (/x) [ctor]
+    //
+    REGEX_EXTENDED = 0x00000008,
+
+    // treat pattern as if it starts with a ^ [ctor, match]
+    //
+    REGEX_ANCHORED = 0x00000010,
+
+    // dollar matches end-of-string only, not last newline in string [ctor]
+    //
+    REGEX_DOLLAR_ENDONLY = 0x00000020,
+
+    // enable optional PCRE functionality [ctor]
+    //
+    REGEX_EXTRA = 0x00000040,
+
+    // circumflex does not match beginning of string [match]
+    //
+    REGEX_NOTBOL = 0x00000080,
+
+    // $ does not match end of string [match]
+    //
+    REGEX_NOTEOL = 0x00000100,
+
+    // make quantifiers ungreedy [ctor]
+    //
+    REGEX_UNGREEDY = 0x00000200,
+
+    // empty string never matches [match]
+    //
+    REGEX_NOTEMPTY = 0x00000400,
+
+    // assume pattern and subject is UTF-8 encoded [ctor]
+    //
+    REGEX_UTF8 = 0x00000800,
+
+    // disable numbered capturing parentheses [ctor, match]
+    //
+    REGEX_NO_AUTO_CAPTURE = 0x00001000,
+
+    // do not check validity of UTF-8 code sequences [match]
+    //
+    REGEX_NO_UTF8_CHECK = 0x00002000,
+
+    // an  unanchored  pattern  is  required  to  match
+    //
+    REGEX_FIRSTLINE = 0x00040000,
+
+    // names used to identify capturing subpatterns need not be unique [ctor]
+    //
+    REGEX_DUPNAMES = 0x00080000,
+
+    // assume newline is CR ('\r'), the default [ctor]
+    //
+    REGEX_NEWLINE_CR = 0x00100000,
+
+    // assume newline is LF ('\n') [ctor]
+    //
+    REGEX_NEWLINE_LF = 0x00200000,
+
+    // assume newline is CRLF ("\r\n") [ctor]
+    //
+    REGEX_NEWLINE_CRLF = 0x00300000,
+
+    // assume newline is any valid Unicode newline character [ctor]
+    //
+    REGEX_NEWLINE_ANY = 0x00400000,
+
+    // assume newline is any of CR, LF, CRLF [ctor]
+    //
+    REGEX_NEWLINE_ANYCRLF = 0x00500000,
+
+    // replace all occurences (/g) [subst]
+    //
+    REGEX_GLOBAL = 0x10000000,
+
+    // treat dollar in replacement string as ordinary character [subst]
+    //
+    REGEX_NO_VARS = 0x20000000
 };
+/*-------------------------------------------------------------------------------*/
 
 static int compile_options(int options)
 {
@@ -153,24 +222,29 @@ typedef struct GroupInfo {
     long        group_number;
     const char* group_name;
 } GroupInfo;
+/*-------------------------------------------------------------------------------*/
 
-typedef struct Compiled_Regex
-{
+typedef struct Compiled_Regex {
+    // compiled pcre regex
     pcre2_code* _pRE;
+
+    // array of name groups
     GroupInfo*  p_groups;
     size_t      n_groups;
+
+    // for caching and LRU
     size_t      tick_count;
     DSTR        pattern;
     int         options;
-
 } Compiled_Regex;
 /*-------------------------------------------------------------------------------*/
 
 static const char* find_group_name(Compiled_Regex* cr, int n)
 {
     for (size_t i = 0; i < cr->n_groups; ++i) {
-        if (cr->p_groups[i].group_number == n)
-            return cr->p_groups[i].group_name;
+        GroupInfo* pGI = &(cr->p_groups[i]);
+        if (pGI != NULL && pGI->group_number == n)
+            return pGI->group_name;
     }
     return NULL;
 }
@@ -224,8 +298,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 
     pcre2_compile_context_free(context);
 
-    if (!_pRE)
-    {
+    if (!_pRE) {
         if (err) *err = (REGEX_COMPILE_ERROR_BASE + error_code);
         dstr_regex_perror(error_code);
         return NULL;
@@ -245,8 +318,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
         gInfo = RE_MALLOC(GroupInfo, name_count);
         if (!gInfo) goto error_clean_pcre;
 
-        for (uint32_t i = 0; i < name_count; i++)
-        {
+        for (uint32_t i = 0; i < name_count; i++) {
             unsigned char* group = name_table + 2 + (name_entry_size * i);
             int n = pcre2_substring_number_from_name(_pRE, group);
             gInfo[i].group_number = n;
@@ -260,7 +332,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
     result->_pRE = _pRE;
     result->p_groups = gInfo;
     result->n_groups = name_count;
-    result->pattern = dstrnew(pattern);
+    result->pattern = dstr_create_sz(pattern);
     result->options = options;
     result->tick_count = 0;
     return result;
@@ -279,7 +351,7 @@ static void destroy_compiled_regex(Compiled_Regex* cr)
         return;
 
     if (cr->pattern)
-        dstrfree(cr->pattern);
+        dstr_destroy(cr->pattern);
 
     if (cr->p_groups)
         free(cr->p_groups);
@@ -295,17 +367,25 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
                                 CDSTR subject, size_t offset,
                                 DSTR_Regex_Match* mtch, int options)
 {
-    if (offset > dstrlen(subject)) {
+    if (offset > dstr_length(subject)) {
         mtch->offset = DSTR_NPOS;
         mtch->length = 0;
         return 0;
     }
 
-    pcre2_match_data* mdata = pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
+    pcre2_match_data* mdata =
+        pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
+
+    if (!mdata) {
+        on_malloc_error();
+        mtch->offset = DSTR_NPOS;
+        mtch->length = 0;
+        return PCRE2_ERROR_NOMEMORY;
+    }
 
     int rc = pcre2_match(cr->_pRE,
-                         (PCRE2_SPTR)(dstrdata(subject)),
-                         dstrlen(subject),
+                         (PCRE2_SPTR)(dstr_cstr(subject)),
+                         dstr_length(subject),
                          offset,
                          match_options(options),
                          mdata,
@@ -352,7 +432,7 @@ static bool dstr_regex_exact_aux(Compiled_Regex* cr,
     dstr_regex_match_aux(cr, subject, offset, &mtch, options);
     return
         mtch.offset == offset &&
-        mtch.length == dstrlen(subject) - offset;
+        mtch.length == dstr_length(subject) - offset;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -367,9 +447,14 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
     pcre2_match_data* mdata =
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
 
+    if (!mdata) {
+        on_malloc_error();
+        return PCRE2_ERROR_NOMEMORY;
+    }
+
     int rc = pcre2_match(cr->_pRE,
-                         (PCRE2_SPTR)(dstrdata(subject)),
-                         dstrlen(subject),
+                         (PCRE2_SPTR)(dstr_cstr(subject)),
+                         dstr_length(subject),
                          offset,
                          match_options(options) & 0xFFFF,
                          mdata,
@@ -445,8 +530,8 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
     // First call - try with local stack buffer
     //
     int rc = pcre2_substitute(cr->_pRE,
-                              (PCRE2_SPTR)dstrdata(subject),
-                              dstrlen(subject),
+                              (PCRE2_SPTR)dstr_cstr(subject),
+                              dstr_length(subject),
                               offset,
                               pcre_opts | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH,
                               NULL, NULL, (PCRE2_SPTR)(replacement),
@@ -457,7 +542,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
         return rc;
     }
     else if (rc > 0) {
-        dstrcpy_bl(subject, (char*) outbuf, outlen);
+        dstr_assign_bl(subject, (char*) outbuf, outlen);
         return rc;
     }
     else if (rc == PCRE2_ERROR_NOMEMORY) {
@@ -466,8 +551,8 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
         uint8_t* buffer = RE_MALLOC(uint8_t, outlen);
         if (!buffer) return rc;
         rc = pcre2_substitute(cr->_pRE,
-                              (PCRE2_SPTR)dstrdata(subject),
-                              dstrlen(subject),
+                              (PCRE2_SPTR)dstr_cstr(subject),
+                              dstr_length(subject),
                               offset, pcre_opts, NULL, NULL,
                               (PCRE2_SPTR)(replacement),
                               strlen(replacement),
@@ -475,7 +560,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
                               &outlen);
 
         if (rc > 0)
-            dstrcpy(subject, (char*)buffer);
+            dstr_assign_sz(subject, (char*)buffer);
 
         free(buffer);
     }
@@ -484,7 +569,10 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 }
 /*-------------------------------------------------------------------------------*/
 
-#define DSTR_CACHE_SIZE 40
+// We store at most DSTR_CACHE_SIZE compiled RE patterns for reuse.
+// Once the cache is full, the oldest used pattern is discarded
+//
+#define DSTR_CACHE_SIZE 32
 
 #if defined(RE_CACHE_USE_PTHREAD)
    typedef pthread_key_t    tss_t;
@@ -517,15 +605,22 @@ static void cache_cleanup(void* unused)
 }
 /*-------------------------------------------------------------------------------*/
 
-static void create_cache_key()
+static void cache_cleanup_at_exit(void)
+{
+    // Argument to cache cleanup is unused (see above)
+    // so NULL is OK
+    //
+    cache_cleanup(NULL);
+}
+/*-------------------------------------------------------------------------------*/
+
+static void create_cache_key(void)
 {
     if (tss_create(&tss_cache_key, cache_cleanup) != thrd_success) {
         fprintf(stderr, "Error: Failed to create TSS key.\n");
         abort();
     }
-
-    typedef void(*voidproc)(void);
-    atexit((voidproc)cache_cleanup);
+    atexit(cache_cleanup_at_exit);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -537,6 +632,7 @@ static void registr_automatic_exit_cleanup(void)
 }
 /*-------------------------------------------------------------------------------*/
 
+#ifdef DEBUG_DISPLAY_CACHE
 static void debug_display_cache(void)
 {
     static int print = -1;
@@ -558,15 +654,23 @@ static void debug_display_cache(void)
     putchar('\n');
 }
 /*-------------------------------------------------------------------------------*/
+#endif
 
 static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
 {
     registr_automatic_exit_cleanup();
 
+    // uint64_t: For 1e6 calls per sec overflow would occur in
+    // half a million years...
+    //
     global_tick_count++;
 
+#ifdef DEBUG_DISPLAY_CACHE
     debug_display_cache();
+#endif
 
+    // Lookup in cache
+    //
     for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
         Compiled_Regex* pCR = re_cache[i];
         if (!pCR) continue;
@@ -576,9 +680,13 @@ static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
         }
     }
 
+    // Not found. Compile and create a new one and store in cache
+    //
     Compiled_Regex* newreg = dstr_compile_regex(pattern, options, errcode);
     if (!newreg) return NULL;
 
+    // That's the newest member for now
+    //
     newreg->tick_count = global_tick_count;
 
     // Find an empty slot
@@ -590,15 +698,19 @@ static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
         }
     }
 
-    // Cache full - destroy a victim
+    // Cache full - find the oldest (LRU)
     //
     size_t victim_index = 0;
+    size_t oldest_so_far = re_cache[0]->tick_count;
+
     for (size_t i = 1; i < DSTR_CACHE_SIZE; ++i) {
-        if (re_cache[i]->tick_count < re_cache[victim_index]->tick_count)
+        if (re_cache[i]->tick_count < oldest_so_far) {
             victim_index = i;
+            oldest_so_far = re_cache[i]->tick_count;
+        }
     }
 
-    // Kill the victim and replace it
+    // Cache full, Destroy victim and replace with newest
     //
     destroy_compiled_regex(re_cache[victim_index]);
     re_cache[victim_index] = newreg;
@@ -696,6 +808,7 @@ void dstr_regex_match_vector_free(DSTR_Match_Vector* vec)
     if (vec && vec->matches) {
         free(vec->matches);
         vec->matches = NULL;
+        vec->matches_len = 0;
     }
 }
 /*-------------------------------------------------------------------------------*/

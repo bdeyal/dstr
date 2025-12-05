@@ -664,6 +664,7 @@ public:
     {
         view().split(c, dest);
     }
+    
     void split(const char* sep, std::vector<DString>& dest) const
     {
         view().split(sep, dest);
