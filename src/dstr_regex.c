@@ -250,7 +250,7 @@ static const char* find_group_name(Compiled_Regex* cr, int n)
 }
 /*-------------------------------------------------------------------------------*/
 
-static void on_malloc_error()
+static void on_malloc_error(void)
 {
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
     abort();
