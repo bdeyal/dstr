@@ -129,7 +129,7 @@ $(LIB): ./src/dstring_regex.o ./src/dstr_regex.o ./src/dstring.o ./src/dstr.o
 	$(CXX) -c $(CXXFLAGS) -DNDEBUG ./src/dstring_regex.cpp -o ./src/dstring_regex.o
 
 .PHONY: testall
-testall: test testvg test_various
+testall: test_various testvg
 
 .PHONY: test
 test: $(PROGRAMS) ./test/test_file.txt

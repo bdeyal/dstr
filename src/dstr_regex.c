@@ -22,8 +22,13 @@
    #else
       #include <threads.h>
    #endif
+#elif defined(__cplusplus) && (__cplusplus >= 201703L) && __has_include(<threads.h>)
+   #include <threads.h>
+   #if !defined(_Thread_local)
+      #define _Thread_local thread_local
+   #endif
 #else
-    #error "dstr_regex.c Must have at least a C11 compiler"
+   #error "Needs C11 threads.h or C++17 with threads.h support"
 #endif
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -316,7 +321,10 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
     GroupInfo* gInfo = NULL;
     if (name_count) {
         gInfo = RE_MALLOC(GroupInfo, name_count);
-        if (!gInfo) goto error_clean_pcre;
+        if (!gInfo) {
+            pcre2_code_free(_pRE);
+            return NULL;
+        }
 
         for (uint32_t i = 0; i < name_count; i++) {
             unsigned char* group = name_table + 2 + (name_entry_size * i);
@@ -327,7 +335,11 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
     }
 
     Compiled_Regex* result = RE_MALLOC(Compiled_Regex, 1);
-    if (!result) goto error_clean_groups;
+    if (!result) {
+        if (gInfo) free(gInfo);
+        pcre2_code_free(_pRE);
+        return NULL;
+    }
 
     result->_pRE = _pRE;
     result->p_groups = gInfo;
@@ -336,12 +348,6 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
     result->options = options;
     result->tick_count = 0;
     return result;
-
-error_clean_groups:
-    if (gInfo) free(gInfo);
-error_clean_pcre:
-    pcre2_code_free(_pRE);
-    return NULL;
 }
 /*-------------------------------------------------------------------------------*/
 
