@@ -2894,17 +2894,22 @@ void dstr_translate(DSTR dest, const char* arr1, const char* arr2)
  }
 /*--------------------------------------------------------------------------*/
 
-void dstr_squeeze(DSTR dest, const char* squeeze)
+void dstr_squeeze(DSTR dest, const char* sqzset)
 {
     if (!dest)
         return;
 
-    if (!squeeze || *squeeze == '\0')
+    if (!sqzset || *sqzset == '\0')
         return;
 
     unsigned char to_squeeze[256] = { 0 };
-    for (; *squeeze ; ++squeeze)
-        to_squeeze[(unsigned char)(*squeeze)] = 1;
+
+    if (is_tr_range(sqzset)) {
+        for (char c = sqzset[0]; c <= sqzset[2]; ++c) {
+            to_squeeze[(unsigned char)(c)] = 1; } }
+    else {
+        for (; *sqzset ; ++sqzset) {
+            to_squeeze[(unsigned char)(*sqzset)] = 1; } }
 
     size_t read_index = 0;
     size_t write_index = 0;

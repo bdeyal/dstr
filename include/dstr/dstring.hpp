@@ -664,7 +664,7 @@ public:
     {
         view().split(c, dest);
     }
-    
+
     void split(const char* sep, std::vector<DString>& dest) const
     {
         view().split(sep, dest);
@@ -1600,7 +1600,8 @@ std::istream& io_getline(std::istream& in, DString& s);
 
 inline void puts(DStringView vw, FILE* fp=stdout)
 {
-    fprintf(fp, "%s\n", vw.c_str());
+    fputs(vw.c_str(), fp);
+    putchar('\n');
 }
 
 //////////////////////////////////////////////////////
