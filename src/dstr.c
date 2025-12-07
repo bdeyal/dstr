@@ -210,8 +210,7 @@ static int dstr_grow(DSTR p, size_t len)
         return DSTR_FAIL;
     }
 
-    if (p->capacity == DSTR_INITIAL_CAPACITY) {
-        assert(D_IS_SSO(p));
+    if (D_IS_SSO(p)) {
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
             errno = ENOMEM;
             dstr_out_of_memory();
@@ -226,7 +225,6 @@ static int dstr_grow(DSTR p, size_t len)
         p->data[0] = '\0';
     }
     else {
-        assert(!D_IS_SSO(p));
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
             errno = ENOMEM;
             dstr_out_of_memory();
@@ -2899,17 +2897,51 @@ void dstr_squeeze(DSTR dest, const char* sqzset)
     if (!dest)
         return;
 
-    if (!sqzset || *sqzset == '\0')
-        return;
+    unsigned char to_squeeze[256];
 
-    unsigned char to_squeeze[256] = { 0 };
-
-    if (is_tr_range(sqzset)) {
-        for (char c = sqzset[0]; c <= sqzset[2]; ++c) {
-            to_squeeze[(unsigned char)(c)] = 1; } }
+    if (!sqzset || *sqzset == '\0') {
+        // For empty string or NULL we squeeze every consequtive charachter
+        // run.
+        //
+        memset(to_squeeze, 1, sizeof(to_squeeze));
+    }
     else {
-        for (; *sqzset ; ++sqzset) {
-            to_squeeze[(unsigned char)(*sqzset)] = 1; } }
+        // Otherwise we set to 1 those that in squeeze set either by
+        // explicit set of by a range of characters
+        //
+        memset(to_squeeze, '\0', sizeof(to_squeeze));
+
+        for (int i  = 0; sqzset[i] ; ++i) {
+            char c = sqzset[i];
+            if (c != '-') {
+                to_squeeze[(unsigned char)(c)] = 1;
+                continue;
+            }
+
+            // below code for c == '-'
+            //
+            if (i == 0 || sqzset[i+1] == '-' || sqzset[i+1] == '\0') {
+                to_squeeze[(unsigned char)(c)] = 1;
+                continue;
+            }
+
+            if (sqzset[i-1] == '\\') {
+                to_squeeze[(unsigned char)(c)] = 1;
+                continue;
+            }
+
+            if (sqzset[i-1] > sqzset[i+1]) {
+                for (char ch = sqzset[i-1]; ch >= sqzset[i+1]; --ch) {
+                    to_squeeze[(uint8_t)ch] = 1;
+                }
+                continue;
+            }
+
+            for (char ch = sqzset[i-1]; ch <= sqzset[i+1]; ++ch) {
+                to_squeeze[(uint8_t)ch] = 1;
+            }
+        }
+    }
 
     size_t read_index = 0;
     size_t write_index = 0;

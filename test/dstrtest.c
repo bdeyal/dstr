@@ -1522,6 +1522,14 @@ void test_join()
         assert(dstreq(dd, (r)));                \
         dstrfree(dd); } while (0)
 
+#define DSTRSQZ(s1, a1, r) do {                 \
+        DSTR dd = dstrnew(s1);                  \
+        dstrsqz(dd, (a1));                      \
+        puts(dstrdata(dd));                     \
+        assert(dstreq(dd, (r)));                \
+        dstrfree(dd); } while (0)
+/*--------------------------------------------------------------------------*/
+
 void test_translate()
 {
     DSTRTRANS("Hello Sam!", "S", "P", "Hello Pam!");
@@ -1539,6 +1547,29 @@ void test_translate()
     DSTRTRSQZ("hello", "l", "r", "hero");
     DSTRTRSQZ("hello", "el", "-", "h-o");
     DSTRTRSQZ("hello", "el", "hx", "hxo");
+
+    // multiple characters runs, are squeezed down to a single char
+    // default is for all ("", or NULL) but a squeeze set can be provided
+    //
+    DSTRSQZ("yellow moon", "", "yelow mon");
+    DSTRSQZ("yellow moon", NULL, "yelow mon");
+    DSTRSQZ("Too    Many    Spaces", " ", "Too Many Spaces");
+    DSTRSQZ("putters shoot balls", "m-z", "puters shot balls");
+    DSTRSQZ("putters shoot balls", "l-z", "puters shot bals");
+    DSTRSQZ("ppuutters shoot ballss", NULL, "puters shot bals");
+    DSTRSQZ("hhhhheeeeeeeelllooooooo", "e-p", "helo");
+    DSTRSQZ("hhhhheeeeeeeelllooooooo", "e-ko-q", "helllo");
+    DSTRSQZ("hhhhheeeeeeeelllooooooo", "e-ko-q", "helllo");
+    DSTRSQZ("hhhhheeeeeeeelllooooooo", "e-ko-q", "helllo");
+    DSTRSQZ("aabbccddAABBCCDD11223344", "a-cA-C1-3", "abcddABCDD12344");
+    DSTRSQZ("++,,----...../////023aabb", "a--0", "++,,-./023abb");
+    DSTRSQZ("a---b===c", "-=", "a-b=c");
+    DSTRSQZ("AAA111zzz", "A-Z0-9", "A1zzz");
+
+    // Unlike ruby, ranges go downwards too
+    //
+    DSTRSQZ("AAA111zzz", "Z-A9-0", "A1zzz");
+
 }
 /*--------------------------------------------------------------------------*/
 

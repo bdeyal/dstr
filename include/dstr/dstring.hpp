@@ -628,7 +628,7 @@ public:
         return translate(from, to);
     }
 
-    DString& squeeze(const char* sqz_set)
+    DString& squeeze(const char* sqz_set = nullptr)
     {
         dstr_squeeze(pImp(), sqz_set);
         return *this;
