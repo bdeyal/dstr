@@ -28,4 +28,6 @@ static inline int isblank(int c) { return isspace(c); }
 #define nullptr (NULL)
 #define noexcept
 
+#define SKIP_DSTRINGSTREAM
+
 #endif

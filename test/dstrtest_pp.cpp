@@ -2157,7 +2157,8 @@ void test_zfill()
 void test_dstringstream(void)
 {
     TRACE_FN();
-
+#if defined (SKIP_DSTRINGSTREAM)
+#else
     DStringOut out;
     out << "Hello World";
     DString s = out.str();
@@ -2181,6 +2182,7 @@ void test_dstringstream(void)
     //
     for (double d = -100.0; d < 100.0; d += 3.14159) {
         assert(to_dstring(d) == DString::to_string(d)); }
+#endif
 }
 //-------------------------------------------------
 

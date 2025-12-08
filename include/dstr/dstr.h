@@ -24,11 +24,9 @@
 #if UINTPTR_MAX > UINT32_MAX
 #define DSTR_64BIT
 #define DSTR_INITIAL_CAPACITY (32U) //(48U)
-#elif UINTPTR_MAX == UINT32_MAX
+#else
 #define DSTR_32BIT
 #define DSTR_INITIAL_CAPACITY (16U) //(20U)
-#else
-#error "Uknown pointer size"
 #endif
 
 
@@ -435,6 +433,17 @@ static inline char dstr_getchar(CDSTR p, size_t pos)
     return p->data[pos];
 }
 
+static inline char dstr_front(CDSTR p)
+{
+    return p->data[0];
+}
+
+static inline char dstr_back(CDSTR p)
+{
+    size_t index = p->length ? p->length - 1 : 0;
+    return p->data[index];
+}
+
 static inline void dstr_putchar(DSTR p, size_t pos, char c)
 {
     p->data[pos] = c;
@@ -652,6 +661,8 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrgetc            dstr_getchar
 #define dstrputc_s          dstr_putchar_safe
 #define dstrgetc_s          dstr_getchar_safe
+#define dstrfornt           dstr_front
+#define dstrback            dstr_back
 
 #define dstrcpy_cc          dstr_assign_cc
 #define dstrcpy             dstr_assign_sz

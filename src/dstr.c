@@ -2848,7 +2848,7 @@ make_tr_table(const char* from, const char* to, uint8_t tbl[], size_t tlen)
     expand_tr_str(&dto, to,  0 /*disable_negate*/);
 
     if (negate) {
-        char back = DVAL(&dto, DLEN(&dto) - 1);
+        char back = dstrback(&dto);
         memset(tbl, back, tlen);
         for (size_t i = 0; i < DLEN(&dfrom); ++i) {
             uint8_t ch = DVAL(&dfrom, i);
@@ -2858,7 +2858,7 @@ make_tr_table(const char* from, const char* to, uint8_t tbl[], size_t tlen)
         if (dstrlen(&dto) == 0) {
             dstr_append_no_overlap(&dto, dstrdata(&dfrom), dstrlen(&dfrom)); }
         else if (dstrlen(&dfrom) > dstrlen(&dto)) {
-            char back = DVAL(&dto, DLEN(&dto) - 1);
+            char back = dstrback(&dto);
             dstr_append_cc(&dto, back, (DLEN(&dfrom) - DLEN(&dto)));  }
         else if (dstrlen(&dfrom) == dstrlen(&dto)) {
             ; }  // do nothing
@@ -2878,13 +2878,15 @@ void dstr_translate(DSTR dest, const char* arr1, const char* arr2)
 {
     if (!dest)
         return;
-
     if (!arr1 || *arr1 == '\0')
         return;
-
     if (!arr2) {
         dstr_translate_delete_aux(dest, arr1);
         return;  }
+
+    /* No change if replacement string empty */
+    if (*arr2 == '\0') {
+        return; }
 
     uint8_t tbl[256];
     make_tr_table(arr1, arr2, tbl, sizeof(tbl));

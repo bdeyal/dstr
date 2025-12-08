@@ -453,6 +453,18 @@ public:
         erase(0);
     }
 
+    // returns '\0' if empty
+    char back() const
+    {
+        return dstr_back(pImp());
+    }
+
+    // returns '\0' if empty
+    char front() const
+    {
+        return dstr_front(pImp());
+    }
+
     void chop()
     {
         dstr_chop(pImp());

@@ -142,6 +142,18 @@ public:
     size_t      length()   const noexcept { return m_imp.length;   }
     bool        empty()    const noexcept { return length() == 0;  }
 
+    // returns '\0' if empty
+    char back() const
+    {
+        return dstr_back(pImp());
+    }
+
+    // returns '\0' if empty
+    char front() const
+    {
+        return dstr_front(pImp());
+    }
+
     bool index_ok(size_t pos) const
     {
         return dstr_valid_index(pImp(), pos);
