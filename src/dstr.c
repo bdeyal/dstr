@@ -2450,29 +2450,22 @@ static int dstr_replace_all_imp(DSTR dest,
     //
     INIT_DSTR(tmp);
     if (!dstr_assign_ds(&tmp, dest)) {
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     for (;;) {
         pos = dstr_find_sz_imp(&tmp, pos, oldstr, 0);
-
         if (pos == DSTR_NPOS)
             break;
-
         if (!dstr_replace_imp(&tmp, pos, oldlen, newstr, newlen)) {
             dstr_clean_data(&tmp);
-            return DSTR_FAIL;
-        }
-
+            return DSTR_FAIL; }
         if (++num_replaced == count)
             break;
-
         pos += newlen;
     };
 
     if (num_replaced > 0) {
-        dstr_swap(&tmp, dest);
-    }
+        dstr_swap(&tmp, dest); }
 
     DONE_DSTR(tmp);
     return DSTR_SUCCESS;
@@ -2579,41 +2572,31 @@ size_t dstr_icount_ds(CDSTR p, CDSTR s)
 int dstr_expand_tabs(DSTR dest, size_t width)
 {
     dstr_assert_valid(dest);
-
-    if (!dest || DLEN(dest) == 0)
-        return DSTR_SUCCESS;
+    if (!dest || DLEN(dest) == 0) {
+        return DSTR_SUCCESS; }
 
     INIT_DSTR(tmp);
-    for (size_t pos = 0; pos < DLEN(dest); ++pos)
-    {
+    for (size_t pos = 0; pos < DLEN(dest); ++pos) {
         char ch = DVAL(dest, pos);
-
         if (ch == '\t') {
-            if (width == 0)
-                continue;
-
+            if (width == 0) {
+                continue; }
             size_t to_tabstop = width - (DLEN(&tmp) % width);
-            if (!dstr_append_cc(&tmp, ' ', to_tabstop))
-                goto fail;
-        }
+            if (!dstr_append_cc(&tmp, ' ', to_tabstop)) {
+                dstr_clean_data(&tmp);
+                return DSTR_FAIL; } }
         else {
-            if (DLEN(&tmp) + 1 == DCAP(&tmp))
-                if (!dstr_grow_by(&tmp, 1))
-                    goto fail;
-
+            if (DLEN(&tmp) + 1 == DCAP(&tmp)) {
+                if (!dstr_grow_by(&tmp, 1)) {
+                    dstr_clean_data(&tmp);
+                    return DSTR_FAIL; } }
             DVAL(&tmp, DLEN(&tmp)) = ch;
             DLEN(&tmp) += 1;
-            DVAL(&tmp, DLEN(&tmp)) = '\0';
-        }
-    }
+            DVAL(&tmp, DLEN(&tmp)) = '\0'; } }
 
     dstr_swap(&tmp, dest);
     DONE_DSTR(tmp);
     return DSTR_SUCCESS;
-
-fail:
-    dstr_clean_data(&tmp);
-    return DSTR_FAIL;
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -2718,11 +2701,9 @@ int dstr_multiply(DSTR dest, size_t n)
 
     if (n == 0) {
         dstr_clear(dest);
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
     else if (n == 1) {
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     INIT_DSTR(tmp);
     if (!dstr_reserve(&tmp, n * DLEN(dest)))
@@ -2731,9 +2712,7 @@ int dstr_multiply(DSTR dest, size_t n)
     for (size_t i = 0; i < n; ++i) {
         if (!dstr_append_no_overlap(&tmp, DBUF(dest), DLEN(dest))) {
             dstr_clean_data(&tmp);
-            return DSTR_FAIL;
-        }
-    }
+            return DSTR_FAIL; } }
 
     dstr_swap(&tmp, dest);
     DONE_DSTR(tmp);
@@ -2810,8 +2789,7 @@ static void dstr_translate_delete_aux(DSTR dest, const char* arr1)
             continue;
 
         DVAL(dest, write_index) = ch;
-        ++write_index;
-    }
+        ++write_index; }
 
     DVAL(dest, write_index) = '\0';
     DLEN(dest) = write_index;
@@ -2882,6 +2860,8 @@ make_tr_table(const char* from, const char* to, uint8_t tbl[], size_t tlen)
         else if (dstrlen(&dfrom) > dstrlen(&dto)) {
             char back = DVAL(&dto, DLEN(&dto) - 1);
             dstr_append_cc(&dto, back, (DLEN(&dfrom) - DLEN(&dto)));  }
+        else if (dstrlen(&dfrom) == dstrlen(&dto)) {
+            ; }  // do nothing
         else {
             dstr_resize(&dto, DLEN(&dfrom));  }
 
