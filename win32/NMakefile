@@ -22,9 +22,10 @@ MTLIB=cw32mt.lib
 
 !ENDIF
 
-CFLAGS=-pthread -std=c11 -O2 -I..\include
+CFLAGS=-std=c11 -O2 -I..\include
 CXXFLAGS=-O2 -I..\include
 OUT=-o
+PTHREAD=-pthread
 
 !ELSE
 
@@ -81,15 +82,15 @@ test_algs.exe: ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
 # 'Platform' set by MSVC vcvarsall.bat script ('x86' or 'x64')
 #
 test_regex.exe: ..\test\test_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.cpp dstr.obj dstr_regex.obj $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -IC:\PCRE2\INCLUDE \
+	$(CXX) $(PTHREAD) $(CXXFLAGS) -IC:\PCRE2\INCLUDE \
 	..\test\test_regex.cpp \
 	..\src\dstring_regex.cpp \
 	..\src\dstring.cpp \
 	dstr_regex.obj \
-	dstr.obj $(OUT)"$@" C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
+	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
 test_regex_c.exe: ..\test\test_regex_c.c ..\src\dstr_regex.c dstr.obj dstr_regex.obj $(DEPS)
-	$(CC) $(CFLAGS) -IC:\PCRE2\INCLUDE \
+	$(CC) $(PTHREAD) $(CFLAGS) -IC:\PCRE2\INCLUDE \
 	..\test\test_regex_c.c \
 	dstr_regex.obj \
 	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib

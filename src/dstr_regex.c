@@ -16,7 +16,7 @@
 // or pthread equivalent if not available
 //
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-   #if defined(__MINGW32__) || defined(__MINGW64__)
+   #if defined(__GNUC__) && (defined(__MINGW32__) || defined(__MINGW64__))
       #include <pthread.h>
       #define RE_CACHE_USE_PTHREAD 1
    #else
@@ -578,7 +578,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 // We store at most DSTR_CACHE_SIZE compiled RE patterns for reuse.
 // Once the cache is full, the oldest used pattern is discarded
 //
-#define DSTR_CACHE_SIZE 32
+#define DSTR_CACHE_SIZE 40
 
 #if defined(RE_CACHE_USE_PTHREAD)
    typedef pthread_key_t    tss_t;
@@ -591,9 +591,15 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
    #define thrd_success     0
 #endif
 
+// Since this is unsigned 64 bit type no danger of overflow
+// e.g. for a million calls per sec, overflow would occur in
+// half a million years...
+//
+static _Thread_local uint64_t global_tick_count = 0;
 static _Thread_local Compiled_Regex* re_cache[DSTR_CACHE_SIZE] = { 0 };
-static _Thread_local size_t global_tick_count = 0;
 
+// Code below for cleanup the cache at exit of thread
+//
 static tss_t     tss_cache_key;
 static once_flag tss_cache_once = ONCE_FLAG_INIT;
 /*-------------------------------------------------------------------------------*/
@@ -665,62 +671,58 @@ static void debug_display_cache(void)
 static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
 {
     registr_automatic_exit_cleanup();
-
-    // uint64_t: For 1e6 calls per sec overflow would occur in
-    // half a million years...
-    //
     global_tick_count++;
 
 #ifdef DEBUG_DISPLAY_CACHE
     debug_display_cache();
 #endif
 
+    Compiled_Regex* pRes = NULL;
+    size_t first_empty_slot = DSTR_NPOS;
+    size_t oldest_index = DSTR_NPOS;
+    size_t oldest_so_far = DSTR_NPOS;
+
     // Lookup in cache
     //
     for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
-        Compiled_Regex* pCR = re_cache[i];
-        if (!pCR) continue;
-        if (pCR->options == options && dstreq(pCR->pattern, pattern)) {
-            pCR->tick_count = global_tick_count;
-            return pCR;
+        if ((pRes = re_cache[i]) == NULL) {
+            first_empty_slot = i;
+            break;
+        }
+        if (pRes->options == options && dstreq(pRes->pattern, pattern)) {
+            pRes->tick_count = global_tick_count;
+            return pRes;
+        }
+        else {
+            if (pRes->tick_count < oldest_so_far) {
+                oldest_index = i;
+                oldest_so_far = pRes->tick_count;
+            }
         }
     }
 
     // Not found. Compile and create a new one and store in cache
     //
-    Compiled_Regex* newreg = dstr_compile_regex(pattern, options, errcode);
-    if (!newreg) return NULL;
+    if ((pRes = dstr_compile_regex(pattern, options, errcode)) == NULL)
+        return NULL;
 
     // That's the newest member for now
     //
-    newreg->tick_count = global_tick_count;
+    pRes->tick_count = global_tick_count;
 
-    // Find an empty slot
+    // If we have an empty slot, store in it
     //
-    for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
-        if (re_cache[i] == NULL) {
-            re_cache[i] = newreg;
-            return newreg;
-        }
+    if (first_empty_slot < DSTR_CACHE_SIZE) {
+        re_cache[first_empty_slot] = pRes;
+        return pRes;
     }
 
-    // Cache full - find the oldest (LRU)
+    // Otherwise cache is full - replace with oldest (LRU)
     //
-    size_t victim_index = 0;
-    size_t oldest_so_far = re_cache[0]->tick_count;
-
-    for (size_t i = 1; i < DSTR_CACHE_SIZE; ++i) {
-        if (re_cache[i]->tick_count < oldest_so_far) {
-            victim_index = i;
-            oldest_so_far = re_cache[i]->tick_count;
-        }
-    }
-
-    // Cache full, Destroy victim and replace with newest
-    //
-    destroy_compiled_regex(re_cache[victim_index]);
-    re_cache[victim_index] = newreg;
-    return newreg;
+    assert(oldest_index < DSTR_CACHE_SIZE);
+    destroy_compiled_regex(re_cache[oldest_index]);
+    re_cache[oldest_index] = pRes;
+    return pRes;
 }
 /*-------------------------------------------------------------------------------*/
 
