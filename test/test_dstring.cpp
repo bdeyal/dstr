@@ -10,6 +10,7 @@
 #include <string>
 #include <iterator>
 #include <vector>
+#include <algorithm>
 
 #include <assert.h>
 #include <string.h>
@@ -2237,6 +2238,106 @@ void test_succ()
 }
 //-------------------------------------------------
 
+void test_algo_back_inserter()
+{
+    DStringView s1("Hello World");
+    DString s2;
+    assert(s1 != s2);
+
+    std::copy(s1.begin(), s1.end(), back_inserter<DString>(s2));
+    assert(s1 == s2);
+
+    s1 = "Hello World today is SAT deep at night";
+    s2 = "";
+    std::copy(s1.begin(), s1.end(), back_inserter<DString>(s2));
+    assert(s1 == s2);
+
+    cout << s1 << endl;
+}
+//--------------------------------------------------------------
+
+void test_algo_for()
+{
+    DString s1("Hello World");
+
+    size_t i = 0;
+    for (auto c : s1) {
+        cout << c << ", ";
+        assert(c == s1[i]);
+        ++i;
+    }
+    cout << endl;
+
+}
+//--------------------------------------------------------------
+
+void test_algo_sort()
+{
+    DString s1("Hello World");
+    std::sort(s1.begin(), s1.end());
+    cout << "\"" << s1.c_str() << "\"" << endl;
+    assert(s1 == " HWdellloor");
+}
+//--------------------------------------------------------------
+
+void test_algo_transform()
+{
+    DString s1("Hello World");
+    DString s2;
+
+    transform(s1.begin(),
+              s1.end(),
+              std::back_inserter<DString>(s2),
+              [] (char c) { return toupper(c); });
+
+    cout << s2.c_str() << endl;
+    assert(s2 == "HELLO WORLD");
+}
+//--------------------------------------------------------------
+
+void test_algo_reverse()
+{
+    DString s1("Hello World Today is SAT deep at night");
+    DString s2(s1);
+    assert(s1 == s2);
+
+    std::reverse(s1.begin(), s1.end());
+    s2.reverse_inplace();
+
+    cout << s1.c_str() << endl;
+    cout << s2.c_str() << endl;
+    assert(s1 == s2);
+}
+//--------------------------------------------------------------
+
+void test_algo_permutations()
+{
+    DString s1("ABCD");
+    do {
+        cout << s1 << ", ";
+    } while (next_permutation(s1.begin(), s1.end()));
+    cout.put('\n');
+}
+//--------------------------------------------------------------
+
+void test_algo_reverse_iterator()
+{
+    DString s1("Hello World today is SAT deep at night");
+    DString s2;
+
+    auto first = reverse_iterator<DString::iterator>(s1.end());
+    auto last  = reverse_iterator<DString::iterator>(s1.begin());
+
+    while (first != last) {
+        s2.append(*first++);
+    }
+
+    cout << s1 << endl;
+    cout << s2 << endl;
+    assert(s2 == s1.reverse());
+}
+//--------------------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -2300,5 +2401,15 @@ int main()
     test_zfill();
     test_dstringstream();
     test_succ();
+
+    // C++ std algorithm test
+    //
+    test_algo_back_inserter();
+    test_algo_for();
+    test_algo_sort();
+    test_algo_transform();
+    test_algo_reverse();
+    test_algo_permutations();
+    test_algo_reverse_iterator();
     // last test
 }

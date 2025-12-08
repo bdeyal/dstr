@@ -56,17 +56,11 @@ endif
 CXXFLAGS += $(CFLAGS) -pthread -pedantic -std=c++20
 
 PROGRAMS = \
-	./test/dstrtest \
-	./test/dstrtest_pp \
-	./test/test_hash \
-	./test/test_dgets \
-	./test/test_map \
-	./test/test_vector \
-	./test/test_tokens \
-	./test/test_algs \
-	./test/test_regex \
-	./test/test_regex_c \
-	./test/test_view
+	./test/test_dstr \
+	./test/test_dstring \
+	./test/test_dstring_regex \
+	./test/test_dstr_regex \
+	./test/test_dstringview
 
 DEPS = ./include/dstr/dstr.h Makefile
 DEPS_PP = \
@@ -79,37 +73,19 @@ LIB=./lib64/libdstr.a
 
 all: $(PROGRAMS)
 
-./test/dstrtest: ./test/dstrtest.c $(LIB) $(DEPS)
+./test/test_dstr: ./test/test_dstr.c $(LIB) $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-./test/dstrtest_pp: ./test/dstrtest_pp.cpp $(LIB) $(DEPS_PP)
+./test/test_dstring: ./test/test_dstring.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-./test/test_dgets: ./test/test_dgets.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
-
-./test/test_map: ./test/test_map.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) $(NO_UNINIT) -o $@ $< $(LDFLAGS) -ldstr
-
-./test/test_vector: ./test/test_vector.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
-
-./test/test_tokens: ./test/test_tokens.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
-
-./test/test_algs: ./test/test_algs.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
-
-./test/test_hash: ./test/test_hash.cpp $(LIB) $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
-
-./test/test_regex: ./test/test_regex.cpp $(LIB) $(DEPS_PP)
+./test/test_dstring_regex: ./test/test_dstring_regex.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
 
-./test/test_regex_c: ./test/test_regex_c.c   $(LIB) $(DEPS_PP)
-	$(CC) $(CFLAGS) -o $@ ./test/test_regex_c.c $(LDFLAGS) -ldstr -lpcre2-8
+./test/test_dstr_regex: ./test/test_dstr_regex.c   $(LIB) $(DEPS_PP)
+	$(CC) $(CFLAGS) -o $@ ./test/test_dstr_regex.c $(LDFLAGS) -ldstr -lpcre2-8
 
-./test/test_view: ./test/test_view.cpp $(LIB) $(DEPS_PP)
+./test/test_dstringview: ./test/test_dstringview.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
 $(LIB): ./src/dstring_regex.o ./src/dstr_regex.o ./src/dstring.o ./src/dstr.o
@@ -132,36 +108,20 @@ $(LIB): ./src/dstring_regex.o ./src/dstr_regex.o ./src/dstring.o ./src/dstr.o
 testall: test_various testvg
 
 .PHONY: test
-test: $(PROGRAMS) ./test/test_file.txt
-	./test/dstrtest_pp
-	./test/dstrtest
-	./test/test_dgets ./test/test_file.txt
-	./test/test_map
-	./test/test_vector
-	./test/test_tokens
-	./test/test_algs
-	./test/test_regex
-	./test/test_regex_c
-	./test/test_hash
-	./test/test_view
+test: $(PROGRAMS)
+	./test/test_dstring
+	./test/test_dstr
+	./test/test_dstring_regex
+	./test/test_dstr_regex
+	./test/test_dstringview
 
 .PHONY: testvg
-testvg: $(PROGRAMS) ./test/test_file.txt
-	valgrind ./test/dstrtest
-	valgrind ./test/dstrtest_pp
-	valgrind ./test/test_dgets ./test/test_file.txt
-	valgrind ./test/test_map
-	valgrind ./test/test_vector
-	valgrind ./test/test_tokens
-	valgrind ./test/test_algs
-	valgrind ./test/test_regex
-	valgrind ./test/test_regex_c
-	valgrind ./test/test_hash
-	valgrind ./test/test_view
-
-
-./test/test_file.txt:
-	man gcc 2>/dev/null > ./test/test_file.txt
+testvg: $(PROGRAMS)
+	valgrind ./test/test_dstr
+	valgrind ./test/test_dstring
+	valgrind ./test/test_dstring_regex
+	valgrind ./test/test_dstr_regex
+	valgrind ./test/test_dstringview
 
 .PHONY: test_various
 test_various: ./test/dstr_test.sh
@@ -170,7 +130,7 @@ test_various: ./test/dstr_test.sh
 clean:
 	rm -rf ./lib64
 	rm -f ./test/*.o ./src/*.o
-	rm -f ./test/test_file.txt ./test/test_various.txt $(PROGRAMS)
+	rm -f ./test/test_various.txt $(PROGRAMS)
 	rm -f ./test/*.exe
 
 PREFIX_INCLUDE=$(PREFIX)/include/dstr

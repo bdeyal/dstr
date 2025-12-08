@@ -38,16 +38,11 @@ OUT=/Fe
 !ENDIF
 
 PROGRAMS = \
-	dstrtest.exe \
-	dstrtest_pp.exe \
-	test_dgets.exe \
-	test_map.exe \
-	test_vector.exe \
-	test_tokens.exe \
-	test_algs.exe \
-	test_regex.exe \
-	test_regex_c.exe \
-	test_view.exe
+	test_dstr.exe \
+	test_dstr_regex.exe \
+	test_dstring.exe \
+	test_dstring_regex.exe \
+	test_dstringview.exe
 
 DEPS = ..\include\dstr\dstr.h ..\src\dstr_internal.h
 DEPS_PP = \
@@ -58,61 +53,41 @@ DEPS_PP = \
 
 all: $(PROGRAMS)
 
-dstrtest.exe: ..\test\dstrtest.c dstr.obj
-	$(CC) $(CFLAGS) ..\test\dstrtest.c dstr.obj $(OUT)"$@"
+test_dstr.exe: ..\test\test_dstr.c dstr.obj
+	$(CC) $(CFLAGS) ..\test\test_dstr.c dstr.obj $(OUT)"$@"
 
-dstrtest_pp.exe: ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\dstrtest_pp.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
-
-test_dgets.exe: ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\test_dgets.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
-
-test_vector.exe: ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\test_vector.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
-
-test_map.exe: ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\test_map.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
-
-test_tokens.exe: ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\test_tokens.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
-
-test_algs.exe: ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\test_algs.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
+test_dstring.exe: ..\test\test_dstring.cpp ..\src\dstring.cpp dstr.obj $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) ..\test\test_dstring.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
 
 # 'Platform' set by MSVC vcvarsall.bat script ('x86' or 'x64')
 #
-test_regex.exe: ..\test\test_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.cpp dstr.obj dstr_regex.obj $(DEPS_PP)
+test_dstring_regex.exe: ..\test\test_dstring_regex.cpp ..\src\dstring_regex.cpp ..\src\dstring.cpp dstr.obj dstr_regex.obj $(DEPS_PP)
 	$(CXX) $(PTHREAD) $(CXXFLAGS) -IC:\PCRE2\INCLUDE \
-	..\test\test_regex.cpp \
+	..\test\test_dstring_regex.cpp \
 	..\src\dstring_regex.cpp \
 	..\src\dstring.cpp \
 	dstr_regex.obj \
 	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
-test_regex_c.exe: ..\test\test_regex_c.c ..\src\dstr_regex.c dstr.obj dstr_regex.obj $(DEPS)
+test_dstr_regex.exe: ..\test\test_dstr_regex.c ..\src\dstr_regex.c dstr.obj dstr_regex.obj $(DEPS)
 	$(CC) $(PTHREAD) $(CFLAGS) -IC:\PCRE2\INCLUDE \
-	..\test\test_regex_c.c \
+	..\test\test_dstr_regex.c \
 	dstr_regex.obj \
 	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
-test_view.exe: ..\test\test_view.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
-	$(CXX) $(CXXFLAGS) ..\test\test_view.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
+test_dstringview.exe: ..\test\test_dstringview.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
+	$(CXX) $(CXXFLAGS) ..\test\test_dstringview.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
 
 clean:
 	del *~ *.obj *.tds
 	del $(PROGRAMS)
 
 test: $(PROGRAMS)
-	.\dstrtest.exe
-	.\dstrtest_pp.exe
-	.\test_dgets.exe
-	.\test_vector.exe
-	.\test_map.exe
-	.\test_tokens.exe
-	.\test_algs.exe
-	.\test_regex.exe
-	.\test_regex_c.exe
-	.\test_view.exe
+	.\test_dstr.exe
+	.\test_dstr_regex.exe
+	.\test_dstring.exe
+	.\test_dstring_regex.exe
+	.\test_dstringview.exe
 
 dstr.obj: ..\src\dstr.c $(DEPS)
 	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c -o $@
