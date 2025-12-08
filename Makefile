@@ -55,11 +55,19 @@ endif
 
 CXXFLAGS += $(CFLAGS) -pthread -pedantic -std=c++20
 
+# Object files for libdstr.a
+#
+LIB_O = \
+	./src/dstr.o \
+	./src/dstr_regex.o \
+	./src/dstring.o \
+	./src/dstring_regex.o
+
 PROGRAMS = \
 	./test/test_dstr \
 	./test/test_dstring \
-	./test/test_dstring_regex \
 	./test/test_dstr_regex \
+	./test/test_dstring_regex \
 	./test/test_dstringview
 
 DEPS = ./include/dstr/dstr.h Makefile
@@ -88,21 +96,21 @@ all: $(PROGRAMS)
 ./test/test_dstringview: ./test/test_dstringview.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
-$(LIB): ./src/dstring_regex.o ./src/dstr_regex.o ./src/dstring.o ./src/dstr.o
+$(LIB): $(LIB_O)
 	mkdir -p ./lib64
-	$(AR) rcs $(LIB) ./src/dstr.o ./src/dstring.o ./src/dstring_regex.o ./src/dstr_regex.o
+	$(AR) rcs $(LIB) $(LIB_O)
 
 ./src/dstr.o: ./src/dstr.c $(DEPS)
-	$(CC) -c $(CFLAGS) -DNDEBUG ./src/dstr.c -o ./src/dstr.o
+	$(CC) -c $(CFLAGS) -DNDEBUG -o $@ $<
 
 ./src/dstr_regex.o: ./src/dstr_regex.c $(DEPS)
-	$(CC) -c $(CFLAGS) -DNDEBUG ./src/dstr_regex.c -o ./src/dstr_regex.o
+	$(CC) -c $(CFLAGS) -DNDEBUG -o $@ $<
 
 ./src/dstring.o: ./src/dstring.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) -DNDEBUG ./src/dstring.cpp -o ./src/dstring.o
+	$(CXX) -c $(CXXFLAGS) -DNDEBUG -o $@ $<
 
 ./src/dstring_regex.o: ./src/dstring_regex.cpp $(DEPS_PP)
-	$(CXX) -c $(CXXFLAGS) -DNDEBUG ./src/dstring_regex.cpp -o ./src/dstring_regex.o
+	$(CXX) -c $(CXXFLAGS) -DNDEBUG -o $@ $<
 
 .PHONY: testall
 testall: test_various testvg

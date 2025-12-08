@@ -1885,7 +1885,7 @@ int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base)
     return dstr_append_no_overlap(dest, first, len);
 
 }
-//---------------------------------------------------------
+/*-------------------------------------------------------------------------------*/
 
 int dstr_itos(DSTR dest, long long n)
 {
@@ -2728,8 +2728,8 @@ int dstr_multiply(DSTR dest, size_t n)
  *   and Ruby tr()
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-static void
-make_deletion_set(const char* tr_set, uint8_t tr_table[], size_t tlen)
+static
+void make_deletion_set(const char* tr_set, uint8_t tr_table[], size_t tlen)
 {
     char negate = 0;
 
@@ -2784,9 +2784,7 @@ static void dstr_translate_delete_aux(DSTR dest, const char* arr1)
     for ( ; read_index < DLEN(dest); ++read_index) {
         char ch = DVAL(dest, read_index);
         int deleted = to_delete[(uint8_t) ch];
-
-        if (deleted)
-            continue;
+        if (deleted) continue;
 
         DVAL(dest, write_index) = ch;
         ++write_index; }
@@ -2855,12 +2853,12 @@ make_tr_table(const char* from, const char* to, uint8_t tbl[], size_t tlen)
             tbl[ch] = ch; } }
     else {
         memset(tbl, 0, tlen);
-        if (dstrlen(&dto) == 0) {
-            dstr_append_no_overlap(&dto, dstrdata(&dfrom), dstrlen(&dfrom)); }
-        else if (dstrlen(&dfrom) > dstrlen(&dto)) {
+        if (DLEN(&dto) == 0) {
+            dstr_append_no_overlap(&dto, dstrdata(&dfrom), DLEN(&dfrom)); }
+        else if (DLEN(&dfrom) > DLEN(&dto)) {
             char back = dstrback(&dto);
             dstr_append_cc(&dto, back, (DLEN(&dfrom) - DLEN(&dto)));  }
-        else if (dstrlen(&dfrom) == dstrlen(&dto)) {
+        else if (DLEN(&dfrom) == DLEN(&dto)) {
             ; }  // do nothing
         else {
             dstr_resize(&dto, DLEN(&dfrom));  }
@@ -2878,8 +2876,11 @@ void dstr_translate(DSTR dest, const char* arr1, const char* arr2)
 {
     if (!dest)
         return;
+
     if (!arr1 || *arr1 == '\0')
         return;
+
+    /* if replacement is NULL = delete. See dstr_remove_any() */
     if (!arr2) {
         dstr_translate_delete_aux(dest, arr1);
         return;  }

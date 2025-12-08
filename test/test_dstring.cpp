@@ -2159,6 +2159,7 @@ void test_dstringstream(void)
 {
     TRACE_FN();
 #if defined (SKIP_DSTRINGSTREAM)
+    puts("Skipped DString Streams");
 #else
     DStringOut out;
     out << "Hello World";
