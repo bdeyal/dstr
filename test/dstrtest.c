@@ -1566,10 +1566,13 @@ void test_translate()
     DSTRSQZ("a---b===c", "-=", "a-b=c");
     DSTRSQZ("AAA111zzz", "A-Z0-9", "A1zzz");
 
+    // ^ is "negate" (or -c, complement in tr command)
+    //
+    DSTRSQZ("AAAppp111zzz", "^A-Z0-9", "AAAp111z");
+
     // Unlike ruby, ranges go downwards too
     //
     DSTRSQZ("AAA111zzz", "Z-A9-0", "A1zzz");
-
 }
 /*--------------------------------------------------------------------------*/
 

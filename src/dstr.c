@@ -2743,70 +2743,70 @@ int dstr_multiply(DSTR dest, size_t n)
 }
 /*--------------------------------------------------------------------------*/
 
-static inline bool is_tr_range(const char* s)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *   Traslate, delete and squeeze (like "tr" command)
+ *   and Ruby tr()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+static void
+make_deletion_set(const char* tr_set, uint8_t tr_table[], size_t tlen)
 {
-    return
-        (strnlen(s, 3) == 3) &&
-        s[0] <= s[2] &&
-        s[1] == '-';
-}
-/*--------------------------------------------------------------------------*/
+    char negate = 0;
 
-static void dstr_translate_range_aux(DSTR dest, const char* arr1, const char* arr2)
-{
-    char in_first  = arr1[0];
-    char in_last   = arr1[2];
-    char out_first = arr2[0];
-    char out_last  = arr2[2];
+    if (*tr_set == '^') {
+        negate = 1;
+        ++tr_set; }
 
-    for (size_t index = 0; index < dstr_length(dest); ++index)
-    {
-        char ch = dstr_getchar(dest, index);
+    memset(tr_table, negate, tlen);
 
-        // check if in the input range
-        //
-        if (in_first <= ch && ch <= in_last) {
-            // translate
-            //
-            ch = out_first + (ch - in_first);
+    for (int i  = 0; tr_set[i] ; ++i) {
+        char c = tr_set[i];
+        if (c == '\\') {
+            if (i > 0 && tr_set[i-1] == '\\')
+                tr_table[(uint8_t)(c)] = !negate;
+            continue;  }
 
-            // check if in output range
-            //
-            if (ch <= out_last) {
-                // only then do the translation
-                //
-                dstr_putchar(dest, index, ch);
-            }
-        }
+        if (c != '-') {
+            tr_table[(uint8_t)(c)] = !negate;
+            continue; }
+
+        if (i == 0 || tr_set[i+1] == '-' || tr_set[i+1] == '\0') {
+            tr_table[(uint8_t)(c)] = !negate;
+            continue; }
+
+        if (tr_set[i-1] == '\\') {
+            tr_table[(uint8_t)(c)] = !negate;
+            continue; }
+
+        if (tr_set[i-1] > tr_set[i+1]) {
+            for (char ch = tr_set[i-1]; ch >= tr_set[i+1]; --ch) {
+                tr_table[(uint8_t)ch] = !negate; }
+            continue; }
+
+        for (char ch = tr_set[i-1]; ch <= tr_set[i+1]; ++ch) {
+            tr_table[(uint8_t)ch] = !negate; }
     }
 }
 /*--------------------------------------------------------------------------*/
 
-static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
+static void dstr_translate_delete_aux(DSTR dest, const char* arr1)
 {
     assert(arr1 != NULL);
 
-    unsigned char to_delete[256] = { 0 };
-    while (*arr1) {
-        to_delete[(unsigned char)(*arr1)] = 1;
-        ++arr1;
-    }
+    uint8_t to_delete[256];
+    make_deletion_set(arr1, to_delete, sizeof(to_delete));
 
     size_t read_index = 0;
     size_t write_index = 0;
 
     // Do translation from table
     //
-    for ( ; read_index < DLEN(dest); ++read_index)
-    {
+    for ( ; read_index < DLEN(dest); ++read_index) {
         char ch = DVAL(dest, read_index);
-        int deleted = to_delete[(unsigned char) ch];
+        int deleted = to_delete[(uint8_t) ch];
 
-        // If normal  (negate = false) and !deleted  => copy
-        // If oppsite (negate = true) and delete => copy
-        // Therefore...
-        //
-        if (negate ^ deleted)
+        if (deleted)
             continue;
 
         DVAL(dest, write_index) = ch;
@@ -2819,48 +2819,78 @@ static void dstr_translate_delete_aux(DSTR dest, const char* arr1, bool negate)
 }
 /*--------------------------------------------------------------------------*/
 
-void dstr_translate_generic_aux(DSTR dest, const char* from, const char* to, bool negate)
+static bool expand_tr_str(DSTR dest, const char* src1, bool allow_negate)
 {
-    unsigned char tbl[256];
+    bool negate = false;
+    const char* src = src1;
 
-    if (strnlen(from, sizeof(tbl)) == sizeof(tbl)) {
-        fprintf(stderr, "translate: arr1 is propably not zero terminated\n");
-        return;
+    if (allow_negate && *src == '^') {
+        ++src;
+        negate = true;  }
+
+    for (int i  = 0; src[i] ; ++i) {
+        char c = src[i];
+        if (c == '\\') {
+            if (i > 0 && src[i-1] == '\\')
+                dstr_append_char(dest, c);;
+            continue;  }
+
+        if (c != '-') {
+            dstr_append_char(dest, c);;
+            continue; }
+
+        if (i == 0 || src[i+1] == '-' || src[i+1] == '\0') {
+            dstr_append_char(dest, c);;
+            continue; }
+
+        if (src[i-1] == '\\') {
+            dstr_append_char(dest, c);;
+            continue; }
+
+        if (src[i-1] > src[i+1]) {
+            for (char ch = src[i-1] + 1; ch > src[i+1]; --ch) {
+                dstr_append_char(dest, ch); }
+            continue; }
+
+        for (char ch = src[i-1] + 1; ch < src[i+1]; ++ch) {
+            dstr_append_char(dest, ch); }
     }
+
+    return negate;
+}
+/*--------------------------------------------------------------------------*/
+
+static void
+make_tr_table(const char* from, const char* to, uint8_t tbl[], size_t tlen)
+{
+    INIT_DSTR(dfrom);
+    bool negate = expand_tr_str(&dfrom, from, 1 /*enable_negate*/);
+
+    INIT_DSTR(dto);
+    expand_tr_str(&dto, to,  0 /*disable_negate*/);
 
     if (negate) {
-        size_t len = strnlen(to, sizeof(tbl));
-        to += len - 1;
-        memset(tbl, *to, sizeof(tbl));
-        while (*from) {
-            unsigned char ch = *from;
-            tbl[ch] = ch;
-            ++from;
-        }
-    }
+        char back = DVAL(&dto, DLEN(&dto) - 1);
+        memset(tbl, back, tlen);
+        for (size_t i = 0; i < DLEN(&dfrom); ++i) {
+            uint8_t ch = DVAL(&dfrom, i);
+            tbl[ch] = ch; } }
     else {
-        memset(tbl, 0, sizeof(tbl));
-        unsigned char last_to = 0;
-        while (*from) {
-            unsigned char c_from = (unsigned char)*from;
-            if (*to) {
-                last_to = *to;
-                ++to;
-            }
-            tbl[c_from] = last_to;
-            ++from;
-        }
-    }
+        memset(tbl, 0, tlen);
+        if (dstrlen(&dto) == 0) {
+            dstr_append_no_overlap(&dto, dstrdata(&dfrom), dstrlen(&dfrom)); }
+        else if (dstrlen(&dfrom) > dstrlen(&dto)) {
+            char back = DVAL(&dto, DLEN(&dto) - 1);
+            dstr_append_cc(&dto, back, (DLEN(&dfrom) - DLEN(&dto)));  }
+        else {
+            dstr_resize(&dto, DLEN(&dfrom));  }
 
-    // Do translation from table
-    //
-    for (size_t index = 0; index < dstr_length(dest); ++index)
-    {
-        char c_old = dstr_getchar(dest, index);
-        char c_new = tbl[(unsigned char) c_old];
-        if (c_new)
-            dstr_putchar(dest, index, c_new);
-    }
+        for (size_t i = 0; i < DLEN(&dfrom); ++i) {
+            uint8_t c = DVAL(&dfrom, i);
+            tbl[c] = DVAL(&dto, i); } }
+
+    DONE_DSTR(dfrom);
+    DONE_DSTR(dto);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -2872,76 +2902,33 @@ void dstr_translate(DSTR dest, const char* arr1, const char* arr2)
     if (!arr1 || *arr1 == '\0')
         return;
 
-    bool negate = false;
-    if (*arr1 == '^') {
-        negate = true;
-        ++arr1;
-    }
-
     if (!arr2) {
-        dstr_translate_delete_aux(dest, arr1, negate);
-        return;
-    }
+        dstr_translate_delete_aux(dest, arr1);
+        return;  }
 
-    if (!negate && is_tr_range(arr1) && is_tr_range(arr2)) {
-        dstr_translate_range_aux(dest, arr1, arr2);
-        return;
-    }
+    uint8_t tbl[256];
+    make_tr_table(arr1, arr2, tbl, sizeof(tbl));
 
-    dstr_translate_generic_aux(dest, arr1, arr2, negate);
+    for (size_t index = 0; index < dstr_length(dest); ++index) {
+        char c_old = dstr_getchar(dest, index);
+        char c_new = tbl[(uint8_t) c_old];
+        if (c_new) {
+            dstr_putchar(dest, index, c_new); } }
  }
 /*--------------------------------------------------------------------------*/
 
 void dstr_squeeze(DSTR dest, const char* sqzset)
 {
-    if (!dest)
-        return;
-
-    unsigned char to_squeeze[256];
+    if (!dest) return;
+    uint8_t to_squeeze[256];
 
     if (!sqzset || *sqzset == '\0') {
         // For empty string or NULL we squeeze every consequtive charachter
         // run.
         //
-        memset(to_squeeze, 1, sizeof(to_squeeze));
-    }
+        memset(to_squeeze, 1, sizeof(to_squeeze));  }
     else {
-        // Otherwise we set to 1 those that in squeeze set either by
-        // explicit set of by a range of characters
-        //
-        memset(to_squeeze, '\0', sizeof(to_squeeze));
-
-        for (int i  = 0; sqzset[i] ; ++i) {
-            char c = sqzset[i];
-            if (c != '-') {
-                to_squeeze[(unsigned char)(c)] = 1;
-                continue;
-            }
-
-            // below code for c == '-'
-            //
-            if (i == 0 || sqzset[i+1] == '-' || sqzset[i+1] == '\0') {
-                to_squeeze[(unsigned char)(c)] = 1;
-                continue;
-            }
-
-            if (sqzset[i-1] == '\\') {
-                to_squeeze[(unsigned char)(c)] = 1;
-                continue;
-            }
-
-            if (sqzset[i-1] > sqzset[i+1]) {
-                for (char ch = sqzset[i-1]; ch >= sqzset[i+1]; --ch) {
-                    to_squeeze[(uint8_t)ch] = 1;
-                }
-                continue;
-            }
-
-            for (char ch = sqzset[i-1]; ch <= sqzset[i+1]; ++ch) {
-                to_squeeze[(uint8_t)ch] = 1;
-            }
-        }
-    }
+        make_deletion_set(sqzset, to_squeeze, sizeof(to_squeeze));  }
 
     size_t read_index = 0;
     size_t write_index = 0;
@@ -2949,16 +2936,12 @@ void dstr_squeeze(DSTR dest, const char* sqzset)
     // Do translation from table
     //
     char prev_ch = '\0';
-    for ( ; read_index < DLEN(dest); ++read_index)
-    {
+    for ( ; read_index < DLEN(dest); ++read_index) {
         char ch = DVAL(dest, read_index);
-        if (ch != prev_ch || !to_squeeze[(unsigned char)ch]) {
+        if (ch != prev_ch || !to_squeeze[(uint8_t)ch]) {
             DVAL(dest, write_index) = ch;
-            ++write_index;
-        }
-
-        prev_ch = ch;
-    }
+            ++write_index; }
+        prev_ch = ch; }
 
     DVAL(dest, write_index) = '\0';
     DLEN(dest) = write_index;
@@ -3012,8 +2995,7 @@ size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 {
     dstr_assert_view(p);
 
-    if (!s)
-        s = "";
+    if (!s) s = "";
 
     size_t len = strnlen(s, DLEN(p));
 
@@ -3024,8 +3006,7 @@ size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 
     if (pos == DSTR_NPOS) {
         pos = 0;
-        len = 0;
-    }
+        len = 0; }
 
     if (pInfo) {
         pInfo->l_pos = 0;
@@ -3048,12 +3029,12 @@ static DSTR_BOOL same_carry_after_puncts(CDSTR p, long pos, int carry)
     char c = '\0';
     for (; pos >= 0; --pos) {
         c = DVAL(p, pos);
-        if (isalnum(c)) break;
-    }
+        if (isalnum(c)) break; }
 
     return
-        isalnum(c) && ((isdigit(c) && isdigit(carry)) ||
-                       (isalpha(c) && isalpha(carry)));
+        isalnum(c) &&
+        ((isdigit(c) && isdigit(carry)) ||
+         (isalpha(c) && isalpha(carry)));
 }
 /*--------------------------------------------------------------------------*/
 
@@ -3074,11 +3055,8 @@ static int dstr_increment_alnum(DSTR dest)
             if (carry && only_alnum) {
                 if (!same_carry_after_puncts(dest, pos, carry)) {
                     dstr_insert_cc_imp(dest, pos + 1, carry, 1);
-                    return NO_CARRY;
-                }
-            }
-            only_alnum = 0;
-        }
+                    return NO_CARRY; }  }
+            only_alnum = 0;  }
         else if (c == '9') {
             DVAL(dest, pos) = '0';
             carry = '1'; }
@@ -3091,9 +3069,7 @@ static int dstr_increment_alnum(DSTR dest)
         else {
             DVAL(dest, pos) = ++c;
             carry = NO_CARRY;
-            break;
-        }
-    }
+            break; }  }
 
     return carry;
 }
@@ -3116,11 +3092,9 @@ static int dstr_increment_printable(DSTR dest)
                 carry = NO_CARRY;
             }
         }
-
         if (carry == NO_CARRY)
             break;
     }
-
     return carry;
 }
 /*--------------------------------------------------------------------------*/
@@ -3128,9 +3102,7 @@ static int dstr_increment_printable(DSTR dest)
 int dstr_increment(DSTR dest)
 {
     dstr_assert_valid(dest);
-
-    if (DLEN(dest) == 0)
-        return DSTR_SUCCESS;
+    if (DLEN(dest) == 0) return DSTR_SUCCESS;
 
     size_t alnum_count = 0;
     size_t print_count = 0;
@@ -3138,34 +3110,24 @@ int dstr_increment(DSTR dest)
     for (size_t n = 0; n < DLEN(dest); ++n) {
         char ch = DVAL(dest, n);
         if (isalnum(ch)) {
-            ++alnum_count;
-        }
+            ++alnum_count; }
         else if (isprint(ch)) {
-            ++print_count;
-        }
-    }
+            ++print_count; } }
 
     int carry = NO_CARRY;
     if (alnum_count) {
         // If we have alnum chars, only they are incremented
-        //
-        carry = dstr_increment_alnum(dest);
-    }
+        carry = dstr_increment_alnum(dest); }
     else if (print_count) {
         // If we have printable chars without alnum only they are incremented
-        //
-        carry = dstr_increment_printable(dest);
-    }
+        carry = dstr_increment_printable(dest); }
     else {
         // otherwise we don't know how to inc
-        //
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     if (carry) {
         if (!dstr_insert_cc_imp(dest, 0, (char) carry, 1))
-            return DSTR_FAIL;
-    }
+            return DSTR_FAIL; }
 
     dstr_assert_valid(dest);
     return DSTR_SUCCESS;
@@ -3179,26 +3141,21 @@ void dstr_remove_char(DSTR p, char to_delete)
     size_t write_index = 0;
     size_t read_index = 0;
 
-    for ( ; read_index < DLEN(p); ++read_index)
-    {
+    for ( ; read_index < DLEN(p); ++read_index) {
         char ch = DVAL(p, read_index);
         if (ch != to_delete) {
             DVAL(p, write_index) = ch;
-            ++write_index;
-        }
-    }
+            ++write_index; } }
 
     DVAL(p, write_index) = '\0';
     DLEN(p) = write_index;
-
     dstr_assert_valid(p);
 }
 /*--------------------------------------------------------------------------*/
 
 void dstr_remove_any(DSTR p, const char* selectors)
 {
-    if (!selectors || !*selectors)
-        return;
+    if (!selectors || !*selectors) return;
 
     /*
      *  Optimization: if selectors is a string of one character then call
@@ -3211,15 +3168,13 @@ void dstr_remove_any(DSTR p, const char* selectors)
     /*  We already have delete by selectors in the more general translate
      *  functions
      */
-    dstr_translate_delete_aux(p, selectors, 0 /*negate*/);
+    dstr_translate_delete_aux(p, selectors);
 }
 /*--------------------------------------------------------------------------*/
 
 void dstr_remove_prefix(DSTR p, const char* s)
 {
-    if (!s || !*s)
-        return;
-
+    if (!s || !*s) return;
     ptrdiff_t pos = dstr_prefix_sz_imp(p, s, 0);
     if (pos > 0)
         dstr_remove_imp(p, 0, pos);
@@ -3228,9 +3183,7 @@ void dstr_remove_prefix(DSTR p, const char* s)
 
 void dstr_iremove_prefix(DSTR p, const char* s)
 {
-    if (!s || !*s)
-        return;
-
+    if (!s || !*s) return;
     ptrdiff_t pos = dstr_prefix_sz_imp(p, s, 1);
     if (pos > 0)
         dstr_remove_imp(p, 0, pos);
@@ -3239,26 +3192,20 @@ void dstr_iremove_prefix(DSTR p, const char* s)
 
 void dstr_remove_suffix(DSTR p, const char* s)
 {
-    if (!s || !*s)
-        return;
-
+    if (!s || !*s) return;
     ptrdiff_t pos = dstr_suffix_sz_imp(p, s, 0);
     if (pos >= 0) {
         DLEN(p) = pos;
-        DVAL(p, pos) = '\0';
-    }
+        DVAL(p, pos) = '\0'; }
 }
 /*--------------------------------------------------------------------------*/
 
 void dstr_iremove_suffix(DSTR p, const char* s)
 {
-    if (!s || !*s)
-        return;
-
+    if (!s || !*s) return;
     ptrdiff_t pos = dstr_suffix_sz_imp(p, s, 1);
     if (pos >= 0) {
         DLEN(p) = pos;
-        DVAL(p, pos) = '\0';
-    }
+        DVAL(p, pos) = '\0'; }
 }
 /*--------------------------------------------------------------------------*/

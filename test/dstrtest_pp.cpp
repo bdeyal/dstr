@@ -470,8 +470,12 @@ void test_remove()
     assert(s2.remove('l') == "heo");
     assert(s2.remove_any("l") == "heo");
     assert(s2.remove_any("lo") == "he");
+    assert(s2.remove_any("^lo") == "llo");
     assert(s2.remove_any("aeiou") == "hll");
+    assert(s2.remove_any("^aeiou") == "eo");
     assert(s2.remove_any("") == "hello");
+    assert(s2.remove_any("od-i") == "ll");
+    assert(s2.remove_any("^od-i") == "heo");
 
     assert(s2.remove_prefix("h") == "ello");
     assert(s2.remove_prefix("he") == "llo");
@@ -1911,9 +1915,15 @@ void test_translate()
     DSTRTRANS("hello", "aeiou", "AA-", "hAll-");
     DSTRTRANS("hello world today is sunday", "aeiou", NULL, "hll wrld tdy s sndy");
     DSTRTRANS("hello world today is sunday", "^aeiou", NULL, "eoooaiua");
-
     DSTRTRANS("hello", "^aeiou", "-", "-e--o");
     DSTRTRANS("hello world today is sunday", "a-z", "A-Z", "HELLO WORLD TODAY IS SUNDAY");
+
+    DSTRTRANS("Good Morning today is Mon", "a-f", "u-z", "Goox Morning toxuy is Mon");
+    DSTRTRANS("Good Morning today is Mon", "a-f", "x-z", "Gooz Morning tozxy is Mon");
+
+    DSTRTRANS("hhheeeellllllloooooo", "elo", "xyz", "hhhxxxxyyyyyyyzzzzzz");
+    DSTRTRANS("hello", "aeiou", "boker_tov_olam", "holle");
+    DSTRTRANS("hhheeeellllllloooooo", "a-fn-q", "f-j", "hhhjjjjllllllljjjjjj");
 
     DSTRTRSQZ("aabbccddeeffgg", "", "abcd", "abcdeeffgg");
     DSTRTRSQZ("hello", "l", "r", "hero");
