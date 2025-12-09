@@ -169,7 +169,7 @@ public:
         return m_imp.data[pos];
     }
 
-    unsigned long hash(int seed = 0) const
+    size_t hash(int seed = 0) const
     {
         return dstr_hash(pImp(), seed);
     }

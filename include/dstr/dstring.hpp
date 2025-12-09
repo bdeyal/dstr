@@ -1039,7 +1039,7 @@ public:
         return m_imp.data[pos];
     }
 
-    unsigned long hash(int seed = 0) const
+    size_t hash(int seed = 0) const
     {
         return dstr_hash(pImp(), seed);
     }
@@ -1473,10 +1473,10 @@ public:
                       const char* options = nullptr);
 
     int subst_inplace(DStringView pattern,
-                      DStringView r,
+                      DStringView replacement,
                       const char* options = nullptr)
     {
-        return subst_inplace(pattern, 0, r, options);
+        return subst_inplace(pattern, 0, replacement, options);
     }
 
     DString subst(DStringView pattern,
@@ -1490,10 +1490,12 @@ public:
     }
 
     DString subst(DStringView pattern,
-                  DStringView r,
+                  DStringView replacement,
                   const char* options = nullptr) const
     {
-        return subst(pattern, 0, r, options);
+        DString result(*this);
+        result.subst_inplace(pattern, 0, replacement, options);
+        return result;
     }
 
     static void on_regex_error(int rc);
@@ -1557,7 +1559,7 @@ class DStringError : public std::exception
 {
 public:
     DStringError(const DString& s) : m_s(s) {}
-    //DStringError(DStringView s) : m_s(s) {}
+    DStringError(DStringView s) : m_s(s) {}
     DStringError(const char* s) : m_s(s) {}
     const char* what() const noexcept { return m_s.c_str(); }
 private:
@@ -1616,12 +1618,12 @@ inline void puts(DStringView vw, FILE* fp=stdout)
     putchar('\n');
 }
 
-//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 //
-//  DStringView inline functions that can be defined
+//  Some of DStringView inline functions can be defined
 //  only after DString type is fully known.
 //
-//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 inline DString DStringView::substr(size_t pos, size_t len) const
 {
     return DString(*this, pos, len);

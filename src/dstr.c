@@ -16,6 +16,11 @@
 #include <dstr/dstr.h>
 #include "dstr_internal.h"
 
+// For implementation of dstr_hash
+//
+#define XXH_INLINE_ALL
+#include "deps/xxhash.h"
+
 #if !defined(__cplusplus)
 #if __STDC_VERSION__ < 199901L
 #error dstr requires at least a C99 compiler
@@ -1839,27 +1844,17 @@ int dstr_fgetline(DSTR p, FILE* fp)
 }
 /*-------------------------------------------------------------------------------*/
 
-// FNV-1 hash algorithm
+// Function uses xxhash (from src/deps/xxhash.h)
+// See: https://xxhash.com
 //
-// See: https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
-//
-unsigned long dstr_hash(CDSTR src, int seed)
+size_t dstr_hash(CDSTR src, int seed)
 {
     dstr_assert_view(src);
-
-    unsigned long h = seed;
-
-    size_t len = DLEN(src);
-    const char* data = DBUF(src);
-
-    h ^= 2166136261;
-
-    for (unsigned int i = 0; i < len; i++) {
-        h ^= data[i];
-        h *= 16777619;
-    }
-
-    return h;
+#if defined(DSTR_64BIT)
+    return XXH64(DBUF(src), DLEN(src), seed);
+#else
+    return XXH32(DBUF(src), DLEN(src), seed);
+#endif
 }
 /*-------------------------------------------------------------------------------*/
 
