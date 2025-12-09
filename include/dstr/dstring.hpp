@@ -536,9 +536,21 @@ public:
         return append(ds);
     }
 
-    // Join inplace
+    // Join inplace - template to cover vector of DString AND
+    // DStringView
     //
-    DString& join_inplace(DStringView sep, const std::vector<DString>& v);
+    template <typename T>
+    DString& join_inplace(DStringView sep, const std::vector<T>& v)
+    {
+        if (v.empty()) {
+            return *this; }
+        auto p = v.begin();
+        for (;;) {
+            this->append(*p);
+            if (++p == v.end()) break;
+            this->append(sep); }
+        return *this;
+    }
 
     DString& join_inplace(DStringView sep, const char* argv[], size_t argc)
     {
@@ -553,7 +565,8 @@ public:
 
     // join
     //
-    DString join(const std::vector<DString>& v) const
+    template <typename T>
+    DString join(const std::vector<T>& v) const
     {
         DString result;
         result.join_inplace(*this, v);
@@ -1666,7 +1679,8 @@ inline DString DStringView::title() const
 }
 //----------------------------------------------------------------
 
-inline DString DStringView::join(const std::vector<DString>& v) const
+template <typename T>
+inline DString DStringView::join(const std::vector<T>& v) const
 {
     DString result;
     result.join_inplace(*this, v);
@@ -1881,8 +1895,6 @@ inline DString DStringView::iremove_suffix(DStringView suffix) const
     return res;
 }
 //----------------------------------------------------------------
-
-
 
 // Include guard
 //

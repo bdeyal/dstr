@@ -253,20 +253,3 @@ std::istream& io_getline(std::istream& in, DString& s)
     return in;
 }
 //-----------------------------------------------------------
-
-DString& DString::join_inplace(DStringView sep, const std::vector<DString>& v)
-{
-    if (v.empty())
-        return *this;
-
-    typename std::vector<DString>::const_iterator p = v.begin();
-
-    for (;;) {
-        this->append(*p);
-        if (++p == v.end()) break;
-        this->append(sep);
-    }
-
-    return *this;
-}
-//-----------------------------------------------------------

@@ -1763,7 +1763,7 @@ void test_join()
     assert(sep.join(argv, argc) == "hello+++world+++good+++morning");
 
 #if __cplusplus >= 201103L
-    std::vector<DString> v{"hello", "world", "good", "morning"};
+    std::vector<DStringView> v{"hello", "world", "good", "morning"};
 #else
     std::vector<DString> v;
     v.push_back("hello");
@@ -1779,7 +1779,7 @@ void test_join()
     assert(sep.join(v) == "hello+++world+++good+++morning");
 
 #if __cplusplus >= 201103L
-    assert(sep.join(std::vector<DString>{"Hi", "Eyal"}) == "Hi+++Eyal");
+    assert(sep.join(std::vector<DStringView>{"Hi", "Eyal"}) == "Hi+++Eyal");
 #endif
 }
 //-------------------------------------------------

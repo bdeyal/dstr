@@ -111,8 +111,11 @@ public:
     DString right(size_t count) const;
     DString expandtabs(size_t width = 8) const;
     DString title() const;
-    DString join(const std::vector<DString>& v) const;
+
+    template <typename T>
+    DString join(const std::vector<T>& v) const;
     DString join(const char* argv[], size_t argc) const;
+
     DString times(size_t n) const;
     DString lstrip(char c) const;
     DString lstrip(const char* sz) const;
