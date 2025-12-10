@@ -1553,11 +1553,17 @@ private:
 };
 /*-------------------------------------------------------------------------------*/
 
-// For use with std::unordered_map
+// For use with std::unordered_map. Standard allowes adding specializations)
+// to std::hash
 //
-struct DStringHasher {
+namespace std {
+template <> struct hash<DStringView> {
     size_t operator()(DStringView d) const { return d.hash(); }
 };
+template <> struct hash<DString> {
+    size_t operator()(const DString& d) const { return d.hash(); }
+};
+}
 
 // for use with std::map + no case comparisons
 //

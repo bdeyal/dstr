@@ -336,8 +336,8 @@ typedef struct DSTR_Regex_Match {
 // Must call free on matches field
 //
 typedef struct DSTR_Match_Vector {
-    DSTR_Regex_Match* matches;
     size_t            matches_len;
+    DSTR_Regex_Match* matches;
 } DSTR_Match_Vector;
 
 void   dstr_regex_match_vector_free(DSTR_Match_Vector* pVec);

@@ -482,6 +482,7 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
     vec->matches_len = (size_t) rc;
     vec->matches = RE_MALLOC(DSTR_Regex_Match, vec->matches_len);
     if (!vec->matches) {
+        pcre2_match_data_free(mdata);
         return rc;
     }
 

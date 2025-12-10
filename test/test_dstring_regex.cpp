@@ -28,7 +28,8 @@ std::ostream& operator<<(std::ostream& out, const DString::Match& m)
 }
 //--------------------------------------------------------------------------------
 
-std::ostream& operator<<(std::ostream& out, const std::vector<DString>& v)
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
 {
     out << "[\"" << DString("\", \"").join(v) << "\"]";
     return out;
@@ -63,7 +64,7 @@ void test_dstring_extract_numbers()
         ++match_group_count;
         for (const auto& m : matches) {
             cout << match_group_count << ") " << m << " ==> ";
-            cout << subject.substr(m.offset, m.length) << endl;
+            cout << subject.substr(offset, m.length) << endl;
         }
 
         offset = matches[0].offset + matches[0].length;
@@ -279,7 +280,7 @@ void test_dstring_replace_all()
 
     DString tmplt = "Hello ${USER}! Your IP: ${IP}. Balance: ${BALANCE}";
 
-    std::unordered_map<DString, DString, DStringHasher> env = {
+    std::unordered_map<DString, DString> env = {
         {"USER",    "alice"},
         {"IP",      "1.2.3.4"},
         {"BALANCE", "42.00"}
