@@ -384,9 +384,9 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
 
     if (!mdata) {
-        on_malloc_error();
         mtch->offset = DSTR_NPOS;
         mtch->length = 0;
+        on_malloc_error();
         return PCRE2_ERROR_NOMEMORY;
     }
 

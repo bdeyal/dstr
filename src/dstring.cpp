@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <dstr/dstring.hpp>
-#include <dstr/dstring_view.hpp>
 #include "dstr_internal.h"
 
 /////////////////////////////////////////////////////////

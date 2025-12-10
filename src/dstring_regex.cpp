@@ -8,6 +8,9 @@
 #include <dstr/dstring.hpp>
 #include "dstr_internal.h"
 
+
+#if !defined(NO_DSTRING_REGEX)
+
 void DString::on_regex_error(int rc)
 {
     DString msg;
@@ -51,17 +54,11 @@ int DStringView::match(DStringView pattern, size_t offset,
 /*-------------------------------------------------------------------------------*/
 
 int DStringView::match_groups(DStringView pattern, size_t offset,
-                              DString::MatchVector& matches_out,
+                              DString::MatchVector& vec,
                               const char* opts) const
 {
-    struct MV_Wrapper : DSTR_Match_Vector {
-        MV_Wrapper()  { matches_len = 0; matches = nullptr; }
-        ~MV_Wrapper() { dre_mvfree(this); }
-    };
-
-    MV_Wrapper vec;
     int rc = dstr_regex_match_groups(pImp(), pattern.c_str(),
-                                     offset, &vec, opts);
+                                     offset, vec.self(), opts);
 
     if (rc > REGEX_COMPILE_ERROR_BASE) {
         DString::on_regex_error(rc);
@@ -70,12 +67,6 @@ int DStringView::match_groups(DStringView pattern, size_t offset,
         DString::on_regex_error(rc);
     }
 
-    DString::MatchVector tmp;
-    for (size_t i = 0; i < vec.matches_len; ++i) {
-        tmp.push_back(vec.matches[i]);
-    }
-
-    matches_out.swap(tmp);
     return rc;
 }
 /*-------------------------------------------------------------------------------*/
@@ -176,3 +167,5 @@ int DString::subst_inplace(DStringView pattern, size_t offset,
     return rc;
 }
 /*-------------------------------------------------------------------------------*/
+
+#endif

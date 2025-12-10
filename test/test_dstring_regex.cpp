@@ -197,8 +197,11 @@ void test_dstring_capture()
 
     // Extract with groups into a vector
     //
+    printf("%d\n", __LINE__);
     std::vector<DString> parts;
     subject.capture(pattern, parts);
+    printf("%d\n", __LINE__);
+
     assert(parts.size() == 4);
     size_t index = 0;
     assert(parts[index++] == "2025-10-29");
@@ -207,14 +210,17 @@ void test_dstring_capture()
     assert(parts[index++] == "29");
 
     subject = "123";
+    printf("%d\n", __LINE__);
     DString s = subject.capture("[0-9]+");
     assert(s == "123");
 
     subject = "ab12de";
+    printf("%d\n", __LINE__);
     s = subject.capture("[0-9]+");
     assert(s == "12");
 
     subject = "abcd";
+    printf("%d\n", __LINE__);
     s = subject.capture("[0-9]+");
     assert(s == "");
 }
@@ -417,18 +423,17 @@ void test_within_threads()
 int main()
 {
     try {
+        test_dstring_capture();
         test_dstring_match();
         test_dstring_match_contains();
-        test_dstring_capture();
         test_dstring_match_struct();
-        test_dstring_replace_all();
         test_dstring_subst();
         test_dstring_group_extract();
         test_dstring_group_patterns();
         test_dstring_extract_numbers();
         test_ip_address();
         test_pattern();
-
+        test_dstring_replace_all();
         test_within_threads();
     }
     catch (const std::exception& ex) {

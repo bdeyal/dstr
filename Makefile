@@ -45,8 +45,8 @@ ifeq ($(COMP),clang)
 	LDFLAGS=-fuse-ld=lld
 endif
 
-CFLAGS +=-O2 $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-LDFLAGS += -L./lib64 -s
+CFLAGS +=-O2 -g $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+LDFLAGS += -L./lib64
 
 ifeq ($(OS),FreeBSD)
 LDFLAGS += -L/usr/local/lib -lstdthreads
@@ -73,7 +73,6 @@ PROGRAMS = \
 DEPS = ./include/dstr/dstr.h Makefile
 DEPS_PP = \
 	./include/dstr/dstring.hpp \
-	./include/dstr/dstring_view.hpp \
 	./include/dstr/dstringstream.hpp \
 	$(DEPS)
 
@@ -150,7 +149,6 @@ install: $(LIB)
 	/usr/bin/mkdir -p $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr.h $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring.hpp $(PREFIX_INCLUDE)
-	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring_view.hpp $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 -o root -g root include/dstr/dstringstream.hpp $(PREFIX_INCLUDE)
 	/usr/bin/mkdir -p $(PREFIX_LIB)
 	/usr/bin/install -m 0644 -o root -g root $(LIB) -t $(PREFIX_LIB)
@@ -158,7 +156,6 @@ install: $(LIB)
 uninstall:
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring.hpp
-	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring_view.hpp
 	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstringstream.hpp
 	/usr/bin/rmdir $(PREFIX_INCLUDE)
 	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.a
