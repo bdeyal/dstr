@@ -5,6 +5,7 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <iterator>
 #include <cassert>
@@ -197,10 +198,8 @@ void test_dstring_capture()
 
     // Extract with groups into a vector
     //
-    printf("%d\n", __LINE__);
     std::vector<DString> parts;
     subject.capture(pattern, parts);
-    printf("%d\n", __LINE__);
 
     assert(parts.size() == 4);
     size_t index = 0;
@@ -210,17 +209,14 @@ void test_dstring_capture()
     assert(parts[index++] == "29");
 
     subject = "123";
-    printf("%d\n", __LINE__);
     DString s = subject.capture("[0-9]+");
     assert(s == "123");
 
     subject = "ab12de";
-    printf("%d\n", __LINE__);
     s = subject.capture("[0-9]+");
     assert(s == "12");
 
     subject = "abcd";
-    printf("%d\n", __LINE__);
     s = subject.capture("[0-9]+");
     assert(s == "");
 }
@@ -402,7 +398,6 @@ catch(DStringError& ex)
 void test_within_threads()
 {
     std::vector<std::thread> threads;
-
     threads.emplace_back([] { test_dstring_match(); });
     threads.emplace_back([] { test_dstring_match_contains(); });
     threads.emplace_back([] { test_dstring_capture(); });
