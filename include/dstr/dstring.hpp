@@ -587,6 +587,19 @@ public:
     {
         return capture(pattern, 0, strings, options);
     }
+
+    // split the string based on a RE separator
+    //
+    int re_split(DStringView pattern, size_t offset,
+                 std::vector<DString>& strings,
+                 const char* options=nullptr) const;
+
+    int re_split(DStringView pattern, std::vector<DString>& strings,
+                 const char* options=nullptr) const
+    {
+        return re_split(pattern, 0, strings, options);
+    }
+
 #endif // NO_DSTRING_REGEX
 
 
@@ -2009,17 +2022,24 @@ public:
 
     // *this is an exact match
     //
-    bool match(DStringView pattern, size_t offset = 0) const;
+    bool match(DStringView pattern, size_t offset = 0) const
+    {
+        return view().match(pattern, offset);
+    }
 
     // pattern appears somewhere in *this. Returns position or NPOS
     //
-    size_t match_contains(DStringView pattern, size_t offset = 0) const;
+    size_t match_contains(DStringView pattern, size_t offset = 0) const
+    {
+        return view().match_contains(pattern, offset);
+    }
 
     // store match info in Match parameter
     //
-    int match(DStringView ptrn,
-              size_t offset, Match& m,
-              const char* opts = nullptr) const;
+    int match(DStringView ptrn, size_t offset, Match& m, const char* opts = nullptr) const
+    {
+        return view().match(ptrn, offset, m, opts);
+    }
 
     int match(DStringView pattern, Match& mtch, const char* options = nullptr) const
     {
@@ -2030,10 +2050,12 @@ public:
     //
     int match_groups(DStringView pattern, size_t offset,
                      MatchVector& matches,
-                     const char* options = nullptr) const;
+                     const char* opts = nullptr) const
+    {
+        return view().match_groups(pattern, offset, matches, opts);
+    }
 
-    int match_groups(DStringView pattern,
-                     MatchVector& matches,
+    int match_groups(DStringView pattern, MatchVector& matches,
                      const char* options = nullptr) const
     {
         return match_groups(pattern, 0, matches, options);
@@ -2041,26 +2063,30 @@ public:
 
     // capture - returns matches as strings or vector of strings
     //
-    DString capture(DStringView pattern,
-                    size_t offset,
-                    const char* options = nullptr) const;
-
-    DString capture(DStringView pattern,
-                    const char* options = nullptr) const
+    DString capture(DStringView pattern, size_t offset, const char* opts=nullptr) const
     {
-        return capture(pattern, 0, options);
+        DString result;
+        view().capture(pattern, offset, result, opts);
+        return result;
     }
 
-    int capture(DStringView pattern,
-                size_t offset,
-                std::vector<DString>& strings,
-                const char* options = nullptr) const;
-
-    int capture(DStringView pattern,
-                std::vector<DString>& strings,
-                const char* options = nullptr) const
+    DString capture(DStringView pattern, const char* opts = nullptr) const
     {
-        return capture(pattern, 0, strings, options);
+        DString result;
+        view().capture(pattern, 0, result, opts);
+        return result;
+    }
+
+    int capture(DStringView pattern, size_t offset, std::vector<DString>& strings,
+                const char* opts = nullptr) const
+    {
+        return view().capture(pattern, offset, strings, opts);
+    }
+
+    int
+    capture(DStringView pattern, std::vector<DString>& strings, const char* opts = 0) const
+    {
+        return capture(pattern, 0, strings, opts);
     }
 
     // substitute
@@ -2093,6 +2119,22 @@ public:
         DString result(*this);
         result.subst_inplace(pattern, 0, replacement, options);
         return result;
+    }
+
+    // split the string based on a RE separator
+    //
+    int re_split(DStringView pattern, size_t offset,
+                 std::vector<DString>& strings,
+                 const char* options=nullptr) const
+    {
+        return view().re_split(pattern, offset, strings, options);
+    }
+
+
+    int re_split(DStringView pattern, std::vector<DString>& strings,
+                 const char* options=nullptr) const
+    {
+        return re_split(pattern, 0, strings, options);
     }
 
     static void on_regex_error(int rc);

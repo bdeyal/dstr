@@ -8,7 +8,6 @@
 #include <dstr/dstring.hpp>
 #include "dstr_internal.h"
 
-
 #if !defined(NO_DSTRING_REGEX)
 
 void DString::on_regex_error(int rc)
@@ -104,55 +103,49 @@ int DStringView::capture(DStringView pattern,
 }
 /*-------------------------------------------------------------------------------*/
 
+int DStringView::re_split(DStringView pattern, size_t offset,
+                          std::vector<DString>& strings,
+                          const char* options) const
+{
+    std::vector<DString> tmp;
+
+    // Spliting on empty pattern = split on each char
+    //
+    if (pattern.size() == 0) {
+        for (char ch : *this) {
+            tmp.push_back(DString(ch, 1));
+        }
+        tmp.swap(strings);
+        return (int) strings.size();
+    }
+
+    DString::MatchVector matches;
+    int rc;
+    while ((rc = match_groups(pattern, offset, matches, options)) > 0) {
+        tmp.push_back({*this, offset, matches[0].offset - offset});
+
+        // If have sub groups include them
+        //
+        for (size_t i = 1; i < matches.size(); ++i) {
+            const auto& m = matches[i];
+            if (m.offset != DString::NPOS) {
+                tmp.push_back({*this, m.offset, m.length}); }
+            else {
+                tmp.push_back(""); }
+        }
+        offset = (matches[0].offset + matches[0].length);
+    }
+    tmp.push_back({*this, offset, size() - offset});
+
+    tmp.swap(strings);
+    return rc;
+}
 
 ////////////////////////////////////////////////////////////
 //
 //   DString Regex - For const functions reuse view() code
 //
 ////////////////////////////////////////////////////////////
-
-bool DString::match(DStringView pattern, size_t offset) const
-{
-    return view().match(pattern, offset);
-}
-/*-------------------------------------------------------------------------------*/
-
-size_t DString::match_contains(DStringView pattern, size_t offset) const
-{
-    return view().match_contains(pattern, offset);
-}
-/*-------------------------------------------------------------------------------*/
-
-DString DString::capture(DStringView pattern,
-                         size_t offset,
-                         const char* opts) const
-{
-    DString result;
-    view().capture(pattern, offset, result, opts);
-    return result;
-}
-/*-------------------------------------------------------------------------------*/
-
-int DString::capture(DStringView pattern, size_t offset,
-                     std::vector<DString>& vec, const char* opts) const
-{
-    return view().capture(pattern, offset, vec, opts);
-}
-/*-------------------------------------------------------------------------------*/
-
-int DString::match(DStringView pattern, size_t offset, DString::Match& m,
-                   const char* opts) const
-{
-    return view().match(pattern, offset, m, opts);
-}
-/*-------------------------------------------------------------------------------*/
-
-int DString::match_groups(DStringView pattern, size_t offset,
-                          DString::MatchVector& matches, const char* opts) const
-{
-    return view().match_groups(pattern, offset, matches, opts);
-}
-/*-------------------------------------------------------------------------------*/
 
 int DString::subst_inplace(DStringView pattern, size_t offset,
                            DStringView replacement, const char* opts)

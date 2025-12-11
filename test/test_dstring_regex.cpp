@@ -408,6 +408,51 @@ catch(DStringError& ex)
 }
 //--------------------------------------------------------------------------------
 
+void test_re_split()
+{
+    TRACE_FN();
+    std::vector<DString> res;
+
+    DString subject("Hello  World\t \tExample");
+    subject.re_split("\\s+", res);
+    cout << res << endl;
+
+    subject = "apple, banana; orange";
+    subject.re_split("[,;\\s]+", res);
+    cout << res << endl;
+
+    subject = "apple, banana; orange";
+    subject.re_split("([,;])\\s*", res);
+    cout << res << endl;
+
+    subject = "abc123def456ghi";
+    subject.re_split("\\d+", res);
+    cout << res << endl;
+
+    subject = "abc123def456ghi";
+    subject.re_split("(\\d+)", res);
+    cout << res << endl;
+
+    subject = "words123more456text";
+    subject.re_split("(\\d+)", res);
+    cout << res << endl;
+
+    subject = "Abc1234Def5678Ghi9012Jklm";
+    subject.re_split("[a-z]+", res, "/i");
+    cout << res << endl;
+
+    DString("abracadabra").re_split("ab", res);
+    cout << res << endl;
+
+    DString("aaabcdaaa").re_split("a", res);
+    cout << res << endl;
+
+    DString("aaabcdaaa").re_split("", res);
+    cout << res << endl;
+}
+//--------------------------------------------------------------------------------
+
+
 // To check that REGEX cache behaves nicely from different threads
 //
 void test_within_threads()
@@ -424,6 +469,7 @@ void test_within_threads()
     threads.emplace_back([] { test_dstring_extract_numbers(); });
     threads.emplace_back([] { test_ip_address(); });
     threads.emplace_back([] { test_pattern(); });
+    threads.emplace_back([] { test_re_split(); });
 
     for (auto& t : threads)
         t.join();
@@ -444,6 +490,7 @@ int main()
         test_ip_address();
         test_pattern();
         test_dstring_replace_all();
+        test_re_split();
         test_within_threads();
     }
     catch (const std::exception& ex) {
