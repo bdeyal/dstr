@@ -1128,7 +1128,7 @@ public:
     {
         if (v.empty()) {
             return *this; }
-        auto p = v.begin();
+        typename std::vector<T>::const_iterator p = v.begin();
         for (;;) {
             this->append(*p);
             if (++p == v.end()) break;
@@ -2170,10 +2170,10 @@ public:
     typedef ptrdiff_t               difference_type;
     typedef size_t                  size_type;
 
-    const_iterator begin() const { check(); return mvec.matches; }
-    const_iterator end()   const { check(); return mvec.matches + mvec.matches_len; }
-    iterator begin() { check(); return mvec.matches; }
-    iterator end()   { check(); return mvec.matches + mvec.matches_len; }
+    const_iterator begin() const { return mvec.matches; }
+    const_iterator end()   const { return mvec.matches + mvec.matches_len; }
+    iterator begin() { return mvec.matches; }
+    iterator end()   { return mvec.matches + mvec.matches_len; }
 
 private:
     DSTR_Match_Vector mvec;

@@ -45,8 +45,8 @@ ifeq ($(COMP),clang)
 	LDFLAGS=-fuse-ld=lld
 endif
 
-CFLAGS +=-O2 -g $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-LDFLAGS += -L./lib64
+CFLAGS +=-O2 $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
+LDFLAGS += -L./lib64 -s
 
 ifeq ($(OS),FreeBSD)
 LDFLAGS += -L/usr/local/lib -lstdthreads

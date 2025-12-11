@@ -2259,8 +2259,8 @@ void test_algo_back_inserter()
 
 void test_algo_for()
 {
+#if __cplusplus >= 201103L
     DString s1("Hello World");
-
     size_t i = 0;
     for (auto c : s1) {
         cout << c << ", ";
@@ -2268,7 +2268,7 @@ void test_algo_for()
         ++i;
     }
     cout << endl;
-
+#endif
 }
 //--------------------------------------------------------------
 
@@ -2284,13 +2284,21 @@ void test_algo_sort()
 void test_algo_transform()
 {
     DString s1("Hello World");
-    DString s2;
 
+#if __cplusplus >= 201103L
+    DString s2;
     transform(s1.begin(),
               s1.end(),
               std::back_inserter<DString>(s2),
               [] (char c) { return toupper(c); });
-
+#else
+    DString s2(s1);
+    struct Upper { int operator()(int c) { toupper(c); } };
+    transform(s1.begin(),
+              s1.end(),
+              s2.begin(),
+              toupper);
+#endif
     cout << s2.c_str() << endl;
     assert(s2 == "HELLO WORLD");
 }
@@ -2326,8 +2334,8 @@ void test_algo_reverse_iterator()
     DString s1("Hello World today is SAT deep at night");
     DString s2;
 
-    auto first = reverse_iterator<DString::iterator>(s1.end());
-    auto last  = reverse_iterator<DString::iterator>(s1.begin());
+    reverse_iterator<DString::iterator> first(s1.end());
+    reverse_iterator<DString::iterator> last(s1.begin());
 
     while (first != last) {
         s2.append(*first++);

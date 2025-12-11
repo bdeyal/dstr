@@ -73,10 +73,23 @@ void test_dstring_extract_numbers()
         offset = matches[0].offset + matches[0].length;
     }
 
-    // Extract with groups into a vector
-    std::vector<DString> v;
-    DString("This is some string").capture("\\w+", v, "g");
-    cout << v << endl;
+    pattern = "(\\w+)\\s*";
+    subject = "This is some string";
+    offset = 0;
+    match_group_count = 0;
+    for (;;) {
+        DString::MatchVector matches;
+        int n = subject.match_groups(pattern, offset, matches, "/g");
+        if (n == 0) break;
+
+        ++match_group_count;
+        for (const auto& m : matches) {
+            cout << match_group_count << ") " << m << " ==> ";
+            cout << "\"" << subject.substr(offset, m.length) << "\"" << endl;
+        }
+
+        offset = matches[0].offset + matches[0].length;
+    }
 }
 //--------------------------------------------------------------------------------
 
