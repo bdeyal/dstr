@@ -370,13 +370,20 @@ static void destroy_compiled_regex(Compiled_Regex* cr)
 }
 /*-------------------------------------------------------------------------------*/
 
+// For a single match find we never set the group name
+// e.g. (?<year>\\d{4}). The group name extracted in the group
+// matching function, therefore we set the DSTR field `name`
+// to NULL.
+//
 static int dstr_regex_match_aux(Compiled_Regex* cr,
                                 CDSTR subject, size_t offset,
                                 DSTR_Regex_Match* mtch, int options)
 {
+    mtch->offset = DSTR_NPOS;
+    mtch->length = 0;
+    mtch->name = NULL;
+
     if (offset > dstr_length(subject)) {
-        mtch->offset = DSTR_NPOS;
-        mtch->length = 0;
         return 0;
     }
 
@@ -384,8 +391,6 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
 
     if (!mdata) {
-        mtch->offset = DSTR_NPOS;
-        mtch->length = 0;
         on_malloc_error();
         return PCRE2_ERROR_NOMEMORY;
     }
@@ -399,8 +404,6 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
                          NULL);
 
     if (rc == PCRE2_ERROR_NOMATCH) {
-        mtch->offset = DSTR_NPOS;
-        mtch->length = 0;
         pcre2_match_data_free(mdata);
         return 0;
     }
@@ -413,11 +416,7 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
     //
     PCRE2_SIZE* ovec = pcre2_get_ovector_pointer(mdata);
 
-    if (ovec[0] == PCRE2_UNSET) {
-        mtch->offset = DSTR_NPOS;
-        mtch->length = 0;
-    }
-    else {
+    if (ovec[0] != PCRE2_UNSET) {
         mtch->offset = ovec[0];
         mtch->length = ovec[1] - mtch->offset;
     }
@@ -433,7 +432,7 @@ static bool dstr_regex_exact_aux(Compiled_Regex* cr,
     DSTR_Regex_Match mtch = {
         .offset = DSTR_NPOS,
         .length = 0,
-        .name = { 0 },
+        .name = 0,
     };
 
     dstr_regex_match_aux(cr, subject, offset, &mtch, options);
@@ -442,6 +441,26 @@ static bool dstr_regex_exact_aux(Compiled_Regex* cr,
         mtch.length == dstr_length(subject) - offset;
 }
 /*-------------------------------------------------------------------------------*/
+
+static int dstr_regex_mvector_alloc(DSTR_Match_Vector* vec, size_t len)
+{
+    vec->matches = RE_MALLOC(DSTR_Regex_Match, len);
+    if (!vec->matches) {
+        vec->matches_len = 0;
+        return DSTR_FAIL;
+    }
+    else
+        vec->matches_len = len;
+
+    for (size_t i = 0; i < vec->matches_len; ++i) {
+        vec->matches[i].offset = DSTR_NPOS;
+        vec->matches[i].length = 0;
+        vec->matches[i].name   = NULL;
+    }
+    return DSTR_SUCCESS;
+}
+/*-------------------------------------------------------------------------------*/
+
 
 static int
 dstr_regex_match_groups_aux(Compiled_Regex* cr,
@@ -479,9 +498,9 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
 
     PCRE2_SIZE* ovec = pcre2_get_ovector_pointer(mdata);
 
-    vec->matches_len = (size_t) rc;
-    vec->matches = RE_MALLOC(DSTR_Regex_Match, vec->matches_len);
-    if (!vec->matches) {
+    // Allocate enough space in the match vector
+    //
+    if (!dstr_regex_mvector_alloc(vec, (size_t) rc)) {
         pcre2_match_data_free(mdata);
         return rc;
     }
@@ -504,10 +523,10 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
         //
         const char* name = find_group_name(cr, i);
         if (name) {
-            strncpy(pM->name, name, sizeof(pM->name) - 1);
+            pM->name = dstrnew(name);
         }
         else {
-            pM->name[0] = '\0';
+            pM->name = dstrnew_empty();
         }
     }
 
@@ -774,7 +793,7 @@ size_t dstr_regex_contains(CDSTR subject, const char* pattern, size_t offset)
     if (!cr) {
         return DSTR_NPOS; }
 
-    DSTR_Regex_Match mtch = { DSTR_NPOS, 0, { 0 } };
+    DSTR_Regex_Match mtch = { DSTR_NPOS, 0, NULL };
     dstr_regex_match_aux(cr, subject, offset, &mtch, match_opts);
     return mtch.offset;
 }
@@ -792,7 +811,9 @@ int dstr_regex_match(CDSTR subject, const char* pattern, size_t offset,
     int result;
     if (!c_match) {
         DSTR_Regex_Match m;
-        result = dstr_regex_match_aux(cr, subject, offset, &m, options); }
+        result = dstr_regex_match_aux(cr, subject, offset, &m, options);
+        assert(m.name == NULL); // name field set only in group match
+    }
     else {
         result = dstr_regex_match_aux(cr, subject, offset, c_match, options); }
 
@@ -813,9 +834,14 @@ int dstr_regex_match_groups(CDSTR subject, const char* pattern, size_t offset,
 }
 /*-------------------------------------------------------------------------------*/
 
-void dstr_regex_match_vector_free(DSTR_Match_Vector* vec)
+void dstr_regex_mvector_free(DSTR_Match_Vector* vec)
 {
     if (vec && vec->matches) {
+        for (size_t i = 0; i < vec->matches_len; ++i) {
+            vec->matches[i].offset = DSTR_NPOS;
+            vec->matches[i].length = 0;
+            dstr_destroy(vec->matches[i].name);
+        }
         free(vec->matches);
         vec->matches = NULL;
         vec->matches_len = 0;

@@ -165,10 +165,10 @@ void test_dstr_group_extract()
         printf("Found %d matches:\n", n);
         for (int i = 0; i < n; ++i) {
             DSTR_Regex_Match* m = &vec.matches[i];
-            printf("  Offset: %zu, Length: %zu, Name: %s ==> ",
+            printf("  Offset: %zu, Length: %zu, Name: \"%s\" ==> ",
                    m->offset,
                    m->length,
-                   m->name);
+                   m->name ? dstrdata(m->name) : "");
 
             dstrcpy_substr(mstr, subject, m->offset, m->length);
             printf("\"%s\"\n", dstrdata(mstr));

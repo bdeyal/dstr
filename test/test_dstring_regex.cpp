@@ -24,7 +24,9 @@
 
 std::ostream& operator<<(std::ostream& out, const DString::Match& m)
 {
-    out << "Match: \"" << m.name << "\", pos=" << m.offset << ", len=" << m.length;
+    out << "Match: \"" << (m.name ? dstrdata(m.name) : "")
+        << "\", pos=" << m.offset
+        << ", len=" << m.length;
     return out;
 }
 //--------------------------------------------------------------------------------

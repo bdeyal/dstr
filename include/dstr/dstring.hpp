@@ -2192,9 +2192,8 @@ private:
         mvec.matches = nullptr;
     }
     void clear() {
-        if (mvec.matches) {
-            free(mvec.matches);
-            init(); }
+        dstr_regex_mvector_free(&mvec);
+        init();
     }
     void check(size_t index = 0) const {
         if (mvec.matches == nullptr || index >= mvec.matches_len) {
