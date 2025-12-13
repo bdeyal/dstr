@@ -29,8 +29,7 @@ public:
 protected:
     int_type overflow(int_type ch) {
         if (traits_type::eq_int_type(ch, traits_type::eof())) {
-            return traits_type::not_eof(ch);
-        }
+            return traits_type::not_eof(ch); }
         str_.push_back((char)ch);
         return traits_type::not_eof(ch);
     }
@@ -61,7 +60,7 @@ public:
 //----------------------------------------------
 //----------------------------------------------
 
-// Slower that DString::to_string() but general for all types that
+// Slower than DString::to_string() but general for all types that
 // have io with std::ostream
 //
 template <typename T>

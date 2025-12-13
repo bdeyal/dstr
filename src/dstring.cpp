@@ -33,16 +33,12 @@ void DStringView::split(char sep, std::vector<DString>& dest) const
         char c = get(i);
         if (c == sep) {
             v.push_back(str);
-            str.clear();
-        }
+            str.clear(); }
         else {
-            str.append(c);
-        }
-    }
+            str.append(c); } }
 
     if (!str.empty()) {
-        v.push_back(str);
-    }
+        v.push_back(str); }
 
     dest.swap(v);
 }
@@ -62,8 +58,7 @@ void DStringView::split(const char* sep, std::vector<DString>& dest) const
         v.push_back(substr(start, pos - start));
         if (pos == NPOS)
             break;
-        start = pos + sep_len;;
-    }
+        start = pos + sep_len; }
 
     dest.swap(v);
 }
@@ -80,8 +75,7 @@ void DStringView::tokenize(const char* pattern, std::vector<DString>& dest) cons
 
     // Check if we are at the end
     //
-    while (first != DString::NPOS)
-    {
+    while (first != DString::NPOS) {
         // Find the first location (> first) with a character
         // that belongs to the separator group
         //
@@ -96,8 +90,7 @@ void DStringView::tokenize(const char* pattern, std::vector<DString>& dest) cons
         // Again find the first char not in separator but now
         // not from the start
         //
-        first = this->ffno(pattern, last);
-    }
+        first = this->ffno(pattern, last); }
 
     dest.swap(tmp);
 }
@@ -147,8 +140,7 @@ DString DString::from_file(const char* fname)
         DString msg = DString::format("Could not open file: %s: %s\n",
                                       fname,
                                       strerror(errno));
-        throw DStringError(STD_MOVE(msg));
-    }
+        throw DStringError(STD_MOVE(msg)); }
     return result;
 }
 //-----------------------------------------------------------
@@ -160,8 +152,7 @@ DString DString::from_cfile(FILE* fp)
     if (!dstr_slurp_stream(result.pImp(), fp)) {
         DString msg = DString::format("Could read file: %s\n",
                                       strerror(errno));
-        throw DStringError(STD_MOVE(msg));
-    }
+        throw DStringError(STD_MOVE(msg)); }
     return result;
 }
 //-----------------------------------------------------------
@@ -215,13 +206,11 @@ std::istream& operator>>(std::istream& in, DString& s)
             buf[bindex] = c;
             if (++bindex == sizeof(buf)) {
                 s.append(buf, bindex);
-                bindex = 0;
-            }
+                bindex = 0; }
         } while (in.get(c) && !isspace(c));
 
         if (bindex)
-            s.append(buf, bindex);
-    }
+            s.append(buf, bindex); }
 
     if (in)
         in.putback(c);
@@ -242,9 +231,7 @@ std::istream& io_getline(std::istream& in, DString& s)
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
             s.append(buf, bindex);
-            bindex = 0;
-        }
-    }
+            bindex = 0; } }
 
     if (bindex)
         s.append(buf, bindex);

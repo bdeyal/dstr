@@ -78,8 +78,7 @@ static const char* my_strcasechr(const char* s, int c)
     for (; *s != '\0'; ++s) {
         unsigned char curr = *s;
         if (curr == lc || curr == uc)
-            return s;
-    }
+            return s; }
 
     return NULL;
 }
@@ -96,12 +95,10 @@ static const char* my_strcasestr(const char* haystack, const char* needle)
 
         while (*s1 && *s2 && (*s1 == *s2 || toupper(*s1) == toupper(*s2))) {
             ++s1;
-            ++s2;
-        }
+            ++s2; }
 
         if (*s2 == '\0')
-            return haystack;
-    }
+            return haystack; }
 
     return NULL;
 }
@@ -156,8 +153,7 @@ static DSTR dstr_alloc_empty(void)
     if (!p) {
         errno = ENOMEM;
         dstr_out_of_memory();
-        return NULL;
-    }
+        return NULL; }
 
     dstr_init_data(p);
     dstr_assert_valid(p);
@@ -178,15 +174,13 @@ int dstr_grow_ctor(DSTR p, size_t len)
     if (new_capacity > UINT32_MAX) {
         errno = ENOMEM;
         dstr_out_of_memory();
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
         errno = ENOMEM;
         dstr_out_of_memory();
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     newbuff[0] = '\0';
     p->capacity = new_capacity;
@@ -202,40 +196,34 @@ static int dstr_grow(DSTR p, size_t len)
     assert(p != NULL);
 
     if (p->capacity > len) {
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     size_t new_capacity = p->capacity;
-    while (new_capacity <= len)
-        new_capacity *= 2;
+    while (new_capacity <= len) {
+        new_capacity *= 2; }
 
     if (new_capacity > UINT32_MAX) {
         errno = ENOMEM;
         dstr_out_of_memory();
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     if (D_IS_SSO(p)) {
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
             errno = ENOMEM;
             dstr_out_of_memory();
-            return DSTR_FAIL;
-        }
+            return DSTR_FAIL; }
 
         if (p->length)
             memcpy(newbuff, p->data, p->length + 1);
         else
             *newbuff = '\0';
 
-        p->data[0] = '\0';
-    }
+        p->data[0] = '\0'; }
     else {
         if ((newbuff = (char*) realloc(p->data, new_capacity)) == NULL) {
             errno = ENOMEM;
             dstr_out_of_memory();
-            return DSTR_FAIL;
-        }
-    }
+            return DSTR_FAIL; } }
 
     p->capacity = new_capacity;
     p->data = newbuff;
@@ -294,8 +282,7 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
         assert(index + len + bytes_to_move < DCAP(p));
         char* to = dstr_address(p, index + len);
         const char* from  = dstr_address(p, index);
-        memmove(to, from, bytes_to_move);
-    }
+        memmove(to, from, bytes_to_move); }
 
     memcpy(dstr_address(p, index), buff, len);
     DLEN(p) += len;
@@ -336,11 +323,10 @@ static int dstr_append_imp(DSTR p, const char* buff, size_t len)
         // In case of overlap we must update
         //
         if (DBUF(p) != first)
-            buff = DBUF(p) + overlap;
-    }
+            buff = DBUF(p) + overlap; }
     else {
         if (!dstr_grow_by(p, len)) {
-            return DSTR_FAIL; }}
+            return DSTR_FAIL; } }
 
     memcpy(dstr_tail(p), buff, len);
     DLEN(p) += len;
@@ -358,19 +344,16 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 
     if (c == '\0') {
         dstr_truncate_imp(p, index);
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     if (!dstr_grow_by(p, count)) {
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     size_t bytes_to_move = DLEN(p) - index;
     if (bytes_to_move > 0) {
         char* to = dstr_address(p, index + count);
         const char* from = dstr_address(p, index);
-        memmove(to, from, bytes_to_move);
-    }
+        memmove(to, from, bytes_to_move); }
 
     memset(dstr_address(p, index), c, count);
     DLEN(p) += count;
@@ -395,8 +378,7 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
     if (bytes_to_move > 0) {
         char* to = dstr_address(p, pos);
         const char* from = dstr_address(p, pos + count);
-        memmove(to, from, bytes_to_move);
-    }
+        memmove(to, from, bytes_to_move); }
 
     DLEN(p) -= count;
     DVAL(p,DLEN(p)) = '\0';
@@ -418,8 +400,7 @@ static int dstr_replace_imp(DSTR p,
 
     if (nothing_to_replace) {
         dstr_remove_imp(p, pos, count);
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     int result = DSTR_FAIL;
 
@@ -433,12 +414,10 @@ static int dstr_replace_imp(DSTR p,
         dstr_remove_imp(p, pos, count);
         buff = DBUF(&tmp);
         result = dstr_insert_imp(p, pos, buff, buflen);
-        DONE_DSTR(tmp);
-    }
+        DONE_DSTR(tmp); }
     else {
         dstr_remove_imp(p, pos, count);
-        result = dstr_insert_imp(p, pos, buff, buflen);
-    }
+        result = dstr_insert_imp(p, pos, buff, buflen); }
 
     return result;
 }
@@ -493,8 +472,8 @@ static DSTR dstr_create_buff_imp(const char* buff, size_t len)
     // Now allocate
     //
     DSTR p;
-    if ((p = dstr_create_len_imp(len)) == NULL)
-        return NULL;
+    if ((p = dstr_create_len_imp(len)) == NULL) {
+        return NULL; }
 
     // copy buffer and set len and null terminator
     //
@@ -517,18 +496,18 @@ static size_t dstr_find_sz_imp(CDSTR p,
 
     dstr_assert_view(p);
 
-    if (pos >= DLEN(p))
-        return DSTR_NPOS;
+    if (pos >= DLEN(p)) {
+        return DSTR_NPOS; }
 
     search_loc = DBUF(p) + pos;
 
-    if (ignore_case)
-        found_loc = my_strcasestr(search_loc, s);
-    else
-        found_loc = strstr(search_loc, s);
+    if (ignore_case) {
+        found_loc = my_strcasestr(search_loc, s); }
+    else {
+        found_loc = strstr(search_loc, s); }
 
-    if (found_loc == NULL)
-        return DSTR_NPOS;
+    if (found_loc == NULL) {
+        return DSTR_NPOS; }
 
     return (size_t)(found_loc - DBUF(p));
 }
@@ -560,15 +539,11 @@ static size_t dstr_rfind_sz_imp(CDSTR p,
         if (ignore_case) {
             if (strncasecmp(search_loc, s, slen) == 0) {
                 found_loc = search_loc;
-                break;
-            }
-        }
+                break; } }
         else {
             if (strncmp(search_loc, s, slen) == 0) {
                 found_loc = search_loc;
-                break;
-            }
-        }
+                break; } }
     }
 
     if (found_loc == NULL)
@@ -620,15 +595,12 @@ static ptrdiff_t dstr_prefix_sz_imp(CDSTR p,
     if (ignore_case) {
         while (*s && ((*pbuf == *s) || (toupper(*pbuf) == toupper(*s)))) {
             ++pbuf;
-            ++s;
-        }
-    }
+            ++s; } }
     else {
         while (*s && (*pbuf == *s)) {
             ++pbuf;
-            ++s;
-        }
-    }
+            ++s; } }
+
     return (*s == '\0') ? (pbuf - DBUF(p)) : -1;
 }
 /*-------------------------------------------------------------------------------*/
@@ -648,13 +620,13 @@ static size_t dstr_find_c_imp(CDSTR p,
 
     search_loc = DBUF(p) + pos;
 
-    if (ignore_case)
-        found_loc = my_strcasechr(search_loc, c);
-    else
-        found_loc = strchr(search_loc, c);
+    if (ignore_case) {
+        found_loc = my_strcasechr(search_loc, c); }
+    else {
+        found_loc = strchr(search_loc, c); }
 
-    if (found_loc == NULL)
-        return DSTR_NPOS;
+    if (found_loc == NULL) {
+        return DSTR_NPOS; }
 
     return (size_t)(found_loc - DBUF(p));
 }
@@ -683,13 +655,11 @@ static size_t dstr_rfind_c_imp(CDSTR p,
     {
         if (*search_loc == c) {
             found_loc = search_loc;
-            break;
-        }
+            break; }
 
         if (ignore_case && toupper(*search_loc) == C_) {
             found_loc = search_loc;
-            break;
-        }
+            break; }
     }
 
     if (found_loc == NULL)
@@ -753,15 +723,10 @@ static size_t dstr_flo_imp(CDSTR p,
 
         if (not_off) {
             if (!ch_in_pattern) {
-                return index;
-            }
-        }
+                return index; } }
         else {
             if (ch_in_pattern) {
-                return index;
-            }
-        }
-    }
+                return index; } } }
 
     return DSTR_NPOS;
 }
@@ -779,15 +744,11 @@ static DSTR_BOOL dstr_isdigits_imp(CDSTR src, DSTR_BOOL is_hex)
     if (is_hex) {
         for (n = 0; n < DLEN(src); ++n) {
             if (!isxdigit(DVAL(src, n)))
-                return DSTR_FALSE;
-        }
-    }
+                return DSTR_FALSE; } }
     else {
         for (n = 0; n < DLEN(src); ++n) {
             if (!isdigit(DVAL(src, n)))
-                return DSTR_FALSE;
-        }
-    }
+                return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -887,18 +848,14 @@ int dstr_slurp_stream(DSTR p, FILE* fp)
 
     if (!fp) {
         errno = EBADF;
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     char chunk[4096];
     for (;;) {
         size_t len = fread(chunk, sizeof(char), sizeof(chunk), fp);
-        if (len < sizeof(chunk)) {
-            if (ferror(fp)) {
-                dstr_clear(p);
-                return DSTR_FAIL;
-            }
-        }
+        if (len < sizeof(chunk) && ferror(fp)) {
+            dstr_clear(p);
+            return DSTR_FAIL; }
 
         if (len) {
             // We don't allow null bytes in DSTR
@@ -906,19 +863,14 @@ int dstr_slurp_stream(DSTR p, FILE* fp)
             if (memchr(chunk, '\0', len)) {
                 errno = EINVAL;
                 dstr_clear(p);
-                return DSTR_FAIL;
-            }
+                return DSTR_FAIL; }
 
             if (!dstr_append_no_overlap(p, chunk, len)) {
                 dstr_clear(p);
-                return DSTR_FAIL;
-            }
-        }
+                return DSTR_FAIL; } }
 
         if (feof(fp)) {
-            break;
-        }
-    }
+            break; } }
 
     dstr_assert_valid(p);
     return DSTR_SUCCESS;
@@ -930,8 +882,7 @@ int dstr_assign_fromfile(DSTR p, const char* fname)
     FILE* fp;
 
     if ((fp = fopen(fname, "r")) == NULL) {
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     dstr_clear(p);
     int rc = dstr_slurp_stream(p, fp);
@@ -952,8 +903,7 @@ DSTR dstr_create_fromfile(const char* fname)
 
     if (dstr_assign_fromfile(p, fname) == DSTR_FAIL) {
         dstr_destroy(p);
-        return NULL;
-    }
+        return NULL; }
 
     return p;
 }
@@ -962,8 +912,7 @@ DSTR dstr_create_fromfile(const char* fname)
 void dstr_clean_data(DSTR p)
 {
     if (p && !D_IS_SSO(p)) {
-        free(p->data);
-    }
+        free(p->data); }
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -971,8 +920,7 @@ void dstr_destroy(DSTR p)
 {
     if (p) {
         dstr_clean_data(p);
-        free(p);
-    }
+        free(p); }
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -989,16 +937,13 @@ int dstr_resize(DSTR p, size_t len)
     dstr_assert_valid(p);
 
     if (len == DLEN(p)) {
-        /* do nothing */
-    }
+        ; /* do nothing */ }
     else if (len < DLEN(p)) {
         dstr_truncate_imp(p, len);
-        dstr_assert_valid(p);
-    }
+        dstr_assert_valid(p); }
     else {
         if (!dstr_grow(p, len))
-            result = DSTR_FAIL;
-    }
+            result = DSTR_FAIL; }
 
     return result;
 }
@@ -1056,8 +1001,7 @@ int dstr_assign_sz(DSTR p, const char* value)
 
     if (value == NULL) {
         dstr_clear(p);
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     size_t len = strlen(value);
     return dstr_assign_imp(p, value, len);
@@ -1070,8 +1014,7 @@ int dstr_assign_bl(DSTR p, const char* buff, size_t len)
 
     if (buff == NULL || len == 0) {
         dstr_clear(p);
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     len = strnlen(buff, len);
     return dstr_assign_imp(p, buff, len);
@@ -1086,8 +1029,7 @@ int dstr_assign_range(DSTR p, const char* first, const char* last)
 
     if (first == NULL || len == 0) {
         dstr_clear(p);
-        return DSTR_SUCCESS;
-    }
+        return DSTR_SUCCESS; }
 
     len = strnlen(first, len);
     return dstr_assign_imp(p, first, len);
@@ -1132,8 +1074,7 @@ int dstr_grow_append_c(DSTR p, char c)
     if (c == '\0') return DSTR_SUCCESS;
 
     if (!dstr_grow_by(p, 1)) {
-        return DSTR_FAIL;
-    }
+        return DSTR_FAIL; }
 
     DVAL(p, DLEN(p)) = c;
     DLEN(p) += 1;
@@ -1367,8 +1308,7 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
     // formatting was successful on tmp buffer
     //
     if ((size_t)len < sizeof(buff)) {
-        dstr_append_no_overlap(p, buff, (size_t) len);
-    }
+        dstr_append_no_overlap(p, buff, (size_t) len); }
     else {
         // Second pass with enough buffer size
         //
@@ -1376,11 +1316,9 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
             return DSTR_FAIL;
 
         if ((len = vsnprintf(dstr_tail(p), len + 1, fmt, argptr)) < 0) {
-            return DSTR_FAIL;
-        }
+            return DSTR_FAIL; }
 
-        DLEN(p) += len;
-    }
+        DLEN(p) += len; }
 
     dstr_assert_valid(p);
     return DSTR_SUCCESS;
@@ -1429,8 +1367,7 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr)
 
     if (dstr_append_vsprintf(result, fmt, argptr) == DSTR_FAIL) {
         dstr_destroy(result);
-        return NULL;
-    }
+        return NULL; }
 
     return result;
 }
@@ -1556,8 +1493,7 @@ void dstr_trim_right(DSTR p)
 
     if (len < DLEN(p)) {
         DVAL(p, len) = '\0';
-        DLEN(p) = len;
-    }
+        DLEN(p) = len; }
 
     dstr_assert_valid(p);
 }
@@ -1572,11 +1508,10 @@ void dstr_trim_left(DSTR p)
         ++pos;
 
     if (pos > 0) {
-        if (pos == DLEN(p))
-            dstr_clear(p);
-        else
-            dstr_remove_imp(p, 0, pos);
-    }
+        if (pos == DLEN(p)) {
+            dstr_clear(p); }
+        else {
+            dstr_remove_imp(p, 0, pos); } }
 
     dstr_assert_valid(p);
 }
@@ -1597,13 +1532,12 @@ void dstr_rstrip_c(DSTR p, char c)
     if ((len = DLEN(p)) == 0)
         return;
 
-    while (len > 0 && (DVAL(p,len - 1) == c))
-        --len;
+    while (len > 0 && (DVAL(p,len - 1) == c)) {
+        --len; }
 
     if (len < DLEN(p)) {
         DVAL(p, len) = '\0';
-        DLEN(p) = len;
-    }
+        DLEN(p) = len; }
 
     dstr_assert_valid(p);
 }
@@ -1614,15 +1548,15 @@ void dstr_lstrip_c(DSTR p, char c)
     size_t pos = 0;
     dstr_assert_valid(p);
 
-    while (pos < DLEN(p) && (DVAL(p, pos) == c))
-        ++pos;
+    while (pos < DLEN(p) && (DVAL(p, pos) == c)) {
+        ++pos; }
 
     if (pos > 0) {
-        if (pos == DLEN(p))
-            dstr_clear(p);
-        else
-            dstr_remove_imp(p, 0, pos);
-    }
+        if (pos == DLEN(p)) {
+            dstr_clear(p); }
+        else {
+            dstr_remove_imp(p, 0, pos); } }
+
     dstr_assert_valid(p);
 }
 /*-------------------------------------------------------------------------------*/
@@ -1633,12 +1567,10 @@ void dstr_rstrip_sz(DSTR p, const char* sz)
 
     size_t pos = dstr_flno_sz(p, DLEN(p), sz);
     if (pos == DSTR_NPOS) {
-        dstr_clear(p);
-    }
+        dstr_clear(p); }
     else if (pos < DLEN(p)) {
         DVAL(p, pos + 1) = '\0';
-        DLEN(p) = pos + 1;
-    }
+        DLEN(p) = pos + 1; }
 
     dstr_assert_valid(p);
 }
@@ -1650,11 +1582,9 @@ void dstr_lstrip_sz(DSTR p, const char* sz)
 
     size_t pos = dstr_ffno_sz(p, 0, sz);
     if (pos == DSTR_NPOS) {
-        dstr_clear(p);
-    }
+        dstr_clear(p); }
     else {
-        dstr_remove_imp(p, 0, pos);
-    }
+        dstr_remove_imp(p, 0, pos); }
 
     dstr_assert_valid(p);
 }
@@ -1699,12 +1629,9 @@ void dstr_ascii_swapcase(DSTR p)
             continue;
 
         if (islower(c)) {
-            *s = toupper(c);
-        }
+            *s = toupper(c); }
         else if (isupper(c)) {
-            *s = tolower(c);
-        }
-    }
+            *s = tolower(c); } }
 
     dstr_assert_valid(p);
 }
@@ -1725,8 +1652,7 @@ void dstr_reverse(DSTR p)
         DVAL(p, first) = DVAL(p, last);
         DVAL(p, last) = c;
         ++first;
-        --last;
-    }
+        --last; }
 
     dstr_assert_valid(p);
 }
@@ -1738,8 +1664,7 @@ static inline void bitcopy_dstr(DSTR_TYPE* dest, const DSTR_TYPE* src)
 
     if (src->capacity == DSTR_INITIAL_CAPACITY) {
         dest->capacity = src->capacity;
-        dest->data = dest->sso_buffer;
-    }
+        dest->data = dest->sso_buffer; }
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -1779,24 +1704,20 @@ int dstr_fgets(DSTR p, FILE* fp)
     for (;;) {
         buf[bindex] = c;
         if (++bindex == sizeof(buf)) {
-            if (!dstr_append_no_overlap(p, buf, bindex))
-                goto clear_fail;
-            bindex = 0;
-        }
+            if (!dstr_append_no_overlap(p, buf, bindex)) {
+                goto clear_fail; }
+            bindex = 0; }
 
         if ((c = fgetc(fp)) == EOF)
             break;
 
         if (isspace(c) || c == '\0') {
             ungetc(c, fp);
-            break;
-        }
-    }
+            break; } }
 
     if (bindex) {
         if (!dstr_append_no_overlap(p, buf, bindex))
-            goto clear_fail;
-    }
+            goto clear_fail; }
 
     return DSTR_SUCCESS;
 
@@ -1824,18 +1745,13 @@ int dstr_fgetline(DSTR p, FILE* fp)
         if (++bindex == sizeof(buf)) {
             if (!dstr_append_no_overlap(p, buf, bindex)) {
                 dstr_clear(p);
-                return EOF;
-            }
-            bindex = 0;
-        }
-    }
+                return EOF; }
+            bindex = 0; } }
 
     if (bindex) {
         if (!dstr_append_no_overlap(p, buf, bindex)) {
             dstr_clear(p);
-            return EOF;
-        }
-    }
+            return EOF; } }
 
     if (DLEN(p) > 0 || (c == '\n') || (c == '\0'))
         return DSTR_SUCCESS;
@@ -1888,20 +1804,19 @@ int dstr_itos(DSTR dest, long long n)
 
     if (n < 0) {
         n = -n;
-        negative = 1;
-    }
+        negative = 1; }
 
     char buf[64];
     char* last  = buf + sizeof buf;
     char* first = itos_aux(last, n, 10);
 
-    if (negative)
-        *--first = '-';
+    if (negative) {
+        *--first = '-'; }
 
     size_t len = last - first;
 
-    if (DLEN(dest))
-        dstr_clear(dest);
+    if (DLEN(dest)) {
+        dstr_clear(dest); }
 
     return dstr_append_no_overlap(dest, first, len);
 }
@@ -1918,22 +1833,17 @@ long dstr_atoi(CDSTR src)
 
     if (*p == '\\') {
         ++p;
-        base = 8;
-    }
+        base = 8; }
     else if (*p == '0') {
         if (p[1] == 'b' || p[1] == 'B') {
             p += 2;
-            base = 2;
-        }
+            base = 2; }
         else if (p[1] == 'x' || p[1] == 'X') {
             p += 2;
-            base = 16;
-        }
+            base = 16; }
         else {
             /* skip all leading zero's */
-            do { ++p; } while (*p == '0');
-        }
-    }
+            do { ++p; } while (*p == '0'); } }
 
     return strtol(p, NULL, base);
 }
@@ -1966,9 +1876,8 @@ DSTR_BOOL dstr_isalnum(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!isalnum(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!isalnum(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -1982,9 +1891,8 @@ DSTR_BOOL dstr_isalpha(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!isalpha(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!isalpha(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -1998,9 +1906,8 @@ DSTR_BOOL dstr_isascii(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!isascii(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!isascii(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -2014,9 +1921,8 @@ DSTR_BOOL dstr_isblank(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!isblank(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!isblank(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -2041,9 +1947,8 @@ DSTR_BOOL dstr_isidentifier(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!is_ident_(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!is_ident_(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -2063,9 +1968,8 @@ DSTR_BOOL dstr_isprintable(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!isprint(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!isprint(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -2079,9 +1983,8 @@ DSTR_BOOL dstr_isspace(CDSTR p)
         return DSTR_FALSE;
 
     for (size_t n = 0; n < DLEN(p); ++n) {
-        if (!isspace(DVAL(p, n)))
-            return DSTR_FALSE;
-    }
+        if (!isspace(DVAL(p, n))) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -2091,19 +1994,13 @@ DSTR_BOOL dstr_istitle(CDSTR p)
 {
     bool curr_is_alpha = false;
 
-    for (size_t pos = 0; pos < DLEN(p); ++pos)
-    {
+    for (size_t pos = 0; pos < DLEN(p); ++pos) {
         char ch = DVAL(p, pos);
         bool prev_is_alpha = curr_is_alpha;
         curr_is_alpha = isalpha(ch);
 
-        if (curr_is_alpha  &&
-            !prev_is_alpha &&
-            !isupper(ch))
-        {
-            return DSTR_FALSE;
-        }
-    }
+        if (curr_is_alpha && !prev_is_alpha && !isupper(ch)) {
+            return DSTR_FALSE; } }
 
     return DSTR_TRUE;
 }
@@ -2126,9 +2023,7 @@ DSTR_BOOL dstr_isupper(CDSTR p)
             if (!isupper(c)) {
                 return DSTR_FALSE; }
             else {
-                ++upper_count; }
-        }
-    }
+                ++upper_count; } } }
 
     return upper_count > 0;
 }
@@ -2151,9 +2046,7 @@ DSTR_BOOL dstr_islower(CDSTR p)
             if (!islower(ch)) {
                 return DSTR_FALSE; }
             else {
-                ++lower_count; }
-        }
-    }
+                ++lower_count; } } }
 
     return lower_count > 0;
 }
@@ -2174,8 +2067,7 @@ int dstr_to_int(CDSTR p, size_t* index, int base)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
     if (errno == 0)
         errno = errsave;
@@ -2199,11 +2091,10 @@ long dstr_to_long(CDSTR p, size_t* index, int base)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2224,11 +2115,10 @@ unsigned long dstr_to_ulong(CDSTR p, size_t* index, int base)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2249,8 +2139,7 @@ long long dstr_to_llong(CDSTR p, size_t* index, int base)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
     if (errno == 0)
         errno = errsave;
@@ -2274,8 +2163,7 @@ unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
     if (errno == 0)
         errno = errsave;
@@ -2299,8 +2187,7 @@ float dstr_to_float(CDSTR p, size_t* index)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
     if (errno == 0)
         errno = errsave;
@@ -2320,15 +2207,14 @@ double dstr_to_double(CDSTR p, size_t* index)
     char* endp;
     double result = strtod(str, &endp);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2349,8 +2235,7 @@ long double dstr_to_ldouble(CDSTR p, size_t* index)
         errno = EINVAL;
 
     if (index) {
-        *index = endp - str;
-    }
+        *index = endp - str; }
 
     if (errno == 0)
         errno = errsave;
@@ -2373,8 +2258,7 @@ int dstr_align_center(DSTR dest, size_t width, char fill)
 
     if (left_side) {
         if (!dstr_insert_cc_imp(dest, 0, fill, left_side))
-            return DSTR_FAIL;
-    }
+            return DSTR_FAIL; }
 
     if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side))
         return DSTR_FAIL;
@@ -2456,8 +2340,7 @@ static int dstr_replace_all_imp(DSTR dest,
             return DSTR_FAIL; }
         if (++num_replaced == count)
             break;
-        pos += newlen;
-    };
+        pos += newlen; }
 
     if (num_replaced > 0) {
         dstr_swap(&tmp, dest); }
@@ -2513,8 +2396,7 @@ static size_t dstr_count_aux(CDSTR p, const char* s, size_t slen, int ignore_cas
             break;
 
         pos += slen;
-        ++num_found;
-    }
+        ++num_found; }
 
     return num_found;
 }
@@ -2607,8 +2489,7 @@ int dstr_zfill(DSTR dest, size_t width)
 
     char ch = DVAL(dest, 0);
     if (ch == '+' || ch == '-') {
-        ++insert_pos;
-    }
+        ++insert_pos; }
 
     if (!dstr_insert_cc_imp(dest, insert_pos, '0', num_zeroes))
         return DSTR_FAIL;
@@ -2622,17 +2503,13 @@ void dstr_title(DSTR p)
 {
     bool curr_is_alpha = false;
 
-    for (size_t pos = 0; pos < DLEN(p); ++pos)
-    {
+    for (size_t pos = 0; pos < DLEN(p); ++pos) {
         char ch = DVAL(p, pos);
         bool prev_is_alpha = curr_is_alpha;
         curr_is_alpha = isalpha(ch);
 
-        if (curr_is_alpha && !prev_is_alpha)
-        {
-            DVAL(p, pos) = (char) toupper(ch);
-        }
-    }
+        if (curr_is_alpha && !prev_is_alpha) {
+            DVAL(p, pos) = (char) toupper(ch); } }
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -2659,8 +2536,7 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
             break;
 
         if (!dstr_append_imp(dest, sep, len))
-            return DSTR_FAIL;
-    }
+            return DSTR_FAIL; }
 
     return DSTR_SUCCESS;
 }
@@ -2683,8 +2559,7 @@ int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n)
             break;
 
         if (!dstr_append_imp(dest, DBUF(sep), DLEN(sep)))
-            return DSTR_FAIL;
-    }
+            return DSTR_FAIL; }
 
     return DSTR_SUCCESS;
 }
@@ -2759,8 +2634,7 @@ void make_deletion_set(const char* tr_set, uint8_t tr_table[], size_t tlen)
             continue; }
 
         for (char ch = tr_set[i-1]; ch <= tr_set[i+1]; ++ch) {
-            tr_table[(uint8_t)ch] = !negate; }
-    }
+            tr_table[(uint8_t)ch] = !negate; } }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -2824,8 +2698,7 @@ static bool expand_tr_str(DSTR dest, const char* src1, bool allow_negate)
             continue; }
 
         for (char ch = src[i-1] + 1; ch < src[i+1]; ++ch) {
-            dstr_append_char(dest, ch); }
-    }
+            dstr_append_char(dest, ch); } }
 
     return negate;
 }
@@ -2950,8 +2823,7 @@ size_t dstr_partition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
 
     if (pos == DSTR_NPOS) {
         pos = DLEN(p);
-        len = 0;
-    }
+        len = 0; }
 
     if (pInfo) {
         pInfo->l_pos = 0;
@@ -2962,8 +2834,7 @@ size_t dstr_partition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
         pInfo->r_len = DLEN(p) - (pos + len);
 
         assert((pInfo->l_len + pInfo->m_len + pInfo->r_len) == DLEN(p));
-        return 0;
-    }
+        return 0; }
 
     return pos;
 }
@@ -2995,8 +2866,7 @@ size_t dstr_rpartition(CDSTR p, const char* s, struct DSTR_PartInfo* pInfo)
         pInfo->r_len = DLEN(p) - (pos + len);
 
         assert((pInfo->l_len + pInfo->m_len + pInfo->r_len) == DLEN(p));
-        return 0;
-    }
+        return 0; }
 
     return pos;
 }
@@ -3067,12 +2937,11 @@ static int dstr_increment_printable(DSTR dest)
                 break;
             default:
                 DVAL(dest, pos) =  ++c;
-                carry = NO_CARRY;
-            }
-        }
-        if (carry == NO_CARRY)
-            break;
-    }
+                carry = NO_CARRY; } }
+
+        if (carry == NO_CARRY) {
+            break; } }
+
     return carry;
 }
 /*--------------------------------------------------------------------------*/

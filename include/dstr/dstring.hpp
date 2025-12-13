@@ -149,10 +149,11 @@ public:
 
     // Inline queries
     //
-    const char* c_str()    const noexcept { return m_imp.data;     }
-    const char* data()     const noexcept { return m_imp.data;     }
-    size_t      length()   const noexcept { return m_imp.length;   }
-    bool        empty()    const noexcept { return length() == 0;  }
+    const char*  c_str()  const noexcept { return m_imp.data;     }
+    const char*  data()   const noexcept { return m_imp.data;     }
+    size_t       length() const noexcept { return m_imp.length;   }
+    bool         empty()  const noexcept { return length() == 0;  }
+    const uint8_t* uptr() const noexcept { return (const uint8_t*) m_imp.data; }
 
     // returns '\0' if empty
     char back() const
@@ -1623,6 +1624,7 @@ public:
     size_t      length()   const noexcept { return m_imp.length;   }
     size_t      capacity() const noexcept { return m_imp.capacity; }
     bool        empty()    const noexcept { return length() == 0;  }
+    const uint8_t* uptr() const noexcept { return (const uint8_t*) m_imp.data; }
 
     bool index_ok(size_t pos) const
     {

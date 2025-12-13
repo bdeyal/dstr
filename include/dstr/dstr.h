@@ -428,6 +428,16 @@ static inline const char* dstr_cstr(CDSTR p)
     return p->data;
 }
 
+static inline const uint8_t* dstr_cu8ptr(CDSTR p)
+{
+    return (const uint8_t*) p->data;
+}
+
+static inline uint8_t* dstr_u8ptr(CDSTR p)
+{
+    return (uint8_t*) p->data;
+}
+
 static inline char dstr_getchar(CDSTR p, size_t pos)
 {
     return p->data[pos];

@@ -40,13 +40,12 @@ int DStringView::match(DStringView pattern, size_t offset,
                        DString::Match& m, const char* opts) const
 {
     int rc = dstr_regex_match(pImp(), pattern.c_str(), offset, &m, opts);
+
     if (rc > REGEX_COMPILE_ERROR_BASE) {
-        DString::on_regex_error(rc);
-    }
+        DString::on_regex_error(rc);  }
 
     if (rc < 0) {
-        DString::on_regex_error(rc);
-    }
+        DString::on_regex_error(rc);  }
 
     return rc;
 }
@@ -60,11 +59,10 @@ int DStringView::match_groups(DStringView pattern, size_t offset,
                                      offset, vec.self(), opts);
 
     if (rc > REGEX_COMPILE_ERROR_BASE) {
-        DString::on_regex_error(rc);
-    }
+        DString::on_regex_error(rc); }
+
     if (rc < 0) {
-        DString::on_regex_error(rc);
-    }
+        DString::on_regex_error(rc); }
 
     return rc;
 }
@@ -76,8 +74,8 @@ int DStringView::capture(DStringView pattern, size_t offset, DString& result,
     DString::Match mtch;
     int rc = match(pattern, offset, mtch, opts);
 
-    if (rc > 0 && mtch.offset != DString::NPOS)
-        result = substr(mtch.offset, mtch.length);
+    if (rc > 0 && mtch.offset != DString::NPOS) {
+        result = substr(mtch.offset, mtch.length); }
 
     return rc;
 }
@@ -113,11 +111,9 @@ int DStringView::re_split(DStringView pattern, size_t offset,
     //
     if (pattern.size() == 0) {
         for (char ch : *this) {
-            tmp.push_back(DString(ch, 1));
-        }
+            tmp.push_back(DString(ch, 1)); }
         tmp.swap(strings);
-        return (int) strings.size();
-    }
+        return (int) strings.size(); }
 
     DString::MatchVector matches;
     int rc;
@@ -131,10 +127,10 @@ int DStringView::re_split(DStringView pattern, size_t offset,
             if (m.offset != DString::NPOS) {
                 tmp.push_back({*this, m.offset, m.length}); }
             else {
-                tmp.push_back(""); }
-        }
-        offset = (matches[0].offset + matches[0].length);
-    }
+                tmp.push_back(""); } }
+
+        offset = (matches[0].offset + matches[0].length); }
+
     tmp.push_back({*this, offset, size() - offset});
 
     tmp.swap(strings);
@@ -154,8 +150,7 @@ int DString::subst_inplace(DStringView pattern, size_t offset,
                                     offset, replacement.c_str(), opts);
 
     if (rc > REGEX_COMPILE_ERROR_BASE || rc < 0) {
-        DString::on_regex_error(rc);
-    }
+        DString::on_regex_error(rc); }
 
     return rc;
 }

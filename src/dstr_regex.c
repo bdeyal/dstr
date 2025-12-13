@@ -45,95 +45,72 @@
 //
 enum {
     // case insensitive matching (/i) [ctor]
-    //
     REGEX_CASELESS = 0x00000001,
 
     // enable multi-line mode; affects ^ and $ (/m) [ctor]
-    //
     REGEX_MULTILINE = 0x00000002,
 
     // dot matches all characters, including newline (/s) [ctor]
-    //
     REGEX_DOTALL = 0x00000004,
 
     // totally ignore whitespace (/x) [ctor]
-    //
     REGEX_EXTENDED = 0x00000008,
 
     // treat pattern as if it starts with a ^ [ctor, match]
-    //
     REGEX_ANCHORED = 0x00000010,
 
     // dollar matches end-of-string only, not last newline in string [ctor]
-    //
     REGEX_DOLLAR_ENDONLY = 0x00000020,
 
     // enable optional PCRE functionality [ctor]
-    //
     REGEX_EXTRA = 0x00000040,
 
     // circumflex does not match beginning of string [match]
-    //
     REGEX_NOTBOL = 0x00000080,
 
     // $ does not match end of string [match]
-    //
     REGEX_NOTEOL = 0x00000100,
 
     // make quantifiers ungreedy [ctor]
-    //
     REGEX_UNGREEDY = 0x00000200,
 
     // empty string never matches [match]
-    //
     REGEX_NOTEMPTY = 0x00000400,
 
     // assume pattern and subject is UTF-8 encoded [ctor]
-    //
     REGEX_UTF8 = 0x00000800,
 
     // disable numbered capturing parentheses [ctor, match]
-    //
     REGEX_NO_AUTO_CAPTURE = 0x00001000,
 
     // do not check validity of UTF-8 code sequences [match]
-    //
     REGEX_NO_UTF8_CHECK = 0x00002000,
 
     // an  unanchored  pattern  is  required  to  match
-    //
     REGEX_FIRSTLINE = 0x00040000,
 
     // names used to identify capturing subpatterns need not be unique [ctor]
-    //
     REGEX_DUPNAMES = 0x00080000,
 
     // assume newline is CR ('\r'), the default [ctor]
-    //
     REGEX_NEWLINE_CR = 0x00100000,
 
     // assume newline is LF ('\n') [ctor]
-    //
     REGEX_NEWLINE_LF = 0x00200000,
 
     // assume newline is CRLF ("\r\n") [ctor]
-    //
     REGEX_NEWLINE_CRLF = 0x00300000,
 
     // assume newline is any valid Unicode newline character [ctor]
-    //
     REGEX_NEWLINE_ANY = 0x00400000,
 
     // assume newline is any of CR, LF, CRLF [ctor]
-    //
     REGEX_NEWLINE_ANYCRLF = 0x00500000,
 
     // replace all occurences (/g) [subst]
-    //
     REGEX_GLOBAL = 0x10000000,
 
     // treat dollar in replacement string as ordinary character [subst]
-    //
     REGEX_NO_VARS = 0x20000000
 };
 /*-------------------------------------------------------------------------------*/
@@ -198,7 +175,6 @@ static int parse_regex_options(const char* str)
     int opts = 0;
     for (; *str; ++str) {
         switch (*str) {
-        case ' ' :
         case '/' : break;
         case 'g' : opts |= REGEX_GLOBAL;          break;
         case 'i' : opts |= REGEX_CASELESS;        break;
@@ -217,9 +193,7 @@ static int parse_regex_options(const char* str)
         case '$' : opts |= REGEX_NO_VARS;         break;
         case '\n': opts |= REGEX_NEWLINE_LF;      break;
         case '\r': opts |= REGEX_NEWLINE_CR;      break;
-        default: break;
-        }
-    }
+        default: break; } }
     return opts;
 }
 /*-------------------------------------------------------------------------------*/
@@ -249,9 +223,9 @@ static const char* find_group_name(Compiled_Regex* cr, int n)
 {
     for (size_t i = 0; i < cr->n_groups; ++i) {
         GroupInfo* pGI = &(cr->p_groups[i]);
-        if (pGI != NULL && pGI->group_number == n)
-            return pGI->group_name;
-    }
+        if (pGI != NULL && pGI->group_number == n) {
+            return pGI->group_name; } }
+
     return NULL;
 }
 /*-------------------------------------------------------------------------------*/
@@ -279,8 +253,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
     pcre2_compile_context* context = pcre2_compile_context_create(NULL);
     if (!context) {
         on_malloc_error();
-        return NULL;
-    }
+        return NULL; }
 
     if (options & REGEX_NEWLINE_LF)
         pcre2_set_newline(context, PCRE2_NEWLINE_LF);
@@ -307,8 +280,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
     if (!_pRE) {
         if (err) *err = (REGEX_COMPILE_ERROR_BASE + error_code);
         dstr_regex_perror(error_code);
-        return NULL;
-    }
+        return NULL; }
 
     unsigned int name_count = 0;
     pcre2_pattern_info(_pRE, PCRE2_INFO_NAMECOUNT, &name_count);
@@ -324,23 +296,19 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
         gInfo = RE_MALLOC(GroupInfo, name_count);
         if (!gInfo) {
             pcre2_code_free(_pRE);
-            return NULL;
-        }
+            return NULL; }
 
         for (uint32_t i = 0; i < name_count; i++) {
             unsigned char* group = name_table + 2 + (name_entry_size * i);
             int n = pcre2_substring_number_from_name(_pRE, group);
             gInfo[i].group_number = n;
-            gInfo[i].group_name = (const char*)group;
-        }
-    }
+            gInfo[i].group_name = (const char*)group; } }
 
     Compiled_Regex* result = RE_MALLOC(Compiled_Regex, 1);
     if (!result) {
         if (gInfo) free(gInfo);
         pcre2_code_free(_pRE);
-        return NULL;
-    }
+        return NULL; }
 
     result->_pRE = _pRE;
     result->p_groups = gInfo;
@@ -354,17 +322,17 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 
 static void destroy_compiled_regex(Compiled_Regex* cr)
 {
-    if (!cr)
-        return;
+    if (!cr) {
+        return; }
 
-    if (cr->pattern)
-        dstr_destroy(cr->pattern);
+    if (cr->pattern) {
+        dstr_destroy(cr->pattern); }
 
-    if (cr->p_groups)
-        free(cr->p_groups);
+    if (cr->p_groups) {
+        free(cr->p_groups); }
 
-    if (cr->_pRE)
-        pcre2_code_free(cr->_pRE);
+    if (cr->_pRE) {
+        pcre2_code_free(cr->_pRE); }
 
     free(cr);
 }
@@ -384,19 +352,17 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
     mtch->name = NULL;
 
     if (offset > dstr_length(subject)) {
-        return 0;
-    }
+        return 0; }
 
     pcre2_match_data* mdata =
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
 
     if (!mdata) {
         on_malloc_error();
-        return PCRE2_ERROR_NOMEMORY;
-    }
+        return PCRE2_ERROR_NOMEMORY; }
 
     int rc = pcre2_match(cr->_pRE,
-                         (PCRE2_SPTR)(dstr_cstr(subject)),
+                         dstr_u8ptr(subject),
                          dstr_length(subject),
                          offset,
                          match_options(options),
@@ -405,12 +371,10 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
 
     if (rc == PCRE2_ERROR_NOMATCH) {
         pcre2_match_data_free(mdata);
-        return 0;
-    }
+        return 0; }
     else if (rc <= 0) {
         pcre2_match_data_free(mdata);
-        return rc;
-    }
+        return rc; }
 
     // Success
     //
@@ -418,8 +382,8 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
 
     if (ovec[0] != PCRE2_UNSET) {
         mtch->offset = ovec[0];
-        mtch->length = ovec[1] - mtch->offset;
-    }
+        mtch->length = ovec[1] - mtch->offset; }
+
     pcre2_match_data_free(mdata);
     return rc;
 }
@@ -432,8 +396,7 @@ static bool dstr_regex_exact_aux(Compiled_Regex* cr,
     DSTR_Regex_Match mtch = {
         .offset = DSTR_NPOS,
         .length = 0,
-        .name = 0,
-    };
+        .name = 0 };
 
     dstr_regex_match_aux(cr, subject, offset, &mtch, options);
     return
@@ -447,16 +410,15 @@ static int dstr_regex_mvector_alloc(DSTR_Match_Vector* vec, size_t len)
     vec->matches = RE_MALLOC(DSTR_Regex_Match, len);
     if (!vec->matches) {
         vec->matches_len = 0;
-        return DSTR_FAIL;
-    }
-    else
-        vec->matches_len = len;
+        return DSTR_FAIL; }
+    else {
+        vec->matches_len = len; }
 
     for (size_t i = 0; i < vec->matches_len; ++i) {
         vec->matches[i].offset = DSTR_NPOS;
         vec->matches[i].length = 0;
-        vec->matches[i].name   = NULL;
-    }
+        vec->matches[i].name   = NULL; }
+
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
@@ -475,11 +437,10 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
 
     if (!mdata) {
         on_malloc_error();
-        return PCRE2_ERROR_NOMEMORY;
-    }
+        return PCRE2_ERROR_NOMEMORY; }
 
     int rc = pcre2_match(cr->_pRE,
-                         (PCRE2_SPTR)(dstr_cstr(subject)),
+                         dstr_u8ptr(subject),
                          dstr_length(subject),
                          offset,
                          match_options(options) & 0xFFFF,
@@ -489,12 +450,9 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
     if (rc <= 0 || vec == NULL) {
         pcre2_match_data_free(mdata);
         if (rc == PCRE2_ERROR_NOMATCH) {
-            return 0;
-        }
+            return 0; }
         else {
-            return rc;
-        }
-    }
+            return rc; } }
 
     PCRE2_SIZE* ovec = pcre2_get_ovector_pointer(mdata);
 
@@ -502,8 +460,7 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
     //
     if (!dstr_regex_mvector_alloc(vec, (size_t) rc)) {
         pcre2_match_data_free(mdata);
-        return rc;
-    }
+        return rc; }
 
     for (int i = 0; i < rc; ++i) {
         DSTR_Regex_Match* pM = &vec->matches[i];
@@ -512,23 +469,18 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
         //
         if (ovec[2 * i] == PCRE2_UNSET) {
             pM->offset = DSTR_NPOS;
-            pM->length = 0;
-        }
+            pM->length = 0; }
         else {
             pM->offset = ovec[2 * i];
-            pM->length = ovec[2 * i + 1] - pM->offset;
-        }
+            pM->length = ovec[2 * i + 1] - pM->offset; }
 
         // Set group name of match
         //
         const char* name = find_group_name(cr, i);
         if (name) {
-            pM->name = dstrnew(name);
-        }
+            pM->name = dstrnew(name); }
         else {
-            pM->name = dstrnew_empty();
-        }
-    }
+            pM->name = dstrnew_empty(); } }
 
     pcre2_match_data_free(mdata);
     return rc;
@@ -549,15 +501,16 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
     PCRE2_SIZE outlen = sizeof(stbuff);
     uint32_t pcre_opts = PCRE2_SUBSTITUTE_EXTENDED;
 
-    if (options & REGEX_GLOBAL)
-        pcre_opts |= PCRE2_SUBSTITUTE_GLOBAL;
-    if (options & REGEX_NO_VARS)
-        pcre_opts |= PCRE2_SUBSTITUTE_LITERAL;
+    if (options & REGEX_GLOBAL) {
+        pcre_opts |= PCRE2_SUBSTITUTE_GLOBAL; }
+
+    if (options & REGEX_NO_VARS) {
+        pcre_opts |= PCRE2_SUBSTITUTE_LITERAL; }
 
     // First call - try with local stack buffer
     //
     int rc = pcre2_substitute(cr->_pRE,
-                              (PCRE2_SPTR)dstr_cstr(subject),
+                              dstr_u8ptr(subject),
                               dstr_length(subject),
                               offset,
                               pcre_opts | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH,
@@ -566,19 +519,17 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
 
     if (rc == 0) {
         // none replaced
-        return rc;
-    }
+        return rc; }
     else if (rc > 0) {
         dstr_assign_bl(subject, (char*) outbuf, outlen);
-        return rc;
-    }
+        return rc; }
     else if (rc == PCRE2_ERROR_NOMEMORY) {
         // increase memory to needed and retry
         //
         uint8_t* buffer = RE_MALLOC(uint8_t, outlen);
         if (!buffer) return rc;
         rc = pcre2_substitute(cr->_pRE,
-                              (PCRE2_SPTR)dstr_cstr(subject),
+                              dstr_u8ptr(subject),
                               dstr_length(subject),
                               offset, pcre_opts, NULL, NULL,
                               (PCRE2_SPTR)(replacement),
@@ -586,11 +537,10 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
                               buffer,
                               &outlen);
 
-        if (rc > 0)
-            dstr_assign_sz(subject, (char*)buffer);
+        if (rc > 0) {
+            dstr_assign_sz(subject, (char*)buffer); }
 
-        free(buffer);
-    }
+        free(buffer);  }
 
     return rc;
 }
@@ -632,9 +582,7 @@ static void cache_cleanup(void* unused)
     for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
         if (re_cache[i]) {
             destroy_compiled_regex(re_cache[i]);
-            re_cache[i] = NULL;
-        }
-    }
+            re_cache[i] = NULL; } }
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -651,8 +599,8 @@ static void create_cache_key(void)
 {
     if (tss_create(&tss_cache_key, cache_cleanup) != thrd_success) {
         fprintf(stderr, "Error: Failed to create TSS key.\n");
-        abort();
-    }
+        abort(); }
+
     atexit(cache_cleanup_at_exit);
 }
 /*-------------------------------------------------------------------------------*/
@@ -670,8 +618,7 @@ static void debug_display_cache(void)
 {
     static int print = -1;
     if (print < 0) {
-        print = (getenv("DSTR_PRINT_CACHE") == NULL) ? 0 : 1;
-    }
+        print = (getenv("DSTR_PRINT_CACHE") == NULL) ? 0 : 1; }
 
     if (!print)
         return;
@@ -681,9 +628,7 @@ static void debug_display_cache(void)
             printf("Index:%02zu, T:%3zu, \"%s\", %d\n",
                    i, re_cache[i]->tick_count,
                    dstrdata(re_cache[i]->pattern),
-                   re_cache[i]->options);
-        }
-    }
+                   re_cache[i]->options); } }
     putchar('\n');
 }
 /*-------------------------------------------------------------------------------*/
@@ -708,19 +653,15 @@ static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
     for (size_t i = 0; i < DSTR_CACHE_SIZE; ++i) {
         if ((pRes = re_cache[i]) == NULL) {
             first_empty_slot = i;
-            break;
-        }
+            break; }
+
         if (pRes->options == options && dstreq(pRes->pattern, pattern)) {
             pRes->tick_count = global_tick_count;
-            return pRes;
-        }
+            return pRes; }
         else {
             if (pRes->tick_count < oldest_so_far) {
                 oldest_index = i;
-                oldest_so_far = pRes->tick_count;
-            }
-        }
-    }
+                oldest_so_far = pRes->tick_count; } } }
 
     // Not found. Compile and create a new one and store in cache
     //
@@ -735,8 +676,7 @@ static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
     //
     if (first_empty_slot < DSTR_CACHE_SIZE) {
         re_cache[first_empty_slot] = pRes;
-        return pRes;
-    }
+        return pRes; }
 
     // Otherwise cache is full - replace with oldest (LRU)
     //
@@ -812,8 +752,7 @@ int dstr_regex_match(CDSTR subject, const char* pattern, size_t offset,
     if (!c_match) {
         DSTR_Regex_Match m;
         result = dstr_regex_match_aux(cr, subject, offset, &m, options);
-        assert(m.name == NULL); // name field set only in group match
-    }
+        assert(m.name == NULL); } // name field set only in group match
     else {
         result = dstr_regex_match_aux(cr, subject, offset, c_match, options); }
 
@@ -840,12 +779,11 @@ void dstr_regex_mvector_free(DSTR_Match_Vector* vec)
         for (size_t i = 0; i < vec->matches_len; ++i) {
             vec->matches[i].offset = DSTR_NPOS;
             vec->matches[i].length = 0;
-            dstr_destroy(vec->matches[i].name);
-        }
+            dstr_destroy(vec->matches[i].name); }
+
         free(vec->matches);
         vec->matches = NULL;
-        vec->matches_len = 0;
-    }
+        vec->matches_len = 0; }
 }
 /*-------------------------------------------------------------------------------*/
 
