@@ -393,11 +393,7 @@ static bool dstr_regex_exact_aux(Compiled_Regex* cr,
                                  CDSTR subject, size_t offset,
                                  int options)
 {
-    DSTR_Regex_Match mtch = {
-        .offset = DSTR_NPOS,
-        .length = 0,
-        .name = 0 };
-
+    DSTR_Regex_Match mtch;
     dstr_regex_match_aux(cr, subject, offset, &mtch, options);
     return
         mtch.offset == offset &&
@@ -467,10 +463,7 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
 
         // Set offset and length
         //
-        if (ovec[2 * i] == PCRE2_UNSET) {
-            pM->offset = DSTR_NPOS;
-            pM->length = 0; }
-        else {
+        if (ovec[2 * i] != PCRE2_UNSET) {
             pM->offset = ovec[2 * i];
             pM->length = ovec[2 * i + 1] - pM->offset; }
 
@@ -478,9 +471,7 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
         //
         const char* name = find_group_name(cr, i);
         if (name) {
-            pM->name = dstrnew(name); }
-        else {
-            pM->name = dstrnew_empty(); } }
+            pM->name = dstrnew(name); } }
 
     pcre2_match_data_free(mdata);
     return rc;
@@ -733,7 +724,7 @@ size_t dstr_regex_contains(CDSTR subject, const char* pattern, size_t offset)
     if (!cr) {
         return DSTR_NPOS; }
 
-    DSTR_Regex_Match mtch = { DSTR_NPOS, 0, NULL };
+    DSTR_Regex_Match mtch;
     dstr_regex_match_aux(cr, subject, offset, &mtch, match_opts);
     return mtch.offset;
 }

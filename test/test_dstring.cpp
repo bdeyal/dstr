@@ -646,6 +646,7 @@ void test_replace()
     assert( s1 == "hell@@@@@ohello");
 
     s1.replace(4, 5, nullptr);
+    cout << s1 << endl;
     assert( s1 == "hellohello");
 
     s1.replace(5, 5, '\0', 1);
@@ -667,7 +668,7 @@ void test_replace()
     DString s3("H World");
     const char* ps3 = s3.c_str() + s3.find("World");
     s3.replace(0, 1, ps3);
-    printf("%s\n", s3.c_str());
+    puts(s3);
     assert( s3 == "World World");
 }
 //-------------------------------------------------
@@ -1246,7 +1247,7 @@ void test_ffno()
     while ((first = s2.ffno(" \t", last)) != DString::NPOS) {
         last = s2.ffo(" \t", first);
         DString sub(s2, first, (last - first));
-        printf("%s\n", sub.c_str());
+        puts(sub);
     }
 }
 //-------------------------------------------------

@@ -2152,6 +2152,8 @@ private:
     CDSTR pImp() const { return &m_imp; }
     DSTR  pImp()       { return &m_imp; }
 
+    void grow_ctor(size_t len);
+
     void init_capacity(size_t len)
     {
         if (len < DSTR_INITIAL_CAPACITY) {
@@ -2159,7 +2161,7 @@ private:
             m_imp.data = m_imp.sso_buffer;
         }
         else {
-            dstr_grow_ctor(&m_imp, len);
+            grow_ctor(len);
         }
     }
 

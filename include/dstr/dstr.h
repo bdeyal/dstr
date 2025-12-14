@@ -104,9 +104,6 @@ DSTR dstr_create_vsprintf(const char* fmt, va_list argptr);
 void dstr_destroy(DSTR p);
 void dstr_clean_data(DSTR p);
 
-/* private function for use in C++ header */
-int dstr_grow_ctor(DSTR p, size_t len);
-
 /*
  *   Assign | Insert | Append | Replace
  *   a DSTR from various sources. returns DSTR_SUCCESS or DSTR_FAIL
@@ -135,6 +132,15 @@ int dstr_append_range(DSTR dest, const char* first, const char* last);
 int dstr_append_sprintf(DSTR dest, const char* fmt, ...);
 int dstr_append_vsprintf(DSTR dest, const char* fmt, va_list argptr);
 
+int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
+int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
+int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
+int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
+int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, const char* last);
+#define DSTR_REPLACE_ALL DSTR_NPOS
+int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_t count);
+int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count);
+
 /* join ARGV into DEST with separator SEP */
 int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n);
 int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n);
@@ -142,16 +148,7 @@ int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n);
 /* duplicate self n times like $s x 5 in perl */
 int dstr_multiply(DSTR dest, size_t n);
 
-int dstr_replace_cc(DSTR dest, size_t pos, size_t len, char c, size_t count);
-int dstr_replace_sz(DSTR dest, size_t pos, size_t len, const char* value);
-int dstr_replace_ds(DSTR dest, size_t pos, size_t len, CDSTR src);
-int dstr_replace_bl(DSTR dest, size_t pos, size_t len, const char* buff, size_t buflen);
-int dstr_replace_range(DSTR dest, size_t pos, size_t len, const char* first, const char* last);
-
 /* replace COUNT occurrences of old with new */
-#define DSTR_REPLACE_ALL DSTR_NPOS
-int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_t count);
-int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count);
 int dstr_expand_tabs(DSTR dest, size_t width);
 int dstr_zfill(DSTR dest, size_t width);
 
@@ -426,11 +423,6 @@ static inline DSTR_BOOL dstr_isempty(CDSTR p)
 static inline const char* dstr_cstr(CDSTR p)
 {
     return p->data;
-}
-
-static inline const uint8_t* dstr_cu8ptr(CDSTR p)
-{
-    return (const uint8_t*) p->data;
 }
 
 static inline uint8_t* dstr_u8ptr(CDSTR p)

@@ -132,6 +132,14 @@ void DStringView::rpartition(const char* s, DString& left, DString& middle, DStr
 #define STD_MOVE(a) (a)
 #endif
 
+// Private function needed in ctors
+//
+void DString::grow_ctor(size_t len)
+{
+    dstr_grow_ctor(pImp(), len);
+}
+//-----------------------------------------------------------
+
 /*static*/
 DString DString::from_file(const char* fname)
 {

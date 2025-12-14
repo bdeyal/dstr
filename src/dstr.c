@@ -161,8 +161,6 @@ static DSTR dstr_alloc_empty(void)
 }
 /*-------------------------------------------------------------------------------*/
 
-// Not static since used in c++ side too
-//
 int dstr_grow_ctor(DSTR p, size_t len)
 {
     assert(len >= DSTR_INITIAL_CAPACITY);
@@ -191,8 +189,6 @@ int dstr_grow_ctor(DSTR p, size_t len)
 
 static int dstr_grow(DSTR p, size_t len)
 {
-    char* newbuff;
-
     assert(p != NULL);
 
     if (p->capacity > len) {
@@ -207,6 +203,7 @@ static int dstr_grow(DSTR p, size_t len)
         dstr_out_of_memory();
         return DSTR_FAIL; }
 
+    char* newbuff;
     if (D_IS_SSO(p)) {
         if ((newbuff = (char*) malloc(new_capacity)) == NULL) {
             errno = ENOMEM;
@@ -261,19 +258,18 @@ static int dstr_insert_imp(DSTR p, size_t index, const char* buff, size_t len)
     // different handling if source data within the DSTR allocated
     // buffer
     //
-    ptrdiff_t overlap = -1;
-    char* first = DBUF(p);
+    if (is_overlap(p, buff)) {
+        char* first = DBUF(p);
+        ptrdiff_t overlap = buff - first;
 
-    if (is_overlap(p, buff))
-        overlap = buff - first;
+        if (!dstr_grow_by(p, len)) {
+            return DSTR_FAIL; }
 
-    if (!dstr_grow_by(p, len))
-        return DSTR_FAIL;
-
-    // in case of overlap, check if realloc() moved the buffer
-    //
-    if (overlap >= 0 && (DBUF(p) != first))
-        buff = DBUF(p) + overlap;
+        if (DBUF(p) != first) {
+            buff = DBUF(p) + overlap; } }
+    else {
+        if (!dstr_grow_by(p, len)) {
+            return DSTR_FAIL; } }
 
     index = min_2(index, DLEN(p));
     size_t bytes_to_move = DLEN(p) - index;
@@ -373,7 +369,7 @@ static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
         return;
 
     count = min_2(count, DLEN(p) - pos);
-    size_t bytes_to_move = DLEN(p) - pos - count;
+    size_t bytes_to_move = DLEN(p) - (pos + count);
 
     if (bytes_to_move > 0) {
         char* to = dstr_address(p, pos);
