@@ -28,17 +28,6 @@
 #endif
 
 /*
- *   garbage collector / memory checker
- */
-#ifdef GC_DEBUG
-#include <gc/gc.h>
-#define malloc  GC_MALLOC
-#define free    GC_FREE
-#define realloc GC_REALLOC
-#endif
-/*-------------------------------------------------------------------------------*/
-
-/*
  *  For convenience, make code shorter
  */
 #define BASE(p)       (p)
@@ -562,6 +551,17 @@ static ptrdiff_t dstr_suffix_sz_imp(CDSTR p,
     if (!p || !s) {
         return -1; }
 
+    // optimize for empty string
+    if (s[0] == '\0')
+        return DLEN(p);
+
+     // optimize for single char
+    if (s[1] == '\0') {
+        char c1 = dstr_back(p);
+        char c2 = s[0];
+        if (c1 == c2 || (ignore_case && tolower(c1) == tolower(c2))) {
+            return DLEN(p) - 1;  } }
+
     if ((compare_len = strlen(s)) > DLEN(p)) {
         return -1; }
 
@@ -585,8 +585,27 @@ static ptrdiff_t dstr_prefix_sz_imp(CDSTR p,
     const char* pbuf;
 
     dstr_assert_view(p);
-    assert(s != NULL);
 
+    // NULL
+    //
+    if (!s) {
+        return  -1; }
+
+    // optimize for empty string
+    //
+    if (s[0] == '\0') {
+        return 0; }
+
+    // optimize for single char
+    //
+    if (s[1] == '\0') {
+        char c1 = DVAL(p, 0);
+        char c2 = s[0];
+        if (c1 == c2 || (ignore_case && tolower(c1) == tolower(c2))) {
+            return 1;  } }
+
+    // Fallback to default string check
+    //
     pbuf = DBUF(p);
     if (ignore_case) {
         while (*s && ((*pbuf == *s) || (toupper(*pbuf) == toupper(*s)))) {

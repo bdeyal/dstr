@@ -15,13 +15,6 @@ for COMP in gcc clang; do
 	echo ">>>> OK"
 	echo
 
-	echo ">>>> GC ($COMP) TEST"
-	$COMP -march=x86-64-v3 -I../include -DGC_DEBUG -O0 -Og test_dstr.c ../src/dstr.c -o test_dstr -lgc
-	./test_dstr
-	rm -f test_dstr
-	echo ">>>> GC OK"
-	echo
-
 	echo ">>>> SANITZE ($COMP) TEST"
 	$COMP -march=x86-64-v3 -I../include -fsanitize=address -O0 -Og test_dstr.c ../src/dstr.c -o test_dstr
 	./test_dstr
@@ -41,13 +34,6 @@ for COMP in g++ clang++; do
 	valgrind --quiet ./test_dstring
 	rm -f test_dstring
 	echo ">>>> OK"
-	echo
-
-	echo ">>>> GC ($COMP) TEST"
-	$COMP $CXXFLAGS -DGC_DEBUG -O0 -Og $SRCFILES -o test_dstring -lgc
-	./test_dstring
-	rm -f test_dstring
-	echo ">>>> GC OK"
 	echo
 
 	echo ">>>> SANITZE ($COMP) TEST"
