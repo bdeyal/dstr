@@ -129,7 +129,7 @@ static inline const char* dstr_end_of_storage(DSTR p)
 }
 /*-------------------------------------------------------------------------------*/
 
-static void dstr_out_of_memory(void)
+void dstr_out_of_memory(void)
 {
     fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
     abort();

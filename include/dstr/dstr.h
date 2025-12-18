@@ -148,7 +148,7 @@ int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n);
 /* duplicate self n times like $s x 5 in perl */
 int dstr_multiply(DSTR dest, size_t n);
 
-/* replace COUNT occurrences of old with new */
+/* tabs and fills a-la python */
 int dstr_expand_tabs(DSTR dest, size_t width);
 int dstr_zfill(DSTR dest, size_t width);
 
@@ -212,9 +212,9 @@ size_t dstr_hash(CDSTR src, int seed /*=0*/);
  *   '123'      => decimal
  *   '0123'     => decimal !
  */
-long      dstr_atoi(CDSTR src);
-long      dstr_atoll(CDSTR src);
-double    dstr_atof(CDSTR src);
+long   dstr_atoi(CDSTR src);
+long   dstr_atoll(CDSTR src);
+double dstr_atof(CDSTR src);
 
 /* itos = int to string */
 int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base);

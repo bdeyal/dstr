@@ -379,7 +379,7 @@ void test_append()
 }
 //-------------------------------------------------
 
-void test_format()
+void test_sprintf()
 {
     TRACE_FN();
 
@@ -2242,6 +2242,8 @@ void test_succ()
 
 void test_algo_back_inserter()
 {
+    TRACE_FN();
+
     DStringView s1("Hello World");
     DString s2;
     assert(s1 != s2);
@@ -2260,6 +2262,8 @@ void test_algo_back_inserter()
 
 void test_algo_for()
 {
+    TRACE_FN();
+
 #if __cplusplus >= 201103L
     DString s1("Hello World");
     size_t i = 0;
@@ -2275,6 +2279,8 @@ void test_algo_for()
 
 void test_algo_sort()
 {
+    TRACE_FN();
+
     DString s1("Hello World");
     std::sort(s1.begin(), s1.end());
     cout << "\"" << s1.c_str() << "\"" << endl;
@@ -2284,6 +2290,8 @@ void test_algo_sort()
 
 void test_algo_transform()
 {
+    TRACE_FN();
+
     DString s1("Hello World");
 
 #if __cplusplus >= 201103L
@@ -2307,6 +2315,8 @@ void test_algo_transform()
 
 void test_algo_reverse()
 {
+    TRACE_FN();
+
     DString s1("Hello World Today is SAT deep at night");
     DString s2(s1);
     assert(s1 == s2);
@@ -2322,6 +2332,8 @@ void test_algo_reverse()
 
 void test_algo_permutations()
 {
+    TRACE_FN();
+
     DString s1("ABCD");
     do {
         cout << s1 << ", ";
@@ -2332,6 +2344,8 @@ void test_algo_permutations()
 
 void test_algo_reverse_iterator()
 {
+    TRACE_FN();
+
     DString s1("Hello World today is SAT deep at night");
     DString s2;
 
@@ -2348,6 +2362,79 @@ void test_algo_reverse_iterator()
 }
 //--------------------------------------------------------------
 
+#define TESTF(description, fmt, ...) do {                               \
+        std::string std_result = std::format(fmt __VA_OPT__(,) __VA_ARGS__); \
+        DString dstr_result = DString::format(fmt __VA_OPT__(,) __VA_ARGS__); \
+        bool equal = (dstr_result == std_result.c_str());               \
+        cout << description << ":\n";                                   \
+        cout << "  Format: \"" << fmt << "\"\n";                        \
+        cout << "  std::format : \"" << std_result << "\"\n";           \
+        cout << "  DString::format : \"" << dstr_result << "\"\n";      \
+        cout << "  Match: " << (equal ? "YES" : "NO") << "\n\n";        \
+        assert(equal && "DString::format produced different output!");  \
+} while(0)
+
+void test_format()
+{
+    TRACE_FN();
+#if __cplusplus >= 202002L
+    cout << std::format("{}", 25) << endl;
+
+    DString name("Sarah");
+    int age = 25;
+    cout << DString::format("My name is {}, I am {} years old\n", name, age);
+
+    // 1. Basic integers
+    TESTF("Integer decimal", "{}", 42);
+    TESTF("Integer with width and fill", "{:>8}", -123);
+    TESTF("Integer hex/oct/bin", "{:#x} {:#o} {:#b}", 255, 255, 255);
+
+    // 2. Floating point
+    TESTF("Float default", "{}", 3.14159);
+    TESTF("Float fixed precision", "{:.3f}", 3.14159);
+    TESTF("Float scientific", "{:.2e}", 123456.789);
+    TESTF("Float general", "{:.4g}", 0.00012345);
+
+   // 3. Strings and characters
+    TESTF("String", "Hello {}", "world");
+    TESTF("Character", "Char: {}", 'A');
+    TESTF("Aligned string", "{:<20}", "left");
+    TESTF("Centered string", "{:^20}", "center");
+    TESTF("Truncated string", "{:.5}", "toolongstring");
+
+    // 4. Boolean
+    TESTF("Boolean true/false", "{} {}", true, false);
+    TESTF("Boolean as 1/0", "{:d} {:d}", true, false);
+
+    // 5. Pointer
+    void* ptr = &std::cout;
+    TESTF("Pointer", "{:p}", ptr);
+
+    // 6. Custom type (DString)
+    DString p{"Alice"};
+    TESTF("Custom type", "DString: {}", p);
+
+    // 7. Multiple arguments
+    TESTF("Multiple mixed args", "{} is {} years old and loves {:.^10}",
+         "Bob", 25, "pizza");
+
+    // 8. Positional arguments
+    TESTF("Positional args", "{1} {0} {1}", "first", "second");
+
+    // 9. Escaping braces
+    TESTF("Escaped braces", "{{ {} }}", 100);
+
+    // 10. Edge cases
+    TESTF("Zero and negative zero float", "{} {}", 0.0, -0.0);
+    TESTF("Large integer", "{}", 1234567890123456789LL);
+    TESTF("Empty format string", "{}", "content");
+
+    std::cout << "All tests passed! DString::format matches std::format on all cases.\n";
+
+#endif
+}
+//--------------------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -2359,7 +2446,7 @@ int main()
     test_range_ctor();
     test_assign();
     test_append();
-    test_format();
+    test_sprintf();
     test_remove();
     test_trim();
     test_insert();
@@ -2411,6 +2498,7 @@ int main()
     test_zfill();
     test_dstringstream();
     test_succ();
+    test_format();
 
     // C++ std algorithm test
     //

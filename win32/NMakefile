@@ -5,7 +5,7 @@
 CC = clang-cl.exe
 CXX = clang-cl.exe
 CFLAGS = /O2 /nologo /D_CRT_SECURE_NO_WARNINGS /I..\include
-CXXFLAGS = /EHsc $(CFLAGS)
+CXXFLAGS = /EHsc /std:c++20  $(CFLAGS)
 OUT=/Fe
 
 !ELSE IF "$(COMP)" == "borland"
@@ -32,7 +32,7 @@ PTHREAD=-pthread
 CC = cl.exe
 CXX = cl.exe
 CFLAGS = /MP /std:c11 /O2 /nologo /I..\include
-CXXFLAGS = /EHsc /O2 /nologo /I..\include
+CXXFLAGS = /EHsc /std:c++20 /O2 /nologo /I..\include
 OUT=/Fe
 
 !ENDIF

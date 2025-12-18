@@ -230,18 +230,11 @@ static const char* find_group_name(Compiled_Regex* cr, int n)
 }
 /*-------------------------------------------------------------------------------*/
 
-static void on_malloc_error(void)
-{
-    fprintf(stderr, "DSTR library: malloc/realloc failed. Out of memory!\n");
-    abort();
-}
-/*-------------------------------------------------------------------------------*/
-
 static void* _re_malloc(size_t len)
 {
     void* result = malloc(len);
     if (!result)
-        on_malloc_error();
+        dstr_out_of_memory();
     return result;
 }
 #define RE_MALLOC(TYPE, Nelem) ((TYPE*) _re_malloc((Nelem) * sizeof(TYPE)))
@@ -252,7 +245,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 {
     pcre2_compile_context* context = pcre2_compile_context_create(NULL);
     if (!context) {
-        on_malloc_error();
+        dstr_out_of_memory();
         return NULL; }
 
     if (options & REGEX_NEWLINE_LF)
@@ -358,7 +351,7 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
 
     if (!mdata) {
-        on_malloc_error();
+        dstr_out_of_memory();
         return PCRE2_ERROR_NOMEMORY; }
 
     int rc = pcre2_match(cr->_pRE,
@@ -432,7 +425,7 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
 
     if (!mdata) {
-        on_malloc_error();
+        dstr_out_of_memory();
         return PCRE2_ERROR_NOMEMORY; }
 
     int rc = pcre2_match(cr->_pRE,

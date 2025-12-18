@@ -145,9 +145,9 @@ DString DString::from_file(const char* fname)
 {
     DString result;
     if (!dstr_assign_fromfile(result.pImp(), fname)) {
-        DString msg = DString::format("Could not open file: %s: %s\n",
-                                      fname,
-                                      strerror(errno));
+        DString msg = DString::c_format("Could not open file: %s: %s\n",
+                                        fname,
+                                        strerror(errno));
         throw DStringError(STD_MOVE(msg)); }
     return result;
 }
@@ -158,15 +158,15 @@ DString DString::from_cfile(FILE* fp)
 {
     DString result;
     if (!dstr_slurp_stream(result.pImp(), fp)) {
-        DString msg = DString::format("Could read file: %s\n",
-                                      strerror(errno));
+        DString msg = DString::c_format("Could read file: %s\n",
+                                        strerror(errno));
         throw DStringError(STD_MOVE(msg)); }
     return result;
 }
 //-----------------------------------------------------------
 
 /*static*/
-DString DString::format(const char* fmt, ...)
+DString DString::c_format(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

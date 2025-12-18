@@ -15,6 +15,10 @@
 #include <string_view>
 #endif
 
+#if __cplusplus >= 202002L
+#include <format>
+#endif
+
 #include <dstr/dstr.h>
 
 // Forward declaraton. Definintion below
@@ -91,6 +95,14 @@ public:
         return *this;
     }
 
+    // Support C++17 std::string_view
+    //
+#if __cplusplus >= 201703L
+    operator std::string_view() const noexcept
+    {
+        return std::string_view(data(), size());
+    }
+#endif
     void swap(DStringView& rhs)
     {
         DSTR_VIEW tmp = m_imp;
@@ -769,7 +781,11 @@ public:
     //
     static DString from_file(const char* fname);
     static DString from_cfile(FILE* fp);
-    static DString format(const char* fmt, ...);
+    static DString c_format(const char* fmt, ...);
+#if __cplusplus >= 202002L
+    template<typename... Args>
+    static DString format(std::format_string<Args...> fmt, Args&&... args);
+#endif
 
     // DstringView conversion
     //
@@ -922,6 +938,12 @@ public:
         dstr_assign_vsprintf(pImp(), fmt, args);
         return *this;
     }
+
+#if __cplusplus >= 202002L
+    template<typename... Args>
+    DString& assign_format(std::format_string<Args...> fmt, Args&&... args);
+#endif
+
 
     // Insertion functions
     //
@@ -1121,6 +1143,11 @@ public:
         dstr_append_vsprintf(pImp(), fmt, args);
         return *this;
     }
+
+#if __cplusplus >= 202002L
+    template<typename... Args>
+    DString& append_format(std::format_string<Args...> fmt, Args&&... args);
+#endif
 
     DString& operator+=(char c) {
         return append(c);
@@ -2585,6 +2612,56 @@ inline DString DStringView::iremove_suffix(DStringView suffix) const
     return res;
 }
 //----------------------------------------------------------------
+
+// std::format support
+//
+#if __cplusplus >= 202002L
+template <>
+struct std::formatter<DStringView> : std::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const DStringView& s, FormatContext& ctx) const {
+        return std::formatter<std::string_view>::format(
+            static_cast<std::string_view>(s), ctx);
+    }
+};
+
+template <>
+struct std::formatter<DString> : std::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const DString& s, FormatContext& ctx) const {
+        return std::formatter<std::string_view>::format(
+            static_cast<std::string_view>(s), ctx);
+    }
+};
+
+template<typename... Args>
+DString& DString::append_format(std::format_string<Args...> fmt, Args&&... args)
+{
+    std::vformat_to(std::back_inserter(*this), fmt.get(),
+                    std::make_format_args(args...));
+    return *this;
+}
+
+template<typename... Args>
+DString& DString::assign_format(std::format_string<Args...> fmt, Args&&... args)
+{
+    if (!empty()) clear();
+    std::vformat_to(std::back_inserter(*this), fmt.get(),
+                    std::make_format_args(args...));
+    return *this;
+}
+
+template<typename... Args>
+DString DString::format(std::format_string<Args...> fmt, Args&&... args)
+{
+    DString result;
+    std::vformat_to(std::back_inserter(result), fmt.get(),
+                    std::make_format_args(args...));
+    return result;
+}
+
+
+#endif
 
 // Include guard
 //

@@ -11,6 +11,7 @@ extern "C"  {
 #endif
 
 int dstr_grow_ctor(DSTR p, size_t len);
+void dstr_out_of_memory(void);
 
 #ifdef __cplusplus
 }
