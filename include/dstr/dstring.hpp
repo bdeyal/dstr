@@ -12,11 +12,10 @@
 #include <exception>
 
 #if __cplusplus >= 201703L
-#include <string_view>
-#endif
-
-#if __cplusplus >= 202002L
-#include <format>
+  #include <string_view>
+  #if __cplusplus >= 202002L
+    #include <format>
+  #endif
 #endif
 
 #include <dstr/dstr.h>
@@ -2616,7 +2615,10 @@ inline DString DStringView::iremove_suffix(DStringView suffix) const
 // std::format support
 //
 #if __cplusplus >= 202002L
-template <>
+
+// Support std::format with DStringView
+//
+template<>
 struct std::formatter<DStringView> : std::formatter<std::string_view> {
     template <typename FormatContext>
     auto format(const DStringView& s, FormatContext& ctx) const {
@@ -2625,7 +2627,9 @@ struct std::formatter<DStringView> : std::formatter<std::string_view> {
     }
 };
 
-template <>
+// Support std::format with DString
+//
+template<>
 struct std::formatter<DString> : std::formatter<std::string_view> {
     template <typename FormatContext>
     auto format(const DString& s, FormatContext& ctx) const {
@@ -2634,6 +2638,9 @@ struct std::formatter<DString> : std::formatter<std::string_view> {
     }
 };
 
+// dstr.append_format(...). Similar to append_sprintf but with the format
+// library that auto expands the object using 'push_back'
+//
 template<typename... Args>
 DString& DString::append_format(std::format_string<Args...> fmt, Args&&... args)
 {
@@ -2642,6 +2649,9 @@ DString& DString::append_format(std::format_string<Args...> fmt, Args&&... args)
     return *this;
 }
 
+// dstr.assign_format(...). Similar to dstr.sprintf but with the format
+// library that auto expands the object using 'push_back'
+//
 template<typename... Args>
 DString& DString::assign_format(std::format_string<Args...> fmt, Args&&... args)
 {
@@ -2651,6 +2661,9 @@ DString& DString::assign_format(std::format_string<Args...> fmt, Args&&... args)
     return *this;
 }
 
+// Static member function. Construct a DString using format operation. Like
+// std::format but for DString
+//
 template<typename... Args>
 DString DString::format(std::format_string<Args...> fmt, Args&&... args)
 {
@@ -2659,8 +2672,6 @@ DString DString::format(std::format_string<Args...> fmt, Args&&... args)
                     std::make_format_args(args...));
     return result;
 }
-
-
 #endif
 
 // Include guard

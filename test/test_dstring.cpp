@@ -2366,11 +2366,11 @@ void test_algo_reverse_iterator()
         std::string std_result = std::format(fmt __VA_OPT__(,) __VA_ARGS__); \
         DString dstr_result = DString::format(fmt __VA_OPT__(,) __VA_ARGS__); \
         bool equal = (dstr_result == std_result.c_str());               \
-        cout << description << ":\n";                                   \
+        if (!equal) { cout << description << ":\n";                     \
         cout << "  Format: \"" << fmt << "\"\n";                        \
         cout << "  std::format : \"" << std_result << "\"\n";           \
         cout << "  DString::format : \"" << dstr_result << "\"\n";      \
-        cout << "  Match: " << (equal ? "YES" : "NO") << "\n\n";        \
+        cout << "  Match: " << (equal ? "YES" : "NO") << "\n\n"; }      \
         assert(equal && "DString::format produced different output!");  \
 } while(0)
 

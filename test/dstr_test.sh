@@ -25,7 +25,7 @@ done
 
 # Test with C++ compilation
 #
-CXXFLAGS="-march=x86-64-v3 -I../include -x c++ -std=c++11 -W -Wall -Wextra"
+CXXFLAGS="-march=x86-64-v3 -I../include -x c++ -std=c++20 -W -Wall -Wextra"
 SRCFILES="test_dstring.cpp ../src/dstring.cpp ../src/dstr.c"
 
 for COMP in g++ clang++; do
