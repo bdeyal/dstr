@@ -131,8 +131,8 @@ static int dstr_regex_mvector_alloc(DSTR_Match_Vector* vec, size_t len)
     if (!vec->matches) {
         vec->matches_len = 0;
         return DSTR_FAIL; }
-    else {
-        vec->matches_len = len; }
+
+    vec->matches_len = len;
 
     for (size_t i = 0; i < vec->matches_len; ++i) {
         vec->matches[i].offset = DSTR_NPOS;
@@ -265,10 +265,12 @@ typedef struct Compiled_Regex {
 
 static const char* find_group_name(Compiled_Regex* cr, int n)
 {
+    if (!cr->p_groups)
+        return NULL;
+
     for (size_t i = 0; i < cr->n_groups; ++i) {
-        GroupInfo* pGI = &(cr->p_groups[i]);
-        if (pGI != NULL && pGI->group_number == n) {
-            return pGI->group_name; } }
+        if (cr->p_groups[i].group_number == n) {
+            return cr->p_groups[i].group_name; } }
 
     return NULL;
 }
@@ -343,8 +345,7 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 
     Compiled_Regex* result = RE_MALLOC(Compiled_Regex, 1);
     if (!result) {
-        if (gInfo)
-            free(gInfo);
+        if (gInfo) free(gInfo);
         pcre2_code_free(_pRE);
         return NULL; }
 
@@ -410,7 +411,8 @@ static int dstr_regex_match_aux(Compiled_Regex* cr,
     if (rc == PCRE2_ERROR_NOMATCH) {
         pcre2_match_data_free(mdata);
         return 0; }
-    else if (rc <= 0) {
+
+    if (rc <= 0) {
         pcre2_match_data_free(mdata);
         return rc; }
 
