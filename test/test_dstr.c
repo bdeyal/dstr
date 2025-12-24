@@ -1347,16 +1347,16 @@ void test_blank()
     const char* longstr = "Good morning today is Friday";
     DSTR s1 = dstrnew(longstr);
 
-    assert( !dstrblank(s1) );
+    assert( !disblank(s1) );
 
     dstrcpy(s1, " \t");
-    assert( dstrblank(s1) );
+    assert( disblank(s1) );
 
     dstrcpy(s1, " \t:");
-    assert( !dstrblank(s1) );
+    assert( !disblank(s1) );
 
     dstrcpy(s1, "         ");
-    assert( dstrblank(s1) );
+    assert( disblank(s1) );
 
     dstrfree(s1);
 }

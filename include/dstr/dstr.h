@@ -746,7 +746,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 
 #define disdigits           dstr_isdigits
 #define disxdigits          dstr_isxdigits
-#define dstrblank           dstr_isblank
+#define disblank            dstr_isblank
 #define disalnum            dstr_isalnum
 #define disalpha            dstr_isalpha
 #define disascii            dstr_isascii
@@ -757,9 +757,9 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define disprint            dstr_isprintable
 #define disspace            dstr_isspace
 #define distitle            dstr_istitle
-#define dsisupper           dstr_isupper
-#define dstrinc             dstr_increment
+#define disupper            dstr_isupper
 
+#define dstrinc             dstr_increment
 #define dstrhash            dstr_hash
 
 #define datoi               dstr_atoi
