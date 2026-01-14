@@ -782,6 +782,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrpart            dstr_partition
 #define dstrrpart           dstr_rpartition
 
+#if !defined(NO_DSTRING_REGEX)
 // Regex functions
 //
 #define dre_exact           dstr_regex_exact
@@ -792,6 +793,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dre_perror          dstr_regex_perror
 #define dre_strerror        dstr_regex_strerror
 #define dre_mvfree          dstr_regex_mvector_free
+#endif
 
 /* clean namespace */
 #endif

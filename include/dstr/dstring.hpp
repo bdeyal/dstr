@@ -775,8 +775,10 @@ public:
 
     // Static constructors
     //
-    // * slurp a text file into a DString (throws)
-    // * create from a printf-like format
+    // 1. slurp a text file into a DString (throws)
+    // 2. slurp from a FILE* ptr
+    // 3. printf line
+    // 4. std::format (like a python format string, C++ >= 20)
     //
     static DString from_file(const char* fname);
     static DString from_cfile(FILE* fp);
