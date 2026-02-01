@@ -357,30 +357,68 @@ int dstr_regex_substitute(DSTR p, const char* pattern, size_t offset,
 /* 3way strcmp-like comparison*/
 static inline int dstr_compare_sz(CDSTR lhs, const char* sz)
 {
-    const char* l = lhs ? lhs->data : "";
-    const char* r = sz ? sz : "";
-    return strcmp(l, r);
+    if (lhs) {
+        if (sz) {
+            return strncmp(lhs->data, sz, lhs->length); }
+        else {
+            return lhs->length > 0; } }
+    else {
+        if (sz) {
+            return -1; }
+        else {
+            return 0; } }
 }
 
 static inline int dstr_icompare_sz(CDSTR lhs, const char* sz)
 {
+    if (lhs) {
+        if (sz) {
+            return strncasecmp(lhs->data, sz, lhs->length); }
+        else {
+            return lhs->length > 0; } }
+    else {
+        if (sz) {
+            return -1; }
+        else {
+            return 0; } }
+#if 0
     const char* l = lhs ? lhs->data : "";
     const char* r = sz ? sz : "";
     return strcasecmp(l, r);
+#endif
 }
 
 static inline int dstr_compare_ds(CDSTR lhs, CDSTR rhs)
 {
-    const char* l = lhs ? lhs->data : "";
-    const char* r = rhs ? rhs->data : "";
-    return strcmp(l, r);
+    if (lhs) {
+        if (rhs) {
+            return strncmp(lhs->data, rhs->data, lhs->length); }
+        else {
+            return lhs->length > 0; } }
+    else {
+        if (rhs) {
+            return rhs->length ? -1 : 0; }
+        else {
+            return 0; } }
 }
 
 static inline int dstr_icompare_ds(CDSTR lhs, CDSTR rhs)
 {
+    if (lhs) {
+        if (rhs) {
+            return strncasecmp(lhs->data, rhs->data, lhs->length); }
+        else {
+            return lhs->length > 0; } }
+    else {
+        if (rhs) {
+            return rhs->length ? -1 : 0; }
+        else {
+            return 0; } }
+#if 0
     const char* l = lhs ? lhs->data : "";
     const char* r = rhs ? rhs->data : "";
     return strcasecmp(l, r);
+#endif
 }
 
 static inline DSTR_BOOL dstr_equal_sz(CDSTR lhs, const char* sz)

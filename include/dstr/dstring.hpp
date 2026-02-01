@@ -393,10 +393,10 @@ public:
     //
     // Note: NULL C string is considered empty string ""
     //
-    int compare(const char* sz)   const { return strcmp(data(), sz ? sz : ""); }
-    int icompare(const char* sz)  const { return strcasecmp(data(), sz ? sz : ""); }
-    int compare(DStringView rhs)  const { return strcmp(data(), rhs.data()); }
-    int icompare(DStringView rhs) const { return strcasecmp(data(), rhs.data()); }
+    int compare(const char* sz)   const { return dstr_compare_sz(pImp(), sz); }
+    int icompare(const char* sz)  const { return dstr_icompare_sz(pImp(), sz); }
+    int compare(DStringView rhs)  const { return dstr_compare_ds(pImp(), rhs.pImp()); }
+    int icompare(DStringView rhs) const { return dstr_icompare_ds(pImp(), rhs.pImp()); }
 
     bool iequal(const char* sz)   const { return (icompare(sz) == 0);  }
     bool iequal(DStringView rhs)  const { return (icompare(rhs) == 0); }
@@ -1867,12 +1867,10 @@ public:
 
     // Comparisons and operators ==, !=, >, <, >=, <=
     //
-    // Note: NULL C string is considered empty string ""
-    //
-    int compare(const char* sz)      const { return strcmp(data(), sz ? sz : ""); }
-    int icompare(const char* sz)     const { return strcasecmp(data(), sz ? sz : ""); }
-    int compare(DStringView rhs)     const { return strcmp(data(), rhs.data()); }
-    int icompare(DStringView rhs)    const { return strcasecmp(data(), rhs.data()); }
+    int compare(const char* sz)   const { return dstr_compare_sz(pImp(), sz); }
+    int icompare(const char* sz)  const { return dstr_icompare_sz(pImp(), sz); }
+    int compare(DStringView rhs)  const { return dstr_compare_ds(pImp(), rhs.pImp()); }
+    int icompare(DStringView rhs) const { return dstr_icompare_ds(pImp(), rhs.pImp()); }
 
     bool iequal(const char* sz)      const { return (icompare(sz) == 0);  }
     bool iequal(DStringView rhs)     const { return (icompare(rhs) == 0); }
