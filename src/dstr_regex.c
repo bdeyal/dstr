@@ -460,7 +460,7 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
                          dstr_u8ptr(subject),
                          dstr_length(subject),
                          offset,
-                         match_options(options) & 0xFFFF,
+                         match_options(options),
                          mdata,
                          NULL);
 
