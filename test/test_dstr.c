@@ -1576,6 +1576,343 @@ void test_translate()
 }
 /*--------------------------------------------------------------------------*/
 
+#define TEST_SUCC(before, after) do {                                   \
+    DSTR next = dstrnew(before);                                        \
+    dstrinc(next);                                                      \
+    printf("\"%s\".succ() ==> \"%s\"\n", (before), dstrdata(next));     \
+    assert(dstreq(next, (after))); dstrfree(next); } while(0)
+
+void test_succ()
+{
+    TRACE_FN();
+
+    TEST_SUCC("USA", "USB");
+    TEST_SUCC("", "");
+    TEST_SUCC("00", "01");
+    TEST_SUCC("09", "10");
+    TEST_SUCC("99", "100");
+    TEST_SUCC("aa", "ab");
+    TEST_SUCC("az", "ba");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("AA", "AB");
+    TEST_SUCC("AZ", "BA");
+    TEST_SUCC("ZZ", "AAA");
+    TEST_SUCC("zz99zz99", "aaa00aa00");
+    TEST_SUCC("99zz99zz", "100aa00aa");
+    TEST_SUCC("abcd", "abce");
+    TEST_SUCC("THX1138", "THX1139");
+    TEST_SUCC("<<koala>>", "<<koalb>>");
+    TEST_SUCC("1999zzz", "2000aaa");
+    TEST_SUCC("ZZZ9999", "AAAA0000");
+    TEST_SUCC("***", "**+");
+    TEST_SUCC("9", "10");
+    TEST_SUCC("z", "aa");
+    TEST_SUCC("zz", "aaa");
+    TEST_SUCC("hell!z99", "helm!a00");
+    TEST_SUCC("hell!9", "hell!10");
+    TEST_SUCC("hell!99", "hell!100");
+    TEST_SUCC("hell!zz", "helm!aa");
+    TEST_SUCC("abc-43", "abc-44");
+    TEST_SUCC("abc-99", "abc-100");
+    TEST_SUCC("abc-a99", "abc-b00");
+    TEST_SUCC("abc-z99", "abd-a00");
+    TEST_SUCC("hell2!99", "hell3!00");
+    TEST_SUCC("hell2!@$99", "hell3!@$00");
+    TEST_SUCC("hello!@$99", "hello!@$100");
+    TEST_SUCC("hell8!@$zz", "hell8!@$aaa");
+    TEST_SUCC("a/@z", "b/@a");
+    TEST_SUCC("/@z", "/@aa");
+    TEST_SUCC("XY.99", "XY.100");
+    TEST_SUCC("XY1.99", "XY2.00");
+}
+//-------------------------------------------------
+
+#define TEST_ZFILL(before, len, after) do {             \
+        DSTR f = dstrnew(before);                       \
+        dzfill(f, len);                                 \
+        printf("\"%s\"\n", dstrdata(f));                \
+        assert(dstreq(f, (after)));                     \
+        dstrfree(f);                                    \
+    } while (0)
+
+void test_zfill()
+{
+    TRACE_FN();
+
+    TEST_ZFILL("35",    5, "00035");
+    TEST_ZFILL("+xyz", 10, "+000000xyz");
+    TEST_ZFILL("-100",  8, "-0000100");
+    TEST_ZFILL("++100", 8, "+000+100");
+    TEST_ZFILL("",      5, "00000");
+    TEST_ZFILL("+",     5, "+0000");
+    TEST_ZFILL("123456",  5, "123456");
+    TEST_ZFILL("123456",  6, "123456");
+    TEST_ZFILL("123456",  7, "0123456");
+}
+//-------------------------------------------------
+
+void test_times()
+{
+    TRACE_FN();
+
+    DSTR s = dstrnew("A");
+    DSTR tmp1 = dstrnew_ds(s);
+    dstrmult(tmp1, 5);
+    assert(dstreq(tmp1, "AAAAA"));
+
+    dstrcpy_ds(tmp1, s);
+    DSTR tmp2 = dstrnew_ds(s);
+
+    dstrmult(tmp1, 2);
+    dstrmult(tmp1, 2);
+    dstrmult(tmp2, 4);
+    assert(dstreq_ds(tmp1, tmp2));
+
+    dstrmult(tmp1, 0);
+    assert(dstreq(tmp1, ""));
+
+    dstrcpy_ds(tmp1, s);
+    dstrmult(tmp1, 1);
+    assert(dstreq_ds(tmp1, s));
+
+    dstrcpy_cc(tmp1, '=', 50);
+    dstrcpy_cc(tmp2, '=', 1);
+    dstrmult(tmp2, 50);
+    assert(dstreq_ds(tmp1, tmp2));
+
+    printf("%s\nH E L L O   W O R L D ! !\n%s\n", dstrdata(tmp1), dstrdata(tmp2));
+
+    dstrfree(s);
+    dstrfree(tmp1);
+    dstrfree(tmp2);
+}
+//-------------------------------------------------
+
+void test_strip()
+{
+    TRACE_FN();
+
+    DSTR s = dstrnew("####Hello####");
+    dlstrip_c(s, '#');
+    drstrip_c(s, '#');
+    assert(dstreq(s, "Hello"));
+
+    dstrcpy(s, "#####################");
+    drstrip_c(s, '#');
+    assert(dstrempty(s));
+
+    dstrcpy(s, "#####################");
+    dlstrip_c(s, '#');
+    assert(dstrempty(s));
+
+    dstrcpy(s, " ###Hello###");
+    dlstrip_c(s, '#');
+    drstrip_c(s, '#');
+    assert(dstreq(s, " ###Hello"));
+
+    dstrcpy(s, " \n \t hello\n");
+    dlstrip_c(s, '\n');
+    drstrip_c(s, '\n');
+    assert(dstreq(s, " \n \t hello"));
+
+    dstrcpy(s, "\n\n \t hello\n");
+    dlstrip_c(s, '\n');
+    drstrip_c(s, '\n');
+    assert(dstreq(s, " \t hello"));
+
+    dstrcpy(s, "www.example.com");
+    dlstrip(s, "cmow.");
+    drstrip(s, "cmow.");
+    assert(dstreq(s, "example"));
+
+    dstrcpy(s, " www.example.com");
+    dlstrip(s, "cmow.");
+    drstrip(s, "cmow.");
+    assert(dstreq(s, " www.example"));
+
+    dstrcpy(s, "www.example.com ");
+    dlstrip(s, "cmow.");
+    drstrip(s, "cmow.");
+    assert(dstreq(s, "example.com "));
+
+    dstrcpy(s, "Arthur: three!");
+    dlstrip(s, "Arthur: ");
+    assert(dstreq(s, "ee!"));
+
+    dstrcpy(s, "Hello World \t\r\n");
+    drstrip(s, " \t\n\r");
+    assert(dstreq(s, "Hello World"));
+
+    dstrfree(s);
+}
+//-------------------------------------------------
+
+void test_is_identifier()
+{
+    TRACE_FN();
+
+    DSTR tmp = dstrnew("MyFolder");
+    assert(dstr_isidentifier(tmp));
+
+    dstrcpy(tmp, "Demo001");
+    assert(dstr_isidentifier(tmp));
+
+    dstrcpy(tmp, "_Demo001");
+    assert(dstr_isidentifier(tmp));
+
+    dstrcpy(tmp, "4Demo001");
+    assert(!dstr_isidentifier(tmp));
+
+    dstrcpy(tmp, "2bring");
+    assert(!dstr_isidentifier(tmp));
+
+    dstrcpy(tmp, "my demo");
+    assert(!dstr_isidentifier(tmp));
+
+    dstrfree(tmp);
+}
+//-------------------------------------------------
+
+#define ASSERT_PARTITION(str, what, p1, p2, p3) do {            \
+    DSTR s = dstrnew(str);                                      \
+    struct DSTR_PartInfo pinfo;                                 \
+    dstr_partition(s, (what), &pinfo);                          \
+    DSTR l = dstrnew_substr(s, pinfo.l_pos, pinfo.l_len);       \
+    DSTR m = dstrnew_substr(s, pinfo.m_pos, pinfo.m_len);       \
+    DSTR r = dstrnew_substr(s, pinfo.r_pos, pinfo.r_len);       \
+    assert(dstreq(l, p1));                                      \
+    assert(dstreq(m, p2));                                      \
+    assert(dstreq(r, p3));                                      \
+    dstrfree(s); dstrfree(l); dstrfree(m); dstrfree(r);         \
+    } while(0)
+
+void test_partition()
+{
+    TRACE_FN();
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "bananas",
+                     "I could eat ",
+                     "bananas",
+                     " all day");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "apples",
+                     "I could eat bananas all day",
+                     "",
+                     "");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "I could eat bananas all day",
+                     "",
+                     "I could eat bananas all day",
+                     "");
+
+    ASSERT_PARTITION("I could eat bananas all day",
+                     "",
+                     "",
+                     "",
+                     "I could eat bananas all day");
+
+    ASSERT_PARTITION("x=y", "=", "x", "=", "y");
+    ASSERT_PARTITION("=y", "=", "", "=", "y");
+    ASSERT_PARTITION("x=", "=", "x", "=", "");
+}
+//-------------------------------------------------
+
+#define ASSERT_RPARTITION(str, what, p1, p2, p3) do {           \
+    DSTR s = dstrnew(str);                                      \
+    struct DSTR_PartInfo pinfo;                                 \
+    dstr_rpartition(s, (what), &pinfo);                         \
+    DSTR l = dstrnew_substr(s, pinfo.l_pos, pinfo.l_len);       \
+    DSTR m = dstrnew_substr(s, pinfo.m_pos, pinfo.m_len);       \
+    DSTR r = dstrnew_substr(s, pinfo.r_pos, pinfo.r_len);       \
+    assert(dstreq(l, p1));                                      \
+    assert(dstreq(m, p2));                                      \
+    assert(dstreq(r, p3));                                      \
+    dstrfree(s); dstrfree(l); dstrfree(m); dstrfree(r);         \
+    } while(0)
+
+void test_rpartition()
+{
+    TRACE_FN();
+
+    ASSERT_PARTITION("We all could eat bananas all day",
+                     "all",
+                     "We ",
+                     "all",
+                     " could eat bananas all day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "all",
+                      "We all could eat bananas ",
+                      "all",
+                      " day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "apples",
+                      "",
+                      "",
+                      "We all could eat bananas all day");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "We all could eat bananas all day",
+                      "",
+                      "We all could eat bananas all day",
+                      "");
+
+    ASSERT_RPARTITION("We all could eat bananas all day",
+                      "",
+                      "We all could eat bananas all day",
+                      "",
+                      "");
+
+    ASSERT_RPARTITION("x=y", "=", "x", "=", "y");
+    ASSERT_RPARTITION("=y", "=", "", "=", "y");
+    ASSERT_RPARTITION("x=", "=", "x", "=", "");
+}
+//-------------------------------------------------
+
+void test_align()
+{
+    TRACE_FN();
+
+    DSTR s1 = dstrnew("Hello");
+    DSTR s2 = dstrnew_empty();
+
+    dstrcpy_ds(s2, s1);
+    dstralign_l(s2, 30, '@');
+    puts(dstrdata(s2));
+
+    dstrcpy_ds(s2, s1);
+    dstralign_r(s2, 30, '@');
+    puts(dstrdata(s2));
+
+    dstrcpy_ds(s2, s1);
+    dstralign_l(s2, dstrlen(s1), '@');
+    puts(dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrcpy_ds(s2, s1);
+    dstralign_r(s2, dstrlen(s1), '@');
+    puts(dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrcpy_ds(s2, s1);
+    dstralign_l(s2, dstrlen(s1) - 1, '@');
+    puts(dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrcpy_ds(s2, s1);
+    dstralign_r(s2, dstrlen(s1) - 1, '@');
+    puts(dstrdata(s2));
+    assert(dstreq_ds(s1, s2));
+
+    dstrfree(s1);
+    dstrfree(s2);
+}
+//-------------------------------------------------
+
 int main()
 {
     test_ctor();
@@ -1619,4 +1956,20 @@ int main()
     test_center();
     test_join();
     test_translate();
+
+    test_succ();
+    test_zfill();
+    test_times();
+    test_strip();
+    test_is_identifier();
+    test_partition();
+    test_rpartition();
+    test_align();
+
+#if 0
+    test_replace_all();
+    test_count();
+    test_expandtabs();
+    test_title();
+#endif
 }
