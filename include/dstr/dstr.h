@@ -627,7 +627,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrcount           dstr_count_sz
 #define dstrcount_i         dstr_icount_sz
 #define dstrcount_ds        dstr_count_ds
-#define dsticount_di        dstr_icount_ds
+#define dstrcount_di        dstr_icount_ds
 
 #define dstrhas             dstr_contains_sz
 #define dstrhas_i           dstr_icontains_sz

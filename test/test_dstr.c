@@ -1913,6 +1913,135 @@ void test_align()
 }
 //-------------------------------------------------
 
+void test_replace_all()
+{
+    TRACE_FN();
+
+    const char* origstr = "I love apple apple apple apple apple";
+    DSTR orig = dstrnew(origstr);
+    printf("ORIG:\n%s\n", dstrdata(orig));
+
+    dstr_replace_all(orig, "apple", "@bannana@", DSTR_REPLACE_ALL);
+    printf("%s\n", dstrdata(orig));
+
+    dstrcpy(orig, origstr);
+    dstr_replace_all(orig, "apple", "fig", DSTR_REPLACE_ALL);
+    printf("%s\n", dstrdata(orig));
+
+    dstrcpy(orig, origstr);
+    dstr_replace_all(orig, "apple", "@bannana@", 2);
+    printf("%s\n", dstrdata(orig));
+
+    dstrcpy(orig, origstr);
+    DSTR oldstr = dstrnew("apple");
+    DSTR newstr = dstrnew("@DSTR@");
+    dstr_replace_all_ds(orig, oldstr, newstr, DSTR_REPLACE_ALL);
+    printf("%s\n", dstrdata(orig));
+
+    dstrcpy(orig, origstr);
+    dstr_replace_all_ds(orig, oldstr, newstr, 0);
+    printf("%s\n", dstrdata(orig));
+
+    dstrfree(orig);
+    dstrfree(oldstr);
+    dstrfree(newstr);
+}
+//-------------------------------------------------
+
+#define TEST_COUNT(str, search, expected) do {             \
+        DSTR str_ = dstrnew(str);                          \
+        assert(dstrcount(str_, (search)) == (expected));   \
+        DSTR search_ = dstrnew(search);                    \
+        assert(dstrcount_ds(str_, search_) == (expected));  \
+        dstrfree(str_); dstrfree(search_);                 \
+    } while (0)
+
+#define TEST_ICOUNT(str, search, expected) do {              \
+        DSTR str_ = dstrnew(str);                            \
+        assert(dstrcount_i(str_, (search)) == (expected));   \
+        DSTR search_ = dstrnew(search);                      \
+        assert(dstrcount_di(str_, search_) == (expected));   \
+        dstrfree(str_); dstrfree(search_);                   \
+    } while (0)
+
+void test_count()
+{
+    TRACE_FN();
+
+    TEST_COUNT("", "", 1);
+    TEST_COUNT("A", "", 2);
+    TEST_COUNT("ABC", "", 4);
+    TEST_COUNT("pppp", "pp", 2);
+    TEST_COUNT("pppp", "ppp", 1);
+
+    TEST_ICOUNT("", "", 1);
+    TEST_ICOUNT("A", "", 2);
+    TEST_ICOUNT("ABC", "", 4);
+    TEST_ICOUNT("pppp", "pp", 2);
+    TEST_ICOUNT("pppp", "ppp", 1);
+    TEST_ICOUNT("pppp", "PpP", 1);
+
+    TEST_COUNT("Hello World", "hell", 0);
+    TEST_ICOUNT("Hello World", "hell", 1);
+
+    TEST_COUNT("Hello World", "RLD", 0);
+    TEST_ICOUNT("Hello World", "RLD", 1);
+}
+//-------------------------------------------------
+
+#define TEST_EXPAND_TABS(str, width, expected)  do {    \
+        DSTR str_ = dstrnew(str);                       \
+        dexpandtabs(str_, (width));                     \
+        assert(dstreq(str_, (expected)));               \
+        dstrfree(str_);                                 \
+} while (0);
+
+void test_expandtabs()
+{
+    TRACE_FN();
+
+    const char* s = "\t";
+    TEST_EXPAND_TABS(s, 8, "        ");
+    TEST_EXPAND_TABS(s, 1, " ");
+    TEST_EXPAND_TABS(s, 2, "  ");
+    DSTR tmp = dstrnew_cc(' ', 60);
+    TEST_EXPAND_TABS(s, 60, dstrdata(tmp));
+    dstrfree(tmp);
+
+    s = "Hello\tWorld\tToday\tIs\tSaturday";
+    TEST_EXPAND_TABS(s, 8, "Hello   World   Today   Is      Saturday");
+    TEST_EXPAND_TABS(s, 7, "Hello  World  Today  Is     Saturday");
+    TEST_EXPAND_TABS(s, 6, "Hello World Today Is    Saturday");
+    TEST_EXPAND_TABS(s, 5, "Hello     World     Today     Is   Saturday");
+    TEST_EXPAND_TABS(s, 4, "Hello   World   Today   Is  Saturday");
+    TEST_EXPAND_TABS(s, 3, "Hello World Today Is Saturday");
+    TEST_EXPAND_TABS(s, 2, "Hello World Today Is  Saturday");
+    TEST_EXPAND_TABS(s, 1, "Hello World Today Is Saturday");
+    TEST_EXPAND_TABS(s, 0, "HelloWorldTodayIsSaturday");
+}
+//-------------------------------------------------
+
+#define TEST_TITLE(before, after)  do {         \
+    DSTR before_ = dstrnew(before);             \
+    dstrtitle(before_);                         \
+    assert(dstreq(before_, after));             \
+    assert(distitle(before_));                  \
+    dstrfree(before_);                          \
+    } while (0)
+
+void test_title()
+{
+    TRACE_FN();
+
+    TEST_TITLE("hello world today 33 is SAT", "Hello World Today 33 Is SAT");
+    TEST_TITLE("Welcome to my 2nd world", "Welcome To My 2Nd World");
+    TEST_TITLE("hello b2b2b2 and 3g3g3g", "Hello B2B2B2 And 3G3G3G");
+    TEST_TITLE("hello b2bb2b2 a.n.d 3g3g3g", "Hello B2Bb2B2 A.N.D 3G3G3G");
+    TEST_TITLE("hello b2b2b2 a_n_d 3g3g3g", "Hello B2B2B2 A_N_D 3G3G3G");
+}
+//-------------------------------------------------
+
+
 int main()
 {
     test_ctor();
@@ -1965,11 +2094,8 @@ int main()
     test_partition();
     test_rpartition();
     test_align();
-
-#if 0
     test_replace_all();
     test_count();
     test_expandtabs();
     test_title();
-#endif
 }
