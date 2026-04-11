@@ -2085,7 +2085,6 @@ int main()
     test_center();
     test_join();
     test_translate();
-
     test_succ();
     test_zfill();
     test_times();
