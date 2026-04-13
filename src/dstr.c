@@ -152,7 +152,8 @@ static DSTR dstr_alloc_empty(void)
 
 int dstr_grow_ctor(DSTR p, size_t len)
 {
-    assert(len >= DSTR_INITIAL_CAPACITY);
+    if (len < DSTR_INITIAL_CAPACITY) {
+        return DSTR_SUCCESS; }
 
     size_t new_capacity = DSTR_INITIAL_CAPACITY;
     while (new_capacity <= len)
@@ -379,9 +380,8 @@ static int dstr_replace_imp(DSTR p,
                             size_t buflen)
 {
     bool nothing_to_replace =
-        (buff == NULL) || \
-        (buflen == 0)  || \
-        ((buflen = strnlen(buff, buflen)) == 0);
+        (buff == NULL) ||                       \
+        (buflen == 0);
 
     if (nothing_to_replace) {
         dstr_remove_imp(p, pos, count);
@@ -705,7 +705,7 @@ static size_t dstr_ffo_imp(CDSTR p,
     else
         result += strcspn(DBUF(p) + pos, pattern);
 
-    if (result == DLEN(p))
+    if (result >= DLEN(p))
         result = DSTR_NPOS;
 
     return result;
@@ -1323,7 +1323,8 @@ int dstr_append_vsprintf(DSTR p, const char* fmt, va_list argptr)
     // formatting was successful on tmp buffer
     //
     if ((size_t)len < sizeof(buff)) {
-        dstr_append_no_overlap(p, buff, (size_t) len); }
+        if (!dstr_append_no_overlap(p, buff, (size_t) len)) {
+            return DSTR_FAIL; } }
     else {
         // Second pass with enough buffer size
         //
@@ -1659,6 +1660,9 @@ void dstr_reverse(DSTR p)
 
     dstr_assert_valid(p);
 
+    if (DLEN(p) == 0)
+        return;
+
     first = 0;
     last = DLEN(p) - 1;
 
@@ -1677,7 +1681,7 @@ static inline void bitcopy_dstr(DSTR_TYPE* dest, const DSTR_TYPE* src)
 {
     *dest = *src;
 
-    if (src->capacity == DSTR_INITIAL_CAPACITY) {
+    if (D_IS_SSO(src)) {
         dest->capacity = src->capacity;
         dest->data = dest->sso_buffer; }
 }
@@ -2371,7 +2375,6 @@ int dstr_replace_all_sz(DSTR dest, const char* oldstr, const char* newstr, size_
     if (!oldstr) return DSTR_SUCCESS;
     if (!newstr) return DSTR_SUCCESS;
     if (*oldstr == '\0') return DSTR_SUCCESS;
-    if (*newstr == '\0') return DSTR_SUCCESS;
 
     size_t oldlen = strlen(oldstr);
     size_t newlen = strlen(newstr);
@@ -2384,16 +2387,23 @@ int dstr_replace_all_ds(DSTR dest, CDSTR oldstr, CDSTR newstr, size_t count)
 {
     if (!count)  return DSTR_SUCCESS;
     if (!oldstr) return DSTR_SUCCESS;
-    if (!newstr) return DSTR_SUCCESS;
 
     size_t oldlen = DLEN(oldstr);
-    size_t newlen = DLEN(newstr);
     if (oldlen == 0) return DSTR_SUCCESS;
-    if (newlen == 0) return DSTR_SUCCESS;
+
+    const char* sz_newstr;
+    size_t newlen;
+
+    if (!newstr) {
+        sz_newstr = "";
+        newlen = 0; }
+    else {
+        sz_newstr = DBUF(newstr);
+        newlen = DLEN(newstr); }
 
     return dstr_replace_all_imp(dest,
                                 DBUF(oldstr), oldlen,
-                                DBUF(newstr), newlen,
+                                sz_newstr, newlen,
                                 count);
 }
 /*-------------------------------------------------------------------------------*/
@@ -2532,8 +2542,8 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
 {
     // Nothing to join
     //
-    if (!argv || !argv[0] || n == 0)
-        return DSTR_SUCCESS;;
+    if (!argv || !argv[0] || n == 0) {
+        return DSTR_SUCCESS; }
 
     // NULL is like empty separator. i.e. concatenation
     //
@@ -2561,8 +2571,18 @@ int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n)
 {
     // Nothing to join
     //
-    if (!argv || !argv[0] || n == 0)
-        return DSTR_SUCCESS;;
+    if (!argv || !argv[0] || n == 0) {
+        return DSTR_SUCCESS; }
+
+    const char* sepstr;
+    size_t seplen;
+
+    if (!sep) {
+        sepstr = "";
+        seplen = 0; }
+    else {
+        sepstr = DBUF(sep);
+        seplen = DLEN(sep); }
 
     size_t index = 0;
 
@@ -2573,7 +2593,7 @@ int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n)
         if ((++index == n) || (argv[index] == NULL))
             break;
 
-        if (!dstr_append_imp(dest, DBUF(sep), DLEN(sep)))
+        if (!dstr_append_imp(dest, sepstr, seplen))
             return DSTR_FAIL; }
 
     return DSTR_SUCCESS;

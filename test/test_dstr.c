@@ -1122,6 +1122,10 @@ void test_reverse()
     TEST_REVERSE("ABC", "CBA");
     TEST_REVERSE("ABCD", "DCBA");
     TEST_REVERSE("Good Morning", "gninroM dooG");
+
+    DSTR empty = dstrnew_empty();
+    dstrrev(empty);
+    dstrfree(empty);
 }
 //-------------------------------------------------
 
