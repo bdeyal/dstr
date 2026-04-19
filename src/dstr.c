@@ -1660,7 +1660,7 @@ void dstr_reverse(DSTR p)
 
     dstr_assert_valid(p);
 
-    if (DLEN(p) == 0)
+    if (!p || DLEN(p) == 0)
         return;
 
     first = 0;

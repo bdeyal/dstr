@@ -202,7 +202,7 @@ void dstr_lstrip_sz(DSTR p, const char* selectors);
 void dstr_rstrip_sz(DSTR p, const char* selectors);
 
 /* hash for use in hash table */
-size_t dstr_hash(CDSTR src, int seed /*=0*/);
+size_t dstr_hash(CDSTR src, int seed);
 
 /*   atoi integer conversion
  *
@@ -395,16 +395,34 @@ static inline DSTR_BOOL dstr_iequal_sz(CDSTR lhs, const char* sz)
 
 static inline DSTR_BOOL dstr_equal_ds(CDSTR lhs, CDSTR rhs)
 {
-    return
-        (lhs->length == rhs->length) &&
-        (dstr_compare_ds(lhs, rhs) == 0);
+    if (lhs) {
+        if (rhs) {
+            if (lhs->length != rhs->length) {
+                return false; }
+            return strcmp(lhs->data, rhs->data) == 0; }
+        else {
+            return strcmp(lhs->data, "") == 0; } }
+    else {
+        if (rhs) {
+            return strcmp(rhs->data, "") == 0; }
+        else  {
+            return 0; } }
 }
 
 static inline DSTR_BOOL dstr_iequal_ds(CDSTR lhs, CDSTR rhs)
 {
-    return
-        (lhs->length == rhs->length) &&
-        (dstr_icompare_ds(lhs, rhs) == 0);
+    if (lhs) {
+        if (rhs) {
+            if (lhs->length != rhs->length) {
+                return false; }
+            return strcasecmp(lhs->data, rhs->data) == 0; }
+        else {
+            return strcmp(lhs->data, "") == 0; } }
+    else {
+        if (rhs) {
+            return strcmp(rhs->data, "") == 0; }
+        else  {
+            return 0; } }
 }
 
 static inline size_t dstr_length(CDSTR p) {
@@ -663,7 +681,7 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrgetc            dstr_getchar
 #define dstrputc_s          dstr_putchar_safe
 #define dstrgetc_s          dstr_getchar_safe
-#define dstrfornt           dstr_front
+#define dstrfront           dstr_front
 #define dstrback            dstr_back
 
 #define dstrcpy_cc          dstr_assign_cc
@@ -701,8 +719,8 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define drmany              dstr_remove_any
 #define drmprefix           dstr_remove_prefix
 #define drmsuffix           dstr_remove_suffix
-#define drmprefix_i         dstr_remove_prefix
-#define drmsuffix_i         dstr_remove_suffix
+#define drmprefix_i         dstr_iremove_prefix
+#define drmsuffix_i         dstr_iremove_suffix
 
 #define dsprintf            dstr_assign_sprintf
 #define dvsprintf           dstr_assign_vsprintf
