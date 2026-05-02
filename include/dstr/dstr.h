@@ -212,9 +212,9 @@ size_t dstr_hash(CDSTR src, int seed);
  *   '123'      => decimal
  *   '0123'     => decimal !
  */
-long   dstr_atoi(CDSTR src);
-long   dstr_atoll(CDSTR src);
-double dstr_atof(CDSTR src);
+long      dstr_atoi(CDSTR src);
+long long dstr_atoll(CDSTR src);
+double    dstr_atof(CDSTR src);
 
 /* itos = int to string */
 int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base);
@@ -804,7 +804,6 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 // Regex functions
 //
 #define dre_exact           dstr_regex_exact
-#define dre_within          dstr_regex_within
 #define dre_match           dstr_regex_match
 #define dre_groups          dstr_regex_match_groups
 #define dre_subst           dstr_regex_substitute

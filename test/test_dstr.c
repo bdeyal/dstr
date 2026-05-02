@@ -1543,9 +1543,16 @@ void test_translate()
     DSTRTRANS("hello", "aeiou", "AA-", "hAll-");
     DSTRTRANS("hello world today is sunday", "aeiou", NULL, "hll wrld tdy s sndy");
     DSTRTRANS("hello world today is sunday", "^aeiou", NULL, "eoooaiua");
+    DSTRTRANS("HELLO", "Z-A", "a-z", "svool");
+    DSTRTRANS("amzn", "a-mz-n", "A-MZ-N", "AMZN");
+    DSTRTRANS("ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+              "A-MZ-N", "a-mz-n",
+              "abcdefghijklmnopqrstuvwxyz");
+    DSTRTRANS("hello", "a-mz-n", "A-MZ-N", "HELLO");
+    DSTRTRANS("hello world 123", "a-mz-n", "A-MZ-N", "HELLO WORLD 123");
 
     DSTRTRANS("hello", "^aeiou", "-", "-e--o");
-    DSTRTRANS("hello world today is sunday", "a-z", "A-Z", "HELLO WORLD TODAY IS SUNDAY");
+    DSTRTRANS("helloz worldz todayz is sundayz", "a-z", "A-Z", "HELLOZ WORLDZ TODAYZ IS SUNDAYZ");
 
     DSTRTRSQZ("aabbccddeeffgg", "", "abcd", "abcdeeffgg");
     DSTRTRSQZ("hello", "l", "r", "hero");
@@ -1930,6 +1937,10 @@ void test_replace_all()
 
     dstrcpy(orig, origstr);
     dstr_replace_all(orig, "apple", "fig", DSTR_REPLACE_ALL);
+    printf("%s\n", dstrdata(orig));
+
+    dstrcpy(orig, origstr);
+    dstr_replace_all(orig, "apple", "apple123", DSTR_REPLACE_ALL);
     printf("%s\n", dstrdata(orig));
 
     dstrcpy(orig, origstr);

@@ -517,10 +517,8 @@ static size_t dstr_rfind_sz_imp(CDSTR p,
     if (slen == 0)
         return pos;
 
-    for (const char* search_loc = dstr_address_c(p, pos) ;
-         search_loc >= DBUF(p) ;
-         --search_loc)
-    {
+    for (size_t i = pos + 1; i-- > 0; )  {
+        const char* search_loc = DBUF(p) + i;
         if (ignore_case) {
             if (strncasecmp(search_loc, s, slen) == 0) {
                 found_loc = search_loc;
@@ -664,10 +662,8 @@ static size_t dstr_rfind_c_imp(CDSTR p,
 
     char C_ = ignore_case ? toupper(c) : c;
 
-    for (const char* search_loc = dstr_address_c(p, pos);
-         search_loc >= DBUF(p);
-         --search_loc)
-    {
+    for (size_t i = pos + 1; i-- > 0; )  {
+        const char* search_loc = DBUF(p) + i;
         if (*search_loc == c) {
             found_loc = search_loc;
             break; }
@@ -1810,7 +1806,7 @@ int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base)
     char buf[64];
     char* last = buf + sizeof buf;
     char* first = itos_aux(last, n, base);
-    size_t len = last - first;
+    size_t len = (size_t)(last - first);
     if (DLEN(dest)) dstr_clear(dest);
     return dstr_append_no_overlap(dest, first, len);
 
@@ -1820,19 +1816,25 @@ int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base)
 int dstr_itos(DSTR dest, long long n)
 {
     DSTR_BOOL negative = 0;
+    unsigned long long un;
 
     if (n < 0) {
-        n = -n;
-        negative = 1; }
+        negative = 1;
+        if (n == LLONG_MIN) {
+            un = (unsigned long long)LLONG_MAX + 1ULL; }
+        else {
+            un = (unsigned long long)(-n); } }
+    else {
+        un = (unsigned long long) n; }
 
     char buf[64];
     char* last  = buf + sizeof buf;
-    char* first = itos_aux(last, n, 10);
+    char* first = itos_aux(last, un, 10);
 
     if (negative) {
         *--first = '-'; }
 
-    size_t len = last - first;
+    size_t len = (size_t)(last - first);
 
     if (DLEN(dest)) {
         dstr_clear(dest); }
@@ -1841,30 +1843,48 @@ int dstr_itos(DSTR dest, long long n)
 }
 /*-------------------------------------------------------------------------------*/
 
-long dstr_atoi(CDSTR src)
+static const char* _find_atoi_base(const char* p, int* pBase)
 {
-    const char* p;
-    int base = 10;
-
-    dstr_assert_view(src);
-
-    p = DBUF(src);
+    assert(p != NULL);
+    assert(pBase != NULL);
 
     if (*p == '\\') {
         ++p;
-        base = 8; }
+        *pBase = 8; }
     else if (*p == '0') {
         if (p[1] == 'b' || p[1] == 'B') {
             p += 2;
-            base = 2; }
+            *pBase = 2; }
         else if (p[1] == 'x' || p[1] == 'X') {
             p += 2;
-            base = 16; }
+            *pBase = 16; }
         else {
             /* skip all leading zero's */
             do { ++p; } while (*p == '0'); } }
 
+    return p;
+}
+/*-------------------------------------------------------------------------------*/
+
+long dstr_atoi(CDSTR src)
+{
+    dstr_assert_view(src);
+
+    int base = 10;
+    const char* p = _find_atoi_base(DBUF(src), &base);
+
     return strtol(p, NULL, base);
+}
+/*-------------------------------------------------------------------------------*/
+
+long long dstr_atoll(CDSTR src)
+{
+    dstr_assert_view(src);
+
+    int base = 10;
+    const char* p = _find_atoi_base(DBUF(src), &base);
+
+    return strtoll(p, NULL, base);
 }
 /*-------------------------------------------------------------------------------*/
 
@@ -2728,8 +2748,10 @@ static bool expand_tr_str(DSTR dest, const char* src1, bool allow_negate)
             continue; }
 
         if (src[i-1] > src[i+1]) {
-            for (char ch = src[i-1] + 1; ch > src[i+1]; --ch) {
+            dstr_chop(dest);
+            for (char ch = src[i-1]; ch >= src[i+1]; --ch) {
                 dstr_append_char(dest, ch); }
+            ++i;
             continue; }
 
         for (char ch = src[i-1] + 1; ch < src[i+1]; ++ch) {
