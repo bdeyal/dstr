@@ -6,14 +6,22 @@
  */
 #if !defined(DSTRINGSTREAM_HPP_INCLUDED)
 #define DSTRINGSTREAM_HPP_INCLUDED
-#endif
 
 #include <iostream>
 #include <streambuf>
 #include <dstr/dstring.hpp>
 
-// Currently only for output (Unbuffered, slow)
+//  DString Buffer (<< operator)
 //
+//  Use this when:
+//  1. You need to stringify a type that has operator<< but no std::formatter
+//  2. You are on C++17 or earlier
+//  3. You need to capture output from code that writes to std::ostream
+//
+//  Prefer DString::format() or DString::to_string() for built-in types.
+//  Currently only for output (Unbuffered, slow)
+//
+
 class DStringBuf : public std::streambuf {
 public:
     explicit DStringBuf() : str_() {
@@ -22,7 +30,7 @@ public:
 
     const DString& str() const { return str_; }
 
-    void clear() {
+    void reset() {
         str_.clear();
     }
 
@@ -36,8 +44,9 @@ protected:
 
     std::streamsize xsputn(const char* s, std::streamsize n) {
         if (n <= 0) return 0;
+        size_t before = str_.size();
         str_.append(s, (size_t) n);
-        return n;
+        return (std::streamsize)(str_.size() - before);
     }
 
     int sync() {
@@ -55,7 +64,14 @@ class DStringOut : public std::ostream {
 public:
     DStringOut() : std::ostream(&buf_), buf_() {}
     const DString& str() const noexcept { return buf_.str(); }
-    void clear() { buf_.clear(); }
+    void reset() { buf_.reset(); }
+private:
+    DStringOut(const DStringOut&);
+    DStringOut& operator=(const DStringOut&);
+#if __cplusplus >= 201103L
+    DStringOut(DStringOut&&) = delete;
+    DStringOut& operator=(DStringOut&&) = delete;
+#endif
 };
 //----------------------------------------------
 //----------------------------------------------
@@ -71,3 +87,5 @@ inline DString to_dstring(const T& t)
     return out.str();
 }
 //----------------------------------------------
+
+#endif

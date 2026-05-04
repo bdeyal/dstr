@@ -5,8 +5,8 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <iostream>
-#include <ctype.h>
-#include <errno.h>
+#include <cctype>
+#include <cerrno>
 #include <dstr/dstring.hpp>
 #include "dstr_internal.h"
 
@@ -26,19 +26,16 @@ std::ostream& operator<<(std::ostream& out, DStringView sv)
 
 void DStringView::split(char sep, std::vector<DString>& dest) const
 {
+    size_t start = 0;
     std::vector<DString> v;
-    DString str;
 
-    for (size_t i = 0; i < size(); ++i) {
-        char c = get(i);
-        if (c == sep) {
-            v.push_back(str);
-            str.clear(); }
-        else {
-            str.append(c); } }
-
-    if (!str.empty()) {
-        v.push_back(str); }
+    for (;;) {
+        size_t pos = find(sep, start);
+        size_t len = (pos == NPOS) ? NPOS : pos - start;
+        v.push_back(substr(start, len));
+        if (pos == NPOS)
+            break;
+        start = pos + 1; }
 
     dest.swap(v);
 }
@@ -55,7 +52,8 @@ void DStringView::split(const char* sep, std::vector<DString>& dest) const
 
     for (;;) {
         size_t pos = find(sep, start);
-        v.push_back(substr(start, pos - start));
+        size_t len = (pos == NPOS) ? NPOS : pos - start;
+        v.push_back(substr(start, len));
         if (pos == NPOS)
             break;
         start = pos + sep_len; }
@@ -83,7 +81,8 @@ void DStringView::tokenize(const char* pattern, std::vector<DString>& dest) cons
 
         // Create a substring to print
         //
-        DString token = this->substr(first, last - first);
+        size_t len = (last == NPOS) ? NPOS : last - first;
+        DString token = this->substr(first, len);
         tmp.push_back(token);
 
         // Prepare for next iteration.
@@ -158,7 +157,7 @@ DString DString::from_cfile(FILE* fp)
 {
     DString result;
     if (!dstr_slurp_stream(result.pImp(), fp)) {
-        DString msg = DString::c_format("Could read file: %s\n",
+        DString msg = DString::c_format("Could not read file: %s\n",
                                         strerror(errno));
         throw DStringError(STD_MOVE(msg)); }
     return result;

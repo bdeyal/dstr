@@ -33,6 +33,12 @@
 
 using namespace std;
 
+inline void puts(DStringView vw, FILE* fp=stdout)
+{
+    fputs(vw.c_str(), fp);
+    putchar('\n');
+}
+
 void test_ctor()
 {
     TRACE_FN();
@@ -1889,6 +1895,15 @@ void test_split()
     assert(dest[i++] == "Good");
     assert(dest[i++] == "Morning");
     copy(dest.begin(), dest.end(), ostream_iterator<DString>(cout, "\n"));
+
+    s3 = "a,b,";
+    dest.clear();
+    s3.split(",", dest);
+    assert(dest.size() == 3);
+
+    dest.clear();
+    s3.split(',', dest);
+    assert(dest.size() == 3);
 }
 //-------------------------------------------------
 

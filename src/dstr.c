@@ -33,7 +33,7 @@
 #define BASE(p)       (p)
 #define DBUF(p)       (BASE(p)->data)
 #define DLEN(p)       (BASE(p)->length)
-#define DVAL(p, i)    DBUF(p)[(i)]
+#define DVAL(p, i)    (DBUF(p)[(i)])
 #define DCAP(p)       (BASE(p)->capacity)
 #define D_SSO_BUF(p)  (&(p)->sso_buffer[0])
 #define D_IS_SSO(p)   (DBUF(p) == D_SSO_BUF(p))
@@ -1926,8 +1926,8 @@ DSTR_BOOL dstr_isalpha(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     for (size_t n = 0; n < DLEN(p); ++n) {
         if (!isalpha(DVAL(p, n))) {
@@ -1941,8 +1941,8 @@ DSTR_BOOL dstr_isascii(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     for (size_t n = 0; n < DLEN(p); ++n) {
         if (!isascii(DVAL(p, n))) {
@@ -1956,8 +1956,8 @@ DSTR_BOOL dstr_isblank(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     for (size_t n = 0; n < DLEN(p); ++n) {
         if (!isblank(DVAL(p, n))) {
@@ -1979,11 +1979,11 @@ DSTR_BOOL dstr_isidentifier(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
-    if (isdigit(DVAL(p, 0)))
-        return DSTR_FALSE;
+    if (isdigit(DVAL(p, 0))) {
+        return DSTR_FALSE; }
 
     for (size_t n = 0; n < DLEN(p); ++n) {
         if (!is_ident_(DVAL(p, n))) {
@@ -2003,8 +2003,8 @@ DSTR_BOOL dstr_isprintable(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     for (size_t n = 0; n < DLEN(p); ++n) {
         if (!isprint(DVAL(p, n))) {
@@ -2018,8 +2018,8 @@ DSTR_BOOL dstr_isspace(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     for (size_t n = 0; n < DLEN(p); ++n) {
         if (!isspace(DVAL(p, n))) {
@@ -2052,8 +2052,8 @@ DSTR_BOOL dstr_isupper(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     size_t upper_count = 0;
     for (size_t n = 0; n < DLEN(p); ++n) {
@@ -2075,8 +2075,8 @@ DSTR_BOOL dstr_islower(CDSTR p)
 {
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_FALSE;
+    if (DLEN(p) == 0) {
+        return DSTR_FALSE; }
 
     size_t lower_count = 0;
     for (size_t n = 0; n < DLEN(p); ++n) {
@@ -2102,14 +2102,14 @@ int dstr_to_int(CDSTR p, size_t* index, int base)
     char* endp;
     int result = strtol(str, &endp, base);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2126,8 +2126,8 @@ long dstr_to_long(CDSTR p, size_t* index, int base)
     char* endp;
     long result = strtol(str, &endp, base);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
@@ -2150,8 +2150,8 @@ unsigned long dstr_to_ulong(CDSTR p, size_t* index, int base)
     char* endp;
     unsigned long result = strtoul(str, &endp, base);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
@@ -2174,14 +2174,14 @@ long long dstr_to_llong(CDSTR p, size_t* index, int base)
     char* endp;
     long long result = strtoll(str, &endp, base);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2198,14 +2198,14 @@ unsigned long long dstr_to_ullong(CDSTR p, size_t* index, int base)
     char* endp;
     unsigned long long result = strtoull(str, &endp, base);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2222,14 +2222,14 @@ float dstr_to_float(CDSTR p, size_t* index)
     char* endp;
     float result = strtof(str, &endp);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2270,14 +2270,14 @@ long double dstr_to_ldouble(CDSTR p, size_t* index)
     char* endp;
     long double result = strtold(str, &endp);
 
-    if (endp == str)
-        errno = EINVAL;
+    if (endp == str) {
+        errno = EINVAL; }
 
     if (index) {
         *index = endp - str; }
 
-    if (errno == 0)
-        errno = errsave;
+    if (errno == 0) {
+        errno = errsave; }
 
     return result;
 }
@@ -2299,8 +2299,8 @@ int dstr_align_center(DSTR dest, size_t width, char fill)
         if (!dstr_insert_cc_imp(dest, 0, fill, left_side))
             return DSTR_FAIL; }
 
-    if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side))
-        return DSTR_FAIL;
+    if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side)) {
+        return DSTR_FAIL; }
 
     // sanity
     //
@@ -2321,8 +2321,8 @@ int dstr_align_right(DSTR dest, size_t width, char fill)
 
     size_t left_side  = width - slen;
 
-    if (!dstr_insert_cc_imp(dest, 0, fill, left_side))
-        return DSTR_FAIL;
+    if (!dstr_insert_cc_imp(dest, 0, fill, left_side)) {
+        return DSTR_FAIL; }
 
     // sanity
     //
@@ -2343,8 +2343,8 @@ int dstr_align_left(DSTR dest, size_t width, char fill)
 
     size_t right_side = width - slen;
 
-    if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side))
-        return DSTR_FAIL;
+    if (!dstr_insert_cc_imp(dest, DLEN(dest), fill, right_side)) {
+        return DSTR_FAIL; }
 
     // sanity
     //
@@ -2372,13 +2372,13 @@ static int dstr_replace_all_imp(DSTR dest,
 
     for (;;) {
         pos = dstr_find_sz_imp(&tmp, pos, oldstr, 0);
-        if (pos == DSTR_NPOS)
-            break;
+        if (pos == DSTR_NPOS) {
+            break; }
         if (!dstr_replace_imp(&tmp, pos, oldlen, newstr, newlen)) {
             dstr_clean_data(&tmp);
             return DSTR_FAIL; }
-        if (++num_replaced == count)
-            break;
+        if (++num_replaced == count) {
+            break; }
         pos += newlen; }
 
     if (num_replaced > 0) {
@@ -2437,8 +2437,8 @@ static size_t dstr_count_aux(CDSTR p, const char* s, size_t slen, int ignore_cas
 
     for (;;) {
         pos = dstr_find_sz_imp(p, pos, s, ignore_case);
-        if (pos == DSTR_NPOS)
-            break;
+        if (pos == DSTR_NPOS) {
+            break; }
 
         pos += slen;
         ++num_found; }
@@ -2526,8 +2526,8 @@ int dstr_zfill(DSTR dest, size_t width)
 {
     dstr_assert_valid(dest);
 
-    if (DLEN(dest) >= width)
-        return DSTR_SUCCESS;
+    if (DLEN(dest) >= width) {
+        return DSTR_SUCCESS; }
 
     size_t num_zeroes = width - DLEN(dest);
     size_t insert_pos = 0;
@@ -2536,8 +2536,8 @@ int dstr_zfill(DSTR dest, size_t width)
     if (ch == '+' || ch == '-') {
         ++insert_pos; }
 
-    if (!dstr_insert_cc_imp(dest, insert_pos, '0', num_zeroes))
-        return DSTR_FAIL;
+    if (!dstr_insert_cc_imp(dest, insert_pos, '0', num_zeroes)) {
+        return DSTR_FAIL; }
 
     dstr_assert_valid(dest);
     return DSTR_SUCCESS;
@@ -2567,21 +2567,21 @@ int dstr_join_sz(DSTR dest, const char* sep, const char* argv[], size_t n)
 
     // NULL is like empty separator. i.e. concatenation
     //
-    if (!sep)
-        sep = "";
+    if (!sep) {
+        sep = ""; }
 
     size_t len = strlen(sep);
     size_t index = 0;
 
     for (;;) {
-        if (!dstr_append_sz(dest, argv[index]))
-            return DSTR_FAIL;
-
-        if ((++index == n) || (argv[index] == NULL))
-            break;
-
-        if (!dstr_append_imp(dest, sep, len))
+        if (!dstr_append_sz(dest, argv[index])) {
             return DSTR_FAIL; }
+
+        if ((++index == n) || (argv[index] == NULL)) {
+            break; }
+
+        if (!dstr_append_imp(dest, sep, len)) {
+            return DSTR_FAIL; } }
 
     return DSTR_SUCCESS;
 }
@@ -2607,14 +2607,14 @@ int dstr_join_ds(DSTR dest, CDSTR sep, const char* argv[], size_t n)
     size_t index = 0;
 
     for (;;) {
-        if (!dstr_append_sz(dest, argv[index]))
-            return DSTR_FAIL;
-
-        if ((++index == n) || (argv[index] == NULL))
-            break;
-
-        if (!dstr_append_imp(dest, sepstr, seplen))
+        if (!dstr_append_sz(dest, argv[index])) {
             return DSTR_FAIL; }
+
+        if ((++index == n) || (argv[index] == NULL)) {
+            break; }
+
+        if (!dstr_append_imp(dest, sepstr, seplen)) {
+            return DSTR_FAIL; } }
 
     return DSTR_SUCCESS;
 }
@@ -2631,8 +2631,8 @@ int dstr_multiply(DSTR dest, size_t n)
         return DSTR_SUCCESS; }
 
     INIT_DSTR(tmp);
-    if (!dstr_reserve(&tmp, n * DLEN(dest)))
-        return DSTR_FAIL;
+    if (!dstr_reserve(&tmp, n * DLEN(dest))) {
+        return DSTR_FAIL; }
 
     for (size_t i = 0; i < n; ++i) {
         if (!dstr_append_no_overlap(&tmp, DBUF(dest), DLEN(dest))) {

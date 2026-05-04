@@ -397,35 +397,34 @@ public:
     int icompare(const char* sz)  const { return strcasecmp(data(), sz ? sz : ""); }
     int compare(DStringView rhs)  const { return strcmp(data(), rhs.data()); }
     int icompare(DStringView rhs) const { return strcasecmp(data(), rhs.data()); }
-
     bool iequal(const char* sz)   const { return (icompare(sz) == 0);  }
     bool iequal(DStringView rhs)  const { return (icompare(rhs) == 0); }
 
+    bool operator==(const char* sz) const { return (compare(sz) == 0);  }
+#if __cplusplus >= 202002L
+    std::strong_ordering operator<=>(const char* sz) const {
+        return compare(sz) <=> 0; }
+#else
     bool operator!=(const char* sz) const { return (compare(sz) != 0);  }
     bool operator<(const char* sz)  const { return (compare(sz) <  0);  }
     bool operator>(const char* sz)  const { return (compare(sz) >  0);  }
     bool operator<=(const char* sz) const { return (compare(sz) <= 0);  }
     bool operator>=(const char* sz) const { return (compare(sz) >= 0);  }
+#endif
 
+    bool operator==(DStringView rhs) const {
+        return (size() == rhs.size()) && (compare(rhs) == 0); }
+#if __cplusplus >= 202002L
+    std::strong_ordering operator<=>(DStringView rhs) const {
+        return compare(rhs) <=> 0; }
+#else
     bool operator<(DStringView rhs)  const { return (compare(rhs) < 0);  }
     bool operator>(DStringView rhs)  const { return (compare(rhs) > 0);  }
     bool operator<=(DStringView rhs) const { return (compare(rhs) <= 0); }
     bool operator>=(DStringView rhs) const { return (compare(rhs) >= 0); }
-
-    bool operator==(const char* sz) const
-    {
-        return (compare(sz) == 0);
-    }
-
-    bool operator==(DStringView rhs) const
-    {
-        return (size() == rhs.size()) && (compare(rhs) == 0);
-    }
-
-    bool operator!=(DStringView rhs) const
-    {
-        return (size() != rhs.size()) || (compare(rhs) != 0);
-    }
+    bool operator!=(DStringView rhs) const {
+        return (size() != rhs.size()) || (compare(rhs) != 0); }
+#endif
 
     int stoi(size_t* index = nullptr, int base = 10) const
     {
@@ -475,6 +474,8 @@ public:
     const_iterator end()    const { return &m_imp.data[m_imp.length]; }
     const_iterator cend()   const { return end(); }
 
+    // removes first n chars (by advancing pointer)
+    //
     void remove_prefix(size_t n)
     {
         if (!n) return;
@@ -2342,12 +2343,6 @@ std::ostream& operator<<(std::ostream& out, DStringView s);
 std::istream& operator>>(std::istream& in, DString& s);
 std::istream& io_getline(std::istream& in, DString& s);
 //----------------------------------------------------------------
-
-inline void puts(DStringView vw, FILE* fp=stdout)
-{
-    fputs(vw.c_str(), fp);
-    putchar('\n');
-}
 
 //////////////////////////////////////////////////////////
 //
