@@ -55,6 +55,15 @@ protected:
 
 private:
     DString str_;
+
+    // Prevent copy and assign
+    //
+    DStringBuf(const DStringBuf&);
+    DStringBuf& operator=(const DStringBuf&);
+#if __cplusplus >= 201103L
+    DStringBuf(DStringBuf&&) = delete;
+    DStringBuf& operator=(DStringBuf&&) = delete;
+#endif
 };
 //----------------------------------------------
 //----------------------------------------------
