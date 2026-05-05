@@ -111,9 +111,6 @@ $(LIB): $(LIB_O)
 ./src/dstring_regex.o: ./src/dstring_regex.cpp $(DEPS_PP)
 	$(CXX) -c $(CXXFLAGS) -DNDEBUG -o $@ $<
 
-.PHONY: testall
-testall: test_various testvg
-
 .PHONY: test
 test: $(PROGRAMS)
 	./test/test_dstring
