@@ -156,13 +156,12 @@ int dstr_grow_ctor(DSTR p, size_t len)
         return DSTR_SUCCESS; }
 
     size_t new_capacity = DSTR_INITIAL_CAPACITY;
-    while (new_capacity <= len)
-        new_capacity *= 2;
-
-    if (new_capacity > UINT32_MAX) {
-        errno = ENOMEM;
-        dstr_out_of_memory();
-        return DSTR_FAIL; }
+    while (new_capacity <= len) {
+        if (new_capacity > UINT32_MAX / 2) {
+            errno = ENOMEM;
+            dstr_out_of_memory();
+            return DSTR_FAIL; }
+        new_capacity *= 2; }
 
     char* newbuff = (char*) malloc(new_capacity);
     if (!newbuff) {
@@ -186,12 +185,11 @@ static int dstr_grow(DSTR p, size_t len)
 
     size_t new_capacity = p->capacity;
     while (new_capacity <= len) {
+        if (new_capacity > UINT32_MAX / 2) {
+            errno = ENOMEM;
+            dstr_out_of_memory();
+            return DSTR_FAIL; }
         new_capacity *= 2; }
-
-    if (new_capacity > UINT32_MAX) {
-        errno = ENOMEM;
-        dstr_out_of_memory();
-        return DSTR_FAIL; }
 
     char* newbuff;
     if (D_IS_SSO(p)) {
@@ -794,6 +792,9 @@ DSTR dstr_create_bl(const char* buff, size_t len)
 
 DSTR dstr_create_range(const char* first, const char* last)
 {
+    if (!first || last < first) {
+        return DSTR_FAIL; }
+
     size_t len = (size_t)(last - first);
 
     // functon checks for NULL or len==0
@@ -1036,6 +1037,9 @@ int dstr_assign_range(DSTR p, const char* first, const char* last)
 {
     dstr_assert_valid(p);
 
+    if (!first || last < first) {
+        return DSTR_FAIL; }
+
     size_t len = last - first;
 
     if (first == NULL || len == 0) {
@@ -1132,6 +1136,9 @@ int dstr_append_bl(DSTR p, const char* buff, size_t len)
 int dstr_append_range(DSTR p, const char* first, const char* last)
 {
     dstr_assert_valid(p);
+
+    if (!first || last < first) {
+        return DSTR_FAIL; }
 
     if (first == NULL)
         return DSTR_SUCCESS;
@@ -1442,6 +1449,9 @@ int dstr_insert_range(DSTR p, size_t index, const char* first, const char* last)
 {
     dstr_assert_valid(p);
 
+    if (!first || last < first) {
+        return DSTR_FAIL; }
+
     size_t len = last - first;
     if (first == NULL || len == 0)
         return DSTR_SUCCESS;
@@ -1486,6 +1496,9 @@ int dstr_replace_bl(DSTR p, size_t pos, size_t count, const char* buff, size_t l
 int dstr_replace_range(DSTR p, size_t pos, size_t count, const char* first, const char* last)
 {
     dstr_assert_valid(p);
+
+    if (!first || last < first) {
+        return DSTR_FAIL; }
 
     /* check for null inside */
     return dstr_replace_imp(p, pos, count, first, (last -first));
@@ -1803,6 +1816,9 @@ static char* itos_aux(char* last, unsigned long long n, unsigned int base)
 
 int dstr_itos_ul(DSTR dest, unsigned long long n, unsigned int base)
 {
+    if (base < 2 || base > 36) {
+        return DSTR_FAIL; }
+
     char buf[64];
     char* last = buf + sizeof buf;
     char* first = itos_aux(last, n, base);
@@ -2639,6 +2655,11 @@ int dstr_multiply(DSTR dest, size_t n)
         return DSTR_SUCCESS; }
     else if (n == 1) {
         return DSTR_SUCCESS; }
+
+    // Check of overflow
+    //
+    if (DLEN(dest) > 0 && n > UINT32_MAX / DLEN(dest)) {
+        return DSTR_FAIL; }
 
     INIT_DSTR(tmp);
     if (!dstr_reserve(&tmp, n * DLEN(dest))) {
