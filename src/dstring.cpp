@@ -26,6 +26,9 @@ std::ostream& operator<<(std::ostream& out, DStringView sv)
 
 void DStringView::split(char sep, std::vector<DString>& dest) const
 {
+     if (sep == '\0')
+        throw DStringError("split: empty separator");
+
     size_t start = 0;
     std::vector<DString> v;
 
@@ -43,11 +46,11 @@ void DStringView::split(char sep, std::vector<DString>& dest) const
 
 void DStringView::split(const char* sep, std::vector<DString>& dest) const
 {
-    if (!sep)
-        return;
+     if (!sep || *sep == '\0')
+        throw DStringError("split: empty separator");
 
-    size_t start = 0;
     size_t sep_len = strlen(sep);
+    size_t start = 0;
     std::vector<DString> v;
 
     for (;;) {

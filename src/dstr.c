@@ -2363,28 +2363,38 @@ static int dstr_replace_all_imp(DSTR dest,
     size_t pos = 0;
     size_t num_replaced = 0;
 
-    // We will work on a copy so if a failure occurs in the middle of replace
-    // we don't leave the original argument in an undefined status
-    //
-    INIT_DSTR(tmp);
-    if (!dstr_assign_ds(&tmp, dest)) {
+    INIT_DSTR(out);
+    if (!dstr_reserve(&out, DLEN(dest))) {
         return DSTR_FAIL; }
 
-    for (;;) {
-        pos = dstr_find_sz_imp(&tmp, pos, oldstr, 0);
-        if (pos == DSTR_NPOS) {
+    while (pos < DLEN(dest)) {
+        // find next match starting from pos
+        //
+        size_t found = dstr_find_sz_imp(dest, pos, oldstr, 0);
+
+        // if not found, append remainder and break
+        //
+        if (found == DSTR_NPOS) {
+            dstr_append_no_overlap(&out, DBUF(dest) + pos, DLEN(dest) - pos);
             break; }
-        if (!dstr_replace_imp(&tmp, pos, oldlen, newstr, newlen)) {
-            dstr_clean_data(&tmp);
-            return DSTR_FAIL; }
+
+        // append everything before the match
+        //
+        dstr_append_no_overlap(&out, DBUF(dest) + pos, found - pos);
+
+        // append replacement
+        //
+        dstr_append_no_overlap(&out, newstr, newlen);
+        pos = found + oldlen;
+
+        // if number of replacement done, append rest unchanged and break
+        //
         if (++num_replaced == count) {
-            break; }
-        pos += newlen; }
+            dstr_append_no_overlap(&out, DBUF(dest) + pos, DLEN(dest) - pos);
+            break;  } }
 
-    if (num_replaced > 0) {
-        dstr_swap(&tmp, dest); }
-
-    DONE_DSTR(tmp);
+    dstr_swap(&out, dest);
+    DONE_DSTR(out);
     return DSTR_SUCCESS;
 }
 /*-------------------------------------------------------------------------------*/
