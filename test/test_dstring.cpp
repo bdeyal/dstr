@@ -11,6 +11,7 @@
 #include <iterator>
 #include <vector>
 #include <algorithm>
+#include <chrono>
 
 #include <assert.h>
 #include <string.h>
@@ -2364,12 +2365,16 @@ void test_algo_reverse_iterator()
     DString s1("Hello World today is SAT deep at night");
     DString s2;
 
-    reverse_iterator<DString::iterator> first(s1.end());
-    reverse_iterator<DString::iterator> last(s1.begin());
+    for (auto first = s1.rbegin(); first != s1.rend(); ++first) {
+        s2.append(*first); }
 
-    while (first != last) {
-        s2.append(*first++);
-    }
+    cout << s1 << endl;
+    cout << s2 << endl;
+    assert(s2 == s1.reverse());
+
+    s2.clear();
+    for (auto first = s1.crbegin(); first != s1.crend(); ++first) {
+        s2.append(*first); }
 
     cout << s1 << endl;
     cout << s2 << endl;
@@ -2381,8 +2386,7 @@ void test_format()
 {
     TRACE_FN();
 #if __cplusplus >= 202002L
-
-    #define TESTF(description, fmt, ...) do {                               \
+#define TESTF(description, fmt, ...) do {                               \
         std::string std_result = std::format(fmt __VA_OPT__(,) __VA_ARGS__); \
         DString dstr_result = DString::format(fmt __VA_OPT__(,) __VA_ARGS__); \
         bool equal = (dstr_result == std_result.c_str());               \
@@ -2445,8 +2449,27 @@ void test_format()
     TESTF("Large integer", "{}", 1234567890123456789LL);
     TESTF("Empty format string", "{}", "content");
 
-    std::cout << "All tests passed! DString::format matches std::format on all cases.\n";
+    // 11. Nested format specs (C++20 feature):
+    TESTF("Dynamic width", "{:{}}", "hello", 10);
+    TESTF("Dynamic precision", "{:.{}f}", 3.14159, 3);
 
+    // 12. Sign formatting:
+    TESTF("Sign always", "{:+}", 42);
+    TESTF("Sign space", "{: }", 42);
+
+    // 13. Chrono
+    TESTF("Duration", "{}", std::chrono::seconds(42));  // C++20
+
+    // 14. Empty string:
+    TESTF("Empty string arg", "{}", "");
+
+    // 15. Zero-padded numbers:
+    TESTF("Zero padded", "{:08}", 42);
+    TESTF("Zero padded negative", "{:08}", -42);
+
+    std::cout << "All tests passed! DString::format matches std::format on all cases.\n";
+#else
+    std::cout << "test_format: skipped (requires C++20)\n";
 #endif
 }
 //--------------------------------------------------------------

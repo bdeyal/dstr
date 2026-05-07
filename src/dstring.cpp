@@ -5,10 +5,15 @@
  * distributed under the GNU GPL v3.0. See LICENSE file for full GPL-3.0 license text.
  */
 #include <iostream>
+#include <random>
 #include <cctype>
 #include <cerrno>
 #include <dstr/dstring.hpp>
 #include "dstr_internal.h"
+
+// Helper for hash
+//
+static uint64_t g_dstr_hash_seed = 0x9e3779b97f4a7c15ULL;
 
 /////////////////////////////////////////////////////////
 //
@@ -21,6 +26,12 @@ std::ostream& operator<<(std::ostream& out, DStringView sv)
 {
     out.write(sv.data(), sv.size());
     return out;
+}
+//----------------------------------------------------------------
+
+size_t DStringView::hash(size_t seed) const
+{
+    return dstr_hash(pImp(), seed ? seed : g_dstr_hash_seed);
 }
 //----------------------------------------------------------------
 
@@ -127,6 +138,22 @@ void DStringView::rpartition(const char* s, DString& left, DString& middle, DStr
 //   Some functions delegate calls to above with view()
 //
 /////////////////////////////////////////////////////////
+
+/*static*/
+void DString::randomize_hash_seed()
+{
+    try {
+        g_dstr_hash_seed = std::random_device{}(); }
+    catch (...) {
+        g_dstr_hash_seed = (size_t)time(0) ^ (size_t)(&g_dstr_hash_seed); }
+}
+
+size_t DString::hash(size_t seed) const
+{
+    if (!seed) seed = g_dstr_hash_seed;
+    return dstr_hash(pImp(), seed);
+}
+//----------------------------------------------------------------
 
 #if __cplusplus >= 201103L
 #define STD_MOVE std::move

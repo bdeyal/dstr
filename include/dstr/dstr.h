@@ -202,7 +202,7 @@ void dstr_lstrip_sz(DSTR p, const char* selectors);
 void dstr_rstrip_sz(DSTR p, const char* selectors);
 
 /* hash for use in hash table */
-size_t dstr_hash(CDSTR src, int seed);
+size_t dstr_hash(CDSTR src, size_t seed);
 
 /*   atoi integer conversion
  *

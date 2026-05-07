@@ -257,7 +257,7 @@ typedef struct Compiled_Regex {
     size_t      n_groups;
 
     // for caching and LRU
-    size_t      tick_count;
+    uint64_t    tick_count;
     DSTR        pattern;
     int         options;
 } Compiled_Regex;
@@ -550,7 +550,7 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
                               &outlen);
 
         if (rc > 0) {
-            dstr_assign_sz(subject, (char*)buffer); }
+            dstr_assign_bl(subject, (char*)buffer, outlen); }
 
         free(buffer);  }
 

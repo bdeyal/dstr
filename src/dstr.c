@@ -1791,7 +1791,7 @@ int dstr_fgetline(DSTR p, FILE* fp)
 // Function uses xxhash (from src/deps/xxhash.h)
 // See: https://xxhash.com
 //
-size_t dstr_hash(CDSTR src, int seed)
+size_t dstr_hash(CDSTR src, size_t seed)
 {
     dstr_assert_view(src);
 #if defined(DSTR_64BIT)

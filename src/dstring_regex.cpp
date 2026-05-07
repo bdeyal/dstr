@@ -43,8 +43,7 @@ int DStringView::match(DStringView pattern, size_t offset,
 
     if (rc > REGEX_COMPILE_ERROR_BASE) {
         DString::on_regex_error(rc);  }
-
-    if (rc < 0) {
+    else if (rc < 0) {
         DString::on_regex_error(rc);  }
 
     return rc;

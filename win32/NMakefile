@@ -32,7 +32,7 @@ PTHREAD=-pthread
 CC = cl.exe
 CXX = cl.exe
 CFLAGS = /MP /std:c11 /O2 /nologo /I..\include
-CXXFLAGS = /EHsc /std:c++20 /O2 /nologo /I..\include
+CXXFLAGS = /EHsc /Zc:preprocessor /Zc:__cplusplus /std:c++20 /O2 /nologo /I..\include
 OUT=/Fe
 
 !ENDIF

@@ -10,6 +10,7 @@
 #include <iosfwd>
 #include <vector>
 #include <exception>
+#include <stdexcept>
 
 #if __cplusplus >= 201703L
   #include <string_view>
@@ -45,6 +46,7 @@ public:
     typedef const char* const_iterator;
     typedef ptrdiff_t difference_type;
     typedef size_t size_type;
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 public:
     DStringView()
@@ -102,7 +104,7 @@ public:
         return std::string_view(data(), size());
     }
 #endif
-    void swap(DStringView& rhs)
+    void swap(DStringView& rhs) noexcept
     {
         DSTR_VIEW tmp = m_imp;
         m_imp = rhs.m_imp;
@@ -193,10 +195,14 @@ public:
         return m_imp.data[pos];
     }
 
-    size_t hash(int seed = 0) const
+    char at(size_t pos) const
     {
-        return dstr_hash(pImp(), seed);
+        if (pos >= size()) {
+            throw std::out_of_range("DStringView::at"); }
+        return m_imp.data[pos];
     }
+
+    size_t hash(size_t seed = 0) const;
 
     long atoi() const
     {
@@ -473,6 +479,10 @@ public:
     const_iterator cbegin() const { return begin(); }
     const_iterator end()    const { return &m_imp.data[m_imp.length]; }
     const_iterator cend()   const { return end(); }
+    const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+    const_reverse_iterator rend()   const { return const_reverse_iterator(begin()); }
+    const_reverse_iterator crbegin() const { return rbegin(); }
+    const_reverse_iterator crend()   const { return rend(); }
 
     // removes first n chars (by advancing pointer)
     //
@@ -648,6 +658,8 @@ public:
     typedef const char* const_iterator;
     typedef ptrdiff_t difference_type;
     typedef size_t size_type;
+    typedef std::reverse_iterator<iterator>       reverse_iterator;
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 public:
     DString()
@@ -1638,7 +1650,7 @@ public:
         return res;
     }
 
-    void swap(DString& rhs)
+    void swap(DString& rhs) noexcept
     {
         dstr_swap(pImp(), rhs.pImp());
     }
@@ -1675,15 +1687,27 @@ public:
         return m_imp.data[pos];
     }
 
+    char at(size_t pos) const
+    {
+        if (pos >= size()) {
+            throw std::out_of_range("DString::at"); }
+        return m_imp.data[pos];
+    }
+
     char& operator[](size_t pos)
     {
         return m_imp.data[pos];
     }
 
-    size_t hash(int seed = 0) const
-    {
-        return dstr_hash(pImp(), seed);
-    }
+    // default seed = 0 is predictable hash behavior which is default.
+    // If for security reasons user want a different seed, a call to
+    // randomize hash seed is needed thus DString("Hello").hash() will
+    // be different for a differnet process. Note that 0 default argument
+    // is not the actual seed but a flag to use the default one which is
+    // better that 0
+    //
+    static void randomize_hash_seed();
+    size_t hash(size_t seed = 0) const;
 
     long atoi() const
     {
@@ -2036,8 +2060,18 @@ public:
     size_type      size()  const { return length(); }
     iterator       begin()       { return m_imp.data; }
     const_iterator begin() const { return m_imp.data; }
+    const_iterator cbegin() const { return m_imp.data; }
     iterator       end()         { return &m_imp.data[m_imp.length]; }
     const_iterator end()   const { return &m_imp.data[m_imp.length]; }
+    const_iterator cend()   const { return &m_imp.data[m_imp.length]; }
+
+    reverse_iterator       rbegin()        { return reverse_iterator(end());         }
+    reverse_iterator       rend()          { return reverse_iterator(begin());       }
+    const_reverse_iterator rbegin()  const { return const_reverse_iterator(end());   }
+    const_reverse_iterator rend()    const { return const_reverse_iterator(begin()); }
+    const_reverse_iterator crbegin() const { return rbegin(); }
+    const_reverse_iterator crend()   const { return rend();   }
+
 
 #if !defined(NO_DSTRING_REGEX)
     ///////////////////////////////////////////////////
@@ -2187,11 +2221,9 @@ private:
     {
         if (len < DSTR_INITIAL_CAPACITY) {
             m_imp.capacity = DSTR_INITIAL_CAPACITY;
-            m_imp.data = m_imp.sso_buffer;
-        }
+            m_imp.data = m_imp.sso_buffer; }
         else {
-            grow_ctor(len);
-        }
+            grow_ctor(len); }
     }
 
     void init_data(char c, size_t count)
