@@ -86,8 +86,7 @@ test_dstringview.exe: ..\test\test_dstringview.cpp ..\src\dstring.cpp dstr.obj  
 	$(CXX) $(CXXFLAGS) ..\test\test_dstringview.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
 
 clean:
-    del /Q *~ *.tds 2>NUL
-    del /Q dstr.obj dstr_regex.obj dstring.obj dstring_regex.obj 2>NUL
+    del /Q *~ *.obj *.tds 2>NUL
     del /Q $(PROGRAMS) 2>NUL
 
 test: $(PROGRAMS)
