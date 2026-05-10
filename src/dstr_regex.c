@@ -658,7 +658,7 @@ static Compiled_Regex* get_RE(const char* pattern, int options, int* errcode)
     Compiled_Regex* pRes = NULL;
     size_t first_empty_slot = DSTR_NPOS;
     size_t oldest_index = DSTR_NPOS;
-    size_t oldest_so_far = DSTR_NPOS;
+    uint64_t oldest_so_far = UINT64_MAX;
 
     // Lookup in cache
     //

@@ -59,8 +59,7 @@ int DStringView::match_groups(DStringView pattern, size_t offset,
 
     if (rc > REGEX_COMPILE_ERROR_BASE) {
         DString::on_regex_error(rc); }
-
-    if (rc < 0) {
+    else if (rc < 0) {
         DString::on_regex_error(rc); }
 
     return rc;
@@ -128,7 +127,11 @@ int DStringView::re_split(DStringView pattern, size_t offset,
             else {
                 tmp.push_back(""); } }
 
-        offset = (matches[0].offset + matches[0].length); }
+        if (matches[0].length == 0) {
+            offset = matches[0].offset + 1; }
+        else {
+            offset = matches[0].offset + matches[0].length; }
+    }
 
     tmp.push_back({*this, offset, size() - offset});
 

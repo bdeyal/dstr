@@ -198,10 +198,10 @@ static int dstr_grow(DSTR p, size_t len)
             dstr_out_of_memory();
             return DSTR_FAIL; }
 
-        if (p->length)
-            memcpy(newbuff, p->data, p->length + 1);
-        else
-            *newbuff = '\0';
+        if (p->length) {
+            memcpy(newbuff, p->data, p->length + 1); }
+        else {
+            *newbuff = '\0'; }
 
         p->data[0] = '\0'; }
     else {
@@ -300,14 +300,14 @@ static int dstr_append_imp(DSTR p, const char* buff, size_t len)
         const char* first = DBUF(p);
         ptrdiff_t overlap = buff - first;
 
-        if (!dstr_grow_by(p, len))
-            return DSTR_FAIL;
+        if (!dstr_grow_by(p, len)) {
+            return DSTR_FAIL; }
 
         // realloc in dstr_grow_by might change the base pointer.
         // In case of overlap we must update
         //
-        if (DBUF(p) != first)
-            buff = DBUF(p) + overlap; }
+        if (DBUF(p) != first) {
+            buff = DBUF(p) + overlap; } }
     else {
         if (!dstr_grow_by(p, len)) {
             return DSTR_FAIL; } }
@@ -321,8 +321,8 @@ static int dstr_append_imp(DSTR p, const char* buff, size_t len)
 
 static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 {
-    if (count == 0)
-        return DSTR_SUCCESS;
+    if (count == 0) {
+        return DSTR_SUCCESS; }
 
     index = min_2(index, DLEN(p));
 
@@ -350,11 +350,11 @@ static int dstr_insert_cc_imp(DSTR p, size_t index, char c, size_t count)
 
 static void dstr_remove_imp(DSTR p, size_t pos, size_t count)
 {
-    if (count == 0)
-        return;
+    if (count == 0) {
+        return; }
 
-    if (pos >= DLEN(p))
-        return;
+    if (pos >= DLEN(p)) {
+        return; }
 
     count = min_2(count, DLEN(p) - pos);
     size_t bytes_to_move = DLEN(p) - (pos + count);
@@ -377,9 +377,7 @@ static int dstr_replace_imp(DSTR p,
                             const char* buff,
                             size_t buflen)
 {
-    bool nothing_to_replace =
-        (buff == NULL) ||                       \
-        (buflen == 0);
+    bool nothing_to_replace = ((buff == NULL) || (buflen == 0));
 
     if (nothing_to_replace) {
         dstr_remove_imp(p, pos, count);
@@ -391,8 +389,8 @@ static int dstr_replace_imp(DSTR p,
     //
     if (is_overlap(p, buff)) {
         INIT_DSTR(tmp);
-        if (!dstr_append_no_overlap(&tmp, buff, buflen))
-            return DSTR_FAIL;
+        if (!dstr_append_no_overlap(&tmp, buff, buflen)) {
+            return DSTR_FAIL; }
 
         dstr_remove_imp(p, pos, count);
         buff = DBUF(&tmp);
@@ -419,8 +417,8 @@ static inline int dstr_replace_cc_imp(DSTR p,
 
 static inline int dstr_assign_imp(DSTR p, const char* value, size_t len)
 {
-    if (DLEN(p) > 0)
-        dstr_clear(p);
+    if (DLEN(p) > 0) {
+        dstr_clear(p); }
 
     return dstr_append_imp(p, value, len);
 }
@@ -445,8 +443,8 @@ static inline DSTR dstr_create_len_imp(size_t len)
 
 static DSTR dstr_create_buff_imp(const char* buff, size_t len)
 {
-    if (!buff || len == 0)
-        return dstr_alloc_empty();
+    if (!buff || len == 0) {
+        return dstr_alloc_empty(); }
 
     // verify no embedded nulls
     //
@@ -506,14 +504,14 @@ static size_t dstr_rfind_sz_imp(CDSTR p,
     dstr_assert_view(p);
 
     size_t slen = strlen(s);
-    if (slen > DLEN(p))
-        return DSTR_NPOS;
+    if (slen > DLEN(p)) {
+        return DSTR_NPOS; }
 
-    if (pos >= DLEN(p))
-        pos = DLEN(p);
+    if (pos >= DLEN(p)) {
+        pos = DLEN(p); }
 
-    if (slen == 0)
-        return pos;
+    if (slen == 0) {
+        return pos; }
 
     for (size_t i = pos + 1; i-- > 0; )  {
         const char* search_loc = DBUF(p) + i;
@@ -524,11 +522,10 @@ static size_t dstr_rfind_sz_imp(CDSTR p,
         else {
             if (strncmp(search_loc, s, slen) == 0) {
                 found_loc = search_loc;
-                break; } }
-    }
+                break; } } }
 
-    if (found_loc == NULL)
-        return DSTR_NPOS;
+    if (found_loc == NULL) {
+        return DSTR_NPOS; }
 
     return (size_t)(found_loc - DBUF(p));
 }
@@ -548,10 +545,12 @@ static ptrdiff_t dstr_suffix_sz_imp(CDSTR p,
         return -1; }
 
     // optimize for empty string
-    if (s[0] == '\0')
-        return DLEN(p);
+    //
+    if (s[0] == '\0') {
+        return DLEN(p); }
 
-     // optimize for single char
+    // optimize for single char
+    //
     if (s[1] == '\0') {
         char c1 = dstr_back(p);
         char c2 = s[0];
@@ -626,8 +625,8 @@ static size_t dstr_find_c_imp(CDSTR p,
 
     dstr_assert_view(p);
 
-    if (pos >= DLEN(p))
-        return DSTR_NPOS;
+    if (pos >= DLEN(p)) {
+        return DSTR_NPOS; }
 
     search_loc = DBUF(p) + pos;
 
@@ -652,11 +651,11 @@ static size_t dstr_rfind_c_imp(CDSTR p,
 
     dstr_assert_view(p);
 
-    if (DLEN(p) == 0)
-        return DSTR_NPOS;
+    if (DLEN(p) == 0) {
+        return DSTR_NPOS; }
 
-    if (pos >= DLEN(p))
-        pos = DLEN(p) - 1;
+    if (pos >= DLEN(p)) {
+        pos = DLEN(p) - 1; }
 
     char C_ = ignore_case ? toupper(c) : c;
 
@@ -668,11 +667,10 @@ static size_t dstr_rfind_c_imp(CDSTR p,
 
         if (ignore_case && toupper(*search_loc) == C_) {
             found_loc = search_loc;
-            break; }
-    }
+            break; } }
 
-    if (found_loc == NULL)
-        return DSTR_NPOS;
+    if (found_loc == NULL) {
+        return DSTR_NPOS; }
 
     return (size_t)(found_loc - DBUF(p));
 }
@@ -688,19 +686,19 @@ static size_t dstr_ffo_imp(CDSTR p,
     dstr_assert_view(p);
     assert(pattern != NULL);
 
-    if (pattern == NULL)
-        return DSTR_NPOS;
+    if (pattern == NULL) {
+        return DSTR_NPOS; }
 
-    if (pos >= DLEN(p))
-        return DSTR_NPOS;
+    if (pos >= DLEN(p)) {
+        return DSTR_NPOS; }
 
-    if (not_off)
-        result += strspn(DBUF(p) + pos, pattern);
-    else
-        result += strcspn(DBUF(p) + pos, pattern);
+    if (not_off) {
+        result += strspn(DBUF(p) + pos, pattern); }
+    else {
+        result += strcspn(DBUF(p) + pos, pattern); }
 
-    if (result >= DLEN(p))
-        result = DSTR_NPOS;
+    if (result >= DLEN(p)) {
+        result = DSTR_NPOS; }
 
     return result;
 }
@@ -713,17 +711,17 @@ static size_t dstr_flo_imp(CDSTR p,
 {
     dstr_assert_view(p);
 
-    if (pattern == NULL || *pattern == '\0' || DLEN(p) == 0)
-        return DSTR_NPOS;
+    if (pattern == NULL || *pattern == '\0' || DLEN(p) == 0) {
+        return DSTR_NPOS; }
 
     // lookup table for char in pattern
     //
     unsigned char tbl[256] = { 0 };
-    for (; *pattern; ++pattern)
-        tbl[(unsigned char) *pattern] = 1;
+    for (; *pattern; ++pattern) {
+        tbl[(unsigned char) *pattern] = 1; }
 
-    if (pos >= DLEN(p))
-        pos = DLEN(p) - 1;
+    if (pos >= DLEN(p)) {
+        pos = DLEN(p) - 1; }
 
     for (size_t i = 0; i <= pos; ++i) {
         size_t index = pos - i;
@@ -747,8 +745,8 @@ static DSTR_BOOL dstr_isdigits_imp(CDSTR src, DSTR_BOOL is_hex)
 
     dstr_assert_view(src);
 
-    if (DLEN(src) == 0)
-        return DSTR_FALSE;
+    if (DLEN(src) == 0) {
+        return DSTR_FALSE; }
 
     if (is_hex) {
         for (n = 0; n < DLEN(src); ++n) {
