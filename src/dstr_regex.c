@@ -251,6 +251,7 @@ typedef struct GroupInfo {
 typedef struct Compiled_Regex {
     // compiled pcre regex
     pcre2_code* _pRE;
+    pcre2_match_context* _mCtx;
 
     // array of name groups
     GroupInfo*  p_groups;
@@ -305,6 +306,9 @@ static GroupInfo* make_group_info(pcre2_code* _pRE, unsigned int* p_name_count)
 static
 Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
 {
+    if (!pattern || !*pattern) {
+        return NULL; }
+
     pcre2_compile_context* context = pcre2_compile_context_create(NULL);
     if (!context) {
         dstr_out_of_memory();
@@ -343,13 +347,26 @@ Compiled_Regex* dstr_compile_regex(const char* pattern, int options, int* err)
         pcre2_code_free(_pRE);
         return NULL; }
 
+    pcre2_match_context* mctx = pcre2_match_context_create(NULL);
+    if (!mctx) {
+        pcre2_code_free(_pRE);
+        if (gInfo) free(gInfo);
+        return NULL; }
+
+    // set limits to resources against malicious Regexp
+    //
+    pcre2_set_match_limit(mctx, 1000000);
+    pcre2_set_depth_limit(mctx, 10000);
+
     Compiled_Regex* result = RE_MALLOC(Compiled_Regex, 1);
     if (!result) {
+        pcre2_match_context_free(mctx);
         if (gInfo) free(gInfo);
         pcre2_code_free(_pRE);
         return NULL; }
 
     result->_pRE = _pRE;
+    result->_mCtx = mctx;
     result->p_groups = gInfo;
     result->n_groups = name_count;
     result->pattern = dstr_create_sz(pattern);
@@ -369,6 +386,9 @@ static void destroy_compiled_regex(Compiled_Regex* cr)
 
     if (cr->p_groups) {
         free(cr->p_groups); }
+
+    if (cr->_mCtx) {
+        pcre2_match_context_free(cr->_mCtx); }
 
     if (cr->_pRE) {
         pcre2_code_free(cr->_pRE); }
@@ -447,7 +467,8 @@ dstr_regex_match_groups_aux(Compiled_Regex* cr,
                             DSTR_Match_Vector* vec,
                             int options)
 {
-    assert (offset <= dstrlen(subject));
+    if (offset > dstr_length(subject)) {
+        return 0; }
 
     pcre2_match_data* mdata =
         pcre2_match_data_create_from_pattern(cr->_pRE, NULL);
@@ -536,6 +557,9 @@ static int dstr_regex_subst_aux(Compiled_Regex* cr,
         dstr_assign_bl(subject, (char*) outbuf, outlen);
         return rc; }
     else if (rc == PCRE2_ERROR_NOMEMORY) {
+        if (outlen == PCRE2_UNSET || outlen > UINT32_MAX) {
+            return PCRE2_ERROR_NOMEMORY; }
+
         // increase memory to needed and retry
         //
         uint8_t* buffer = RE_MALLOC(uint8_t, outlen);
