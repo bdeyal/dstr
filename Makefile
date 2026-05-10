@@ -1,5 +1,6 @@
 # -*- Makefile -*-
 #
+MKDIR=/bin/mkdir -p
 PREFIX=/usr/local
 ARCH ?= x86-64-v3
 
@@ -102,7 +103,7 @@ all: $(PROGRAMS)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr
 
 $(LIB): $(LIB_O)
-	mkdir -p ./lib64
+	$(MKDIR) ./lib64
 	$(AR) rcs $(LIB) $(LIB_O)
 
 ./src/dstr.o: ./src/dstr.c $(DEPS)
@@ -152,17 +153,17 @@ PREFIX_LIB=$(PREFIX)/lib64
 # Tested on RHEL 10.0 ONLY
 #
 install: $(LIB)
-	/usr/bin/mkdir -p $(PREFIX_INCLUDE)
-	/usr/bin/install -m 0644 -o root -g root include/dstr/dstr.h $(PREFIX_INCLUDE)
-	/usr/bin/install -m 0644 -o root -g root include/dstr/dstring.hpp $(PREFIX_INCLUDE)
-	/usr/bin/install -m 0644 -o root -g root include/dstr/dstringstream.hpp $(PREFIX_INCLUDE)
-	/usr/bin/mkdir -p $(PREFIX_LIB)
-	/usr/bin/install -m 0644 -o root -g root $(LIB) -t $(PREFIX_LIB)
+	$(MKDIR) $(PREFIX_INCLUDE)
+	/usr/bin/install -m 0644 include/dstr/dstr.h $(PREFIX_INCLUDE)
+	/usr/bin/install -m 0644 include/dstr/dstring.hpp $(PREFIX_INCLUDE)
+	/usr/bin/install -m 0644 include/dstr/dstringstream.hpp $(PREFIX_INCLUDE)
+	$(MKDIR) $(PREFIX_LIB)
+	/usr/bin/install -m 0644 $(LIB) $(PREFIX_LIB)
 
 uninstall:
-	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
-	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstring.hpp
-	/usr/bin/rm -f $(PREFIX_INCLUDE)/dstringstream.hpp
-	/usr/bin/rmdir $(PREFIX_INCLUDE)
-	/usr/bin/rm -f $(PREFIX_LIB)/libdstr.a
-	/usr/bin/rmdir --ignore-fail-on-non-empty $(PREFIX_LIB)
+	/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
+	/bin/rm -f $(PREFIX_INCLUDE)/dstring.hpp
+	/bin/rm -f $(PREFIX_INCLUDE)/dstringstream.hpp
+	/bin/rmdir $(PREFIX_INCLUDE) 2>/dev/null || true
+	/bin/rm -f $(PREFIX_LIB)/libdstr.a
+	/bin/rmdir $(PREFIX_LIB) 2>/dev/null || true
