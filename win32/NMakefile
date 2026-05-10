@@ -1,5 +1,10 @@
 # dstr NMakefile
 #
+
+!IF "$(PCRE2_DIR)" == ""
+PCRE2_DIR = C:\PCRE2
+!ENDIF
+
 !IF "$(COMP)" == "clang"
 
 CC = clang-cl.exe
@@ -7,11 +12,13 @@ CXX = clang-cl.exe
 CFLAGS = /O2 /nologo /D_CRT_SECURE_NO_WARNINGS /I..\include
 CXXFLAGS = /EHsc /std:c++20  $(CFLAGS)
 OUT=/Fe
+OBJ_OUT=-o
 
 !ELSE IF "$(COMP)" == "borland"
 
 CC=bcc64x
 CXX=bcc64x
+OBJ_OUT=-o
 
 !IF "$(PLAT)" == "x86"
 
@@ -34,6 +41,7 @@ CXX = cl.exe
 CFLAGS = /MP /std:c11 /O2 /nologo /I..\include
 CXXFLAGS = /EHsc /Zc:preprocessor /Zc:__cplusplus /std:c++20 /O2 /nologo /I..\include
 OUT=/Fe
+OBJ_OUT=/Fo
 
 !ENDIF
 
@@ -61,25 +69,26 @@ test_dstring.exe: ..\test\test_dstring.cpp ..\src\dstring.cpp dstr.obj $(DEPS_PP
 # 'Platform' set by MSVC vcvarsall.bat script ('x86' or 'x64')
 #
 test_dstring_regex.exe: ..\test\test_dstring_regex.cpp ..\src\dstring.cpp ..\src\dstring_regex.cpp dstr.obj dstr_regex.obj $(DEPS_PP)
-	$(CXX) $(PTHREAD) $(CXXFLAGS) -IC:\PCRE2\INCLUDE \
+	$(CXX) $(PTHREAD) $(CXXFLAGS) -I$(PCRE2_DIR)\INCLUDE \
 	..\test\test_dstring_regex.cpp \
 	..\src\dstring.cpp \
 	..\src\dstring_regex.cpp \
 	dstr_regex.obj \
-	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
+	dstr.obj $(OUT)"$@" $(MTLIB) $(PCRE2_DIR)\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
 test_dstr_regex.exe: ..\test\test_dstr_regex.c ..\src\dstr_regex.c dstr.obj dstr_regex.obj $(DEPS)
-	$(CC) $(PTHREAD) $(CFLAGS) -IC:\PCRE2\INCLUDE \
+	$(CC) $(PTHREAD) $(CFLAGS) -I$(PCRE2_DIR)\INCLUDE \
 	..\test\test_dstr_regex.c \
 	dstr_regex.obj \
-	dstr.obj $(OUT)"$@" $(MTLIB) C:\PCRE2\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
+	dstr.obj $(OUT)"$@" $(MTLIB) $(PCRE2_DIR)\lib\%%Platform%%\libpcre2-8$(LIB_DECO).lib
 
 test_dstringview.exe: ..\test\test_dstringview.cpp ..\src\dstring.cpp dstr.obj  $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) ..\test\test_dstringview.cpp ..\src\dstring.cpp dstr.obj $(OUT)"$@"
 
 clean:
-	del *~ *.obj *.tds
-	del $(PROGRAMS)
+    del /Q *~ *.tds 2>NUL
+    del /Q dstr.obj dstr_regex.obj dstring.obj dstring_regex.obj 2>NUL
+    del /Q $(PROGRAMS) 2>NUL
 
 test: $(PROGRAMS)
 	.\test_dstr.exe
@@ -89,7 +98,7 @@ test: $(PROGRAMS)
 	.\test_dstringview.exe
 
 dstr.obj: ..\src\dstr.c $(DEPS)
-	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c -o $@
+	$(CC) -c $(CFLAGS) -DNDEBUG ..\src\dstr.c $(OBJ_OUT)"$@"
 
 dstr_regex.obj: ..\src\dstr_regex.c $(DEPS)
-	$(CC) -c -IC:\PCRE2\INCLUDE $(CFLAGS) -DNDEBUG ..\src\dstr_regex.c -o $@
+	$(CC) -c -I$(PCRE2_DIR)\INCLUDE $(CFLAGS) -DNDEBUG ..\src\dstr_regex.c $(OBJ_OUT)"$@"

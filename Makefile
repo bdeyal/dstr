@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 #
 PREFIX=/usr/local
-ARCH=x86-64-v3
+ARCH ?= x86-64-v3
 
 OS := $(shell uname)
 
@@ -16,16 +16,19 @@ endif
 ifeq ($(COMP),cc)
 	CC=cc
 	CXX=c++
+	AR=ar
 endif
 
 ifeq ($(COMP),gcc)
 	CC=gcc
 	CXX=g++
+	AR=ar
 endif
 
 ifeq ($(COMP),mingw64)
 	CC=x86_64-w64-mingw32-gcc
 	CXX=x86_64-w64-mingw32-g++
+	AR=x86_64-w64-mingw32-ar
 	LDFLAGS += -static
 	CFLAGS=-DPCRE2_STATIC
 endif
@@ -33,6 +36,7 @@ endif
 ifeq ($(COMP),mingw32)
 	CC=i686-w64-mingw32-gcc
 	CXX=i686-w64-mingw32-g++
+	AR=i686-w64-mingw32-ar
 	LDFLAGS += -static
 	ARCH=core2
 	CFLAGS=-m32 -msse2 -mssse3 -msse4.1 -msse4.2 -mfpmath=sse -DPCRE2_STATIC
@@ -46,14 +50,14 @@ ifeq ($(COMP),clang)
 endif
 
 CFLAGS +=-O2 $(SAN) -pthread -march=$(ARCH) -W -Wall -Wextra -Wshadow -Iinclude -flto=auto -ffat-lto-objects
-LDFLAGS += -L./lib64 -s
+LDFLAGS += -L./lib64
 
 ifeq ($(OS),FreeBSD)
 LDFLAGS += -L/usr/local/lib -lstdthreads
 CFLAGS += -I/usr/local/include
 endif
 
-CXXFLAGS += $(CFLAGS) -pthread -pedantic -std=c++20
+CXXFLAGS += $(CFLAGS) -pedantic -std=c++20
 
 # Object files for libdstr.a
 #
@@ -78,6 +82,8 @@ DEPS_PP = \
 
 LIB=./lib64/libdstr.a
 
+.DEFAULT_GOAL := all
+
 all: $(PROGRAMS)
 
 ./test/test_dstr: ./test/test_dstr.c $(LIB) $(DEPS)
@@ -89,7 +95,7 @@ all: $(PROGRAMS)
 ./test/test_dstring_regex: ./test/test_dstring_regex.cpp $(LIB) $(DEPS_PP)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) -ldstr -lpcre2-8
 
-./test/test_dstr_regex: ./test/test_dstr_regex.c   $(LIB) $(DEPS_PP)
+./test/test_dstr_regex: ./test/test_dstr_regex.c   $(LIB) $(DEPS)
 	$(CC) $(CFLAGS) -o $@ ./test/test_dstr_regex.c $(LDFLAGS) -ldstr -lpcre2-8
 
 ./test/test_dstringview: ./test/test_dstringview.cpp $(LIB) $(DEPS_PP)
@@ -118,6 +124,9 @@ test: $(PROGRAMS)
 	./test/test_dstring_regex
 	./test/test_dstr_regex
 	./test/test_dstringview
+
+.PHONY: check
+check: test
 
 .PHONY: testvg
 testvg: $(PROGRAMS)
