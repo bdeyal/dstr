@@ -559,8 +559,8 @@ nmake -f NMakefile test
 ### Windows (Borland)
 
 ```cmd
-nmake COMP=borland          # 64-bit
-nmake COMP=borland PLAT=x86 # 32-bit
+nmake -f NMakefile COMP=borland          # 64-bit
+nmake -f NMakefile COMP=borland PLAT=x86 # 32-bit
 ```
 
 ### Cross-compilation (MinGW)
