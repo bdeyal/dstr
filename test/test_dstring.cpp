@@ -231,6 +231,42 @@ void test_range_ctor()
 }
 //-------------------------------------------------
 
+void test_move_ctor()
+{
+#if __cplusplus >= 201103L
+    TRACE_FN();
+
+    DString ds1("Hello");
+
+    DString s0(ds1);
+    assert(s0 == "Hello");
+    assert(s0 == ds1);
+
+    DString s1(std::move(ds1));
+    assert(s1 == "Hello");
+    assert(ds1.empty());
+#endif
+}
+//-------------------------------------------------
+
+void test_dstr_ctor()
+{
+    TRACE_FN();
+
+    DSTR ds1 = dstrnew("Hello");
+
+    DString s0(ds1);
+    DString s1(ds1, DString::Copy);
+    assert(s0 == "Hello");
+    assert(s1 == "Hello");
+
+    DString s2(ds1, DString::Move);
+    assert(s2 == "Hello");
+    assert(dstrempty(ds1));
+    dstrfree(ds1);
+}
+//-------------------------------------------------
+
 void test_assign()
 {
     TRACE_FN();
@@ -2483,6 +2519,8 @@ int main()
     test_copy_ctor();
     test_buff_ctor();
     test_range_ctor();
+    test_move_ctor();
+    test_dstr_ctor();
     test_assign();
     test_append();
     test_sprintf();

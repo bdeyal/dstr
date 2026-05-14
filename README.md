@@ -1,19 +1,20 @@
 # DString — A Rich Dynamic String Library for C and C++
 
-DString is a dynamic string library written in C with an optional C++ wrapper.
-The core is a pure C implementation offering a Python-inspired string API,
-Small String Optimization (SSO), a non-owning view type, and optional PCRE2
-regular expression support. The C++ wrapper provides RAII, operator overloading,
-`std::format` integration, and STL compatibility while adding zero logic of its
-own — every operation delegates to the C implementation.
+DString is a dynamic string library written in C with an optional C++
+wrapper. The core is a pure C implementation offering a Python-inspired
+string API, Small String Optimization (SSO), a non-owning view type,
+and optional PCRE2 regular expression support. The C++ wrapper provides
+RAII, operator overloading,`std::format` integration, and STL compatibility
+while adding zero logic of its own — every operation delegates to the C
+implementation.
 
 ---
 
 ## Design Philosophy
 
-Most C string libraries offer a thin wrapper around `malloc` with a handful of
-functions. DString takes a different approach: it aims for the richness of
-Python's `str` type while remaining idiomatic C. Functions like `dstr_partition`,
+Most C string libraries offer a thin wrapper around `malloc` with a handful
+of functions. DString takes a different approach: it aims for the richness
+of Python's `str` type while remaining idiomatic C. Functions like `dstr_partition`,
 `dstr_increment`, `dstr_translate`, `dstr_squeeze`, and `dstr_zfill` are rarely
 seen in C string libraries but solve real problems without requiring a higher-level
 language.

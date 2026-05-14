@@ -662,15 +662,20 @@ public:
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 public:
-    DString()
-    {
-        dstr_init_data(pImp());
-    }
-
     ~DString()
     {
         if (capacity() > DSTR_INITIAL_CAPACITY)
             dstr_clean_data(pImp());
+    }
+
+    DString() noexcept
+    {
+        dstr_init_data(pImp());
+    }
+
+    explicit DString(std::nullptr_t) noexcept
+    {
+        dstr_init_data(pImp());
     }
 
     // DString s('A', 100);
@@ -784,6 +789,34 @@ public:
             init_capacity(sv.size());
             init_data(sv.data(), sv.size());
             init_length(sv.size()); }
+    }
+
+    // Constructors from a DSTR
+    //
+    enum Method { Copy, Move };
+    DString(DSTR rhs, Method m)
+    {
+        if (!rhs || dstr_isempty(rhs)) {
+            dstr_init_data(pImp()); }
+        else if (m == Method::Copy) {
+            size_t len = dstr_length(rhs);
+            init_capacity(len);
+            init_data(dstr_cstr(rhs), len);
+            init_length(len); }
+        else {
+            dstr_init_data(pImp());
+            dstr_swap(pImp(), rhs); }
+    }
+
+    explicit DString(CDSTR rhs)
+    {
+        if (!rhs || dstr_isempty(rhs)) {
+            dstr_init_data(pImp()); }
+        else {
+            size_t len = dstr_length(rhs);
+            init_capacity(len);
+            init_data(dstr_cstr(rhs), len);
+            init_length(len); }
     }
 
     // Static constructors
