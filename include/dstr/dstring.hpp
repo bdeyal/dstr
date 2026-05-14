@@ -794,18 +794,29 @@ public:
     // Constructors from a DSTR
     //
     enum Method { Copy, Move };
+
     DString(DSTR rhs, Method m)
     {
         if (!rhs || dstr_isempty(rhs)) {
             dstr_init_data(pImp()); }
-        else if (m == Method::Copy) {
+        else  {
             size_t len = dstr_length(rhs);
-            init_capacity(len);
-            init_data(dstr_cstr(rhs), len);
-            init_length(len); }
-        else {
-            dstr_init_data(pImp());
-            dstr_swap(pImp(), rhs); }
+            if (m == Method::Copy) {
+                init_capacity(len);
+                init_data(dstr_cstr(rhs), len);
+                init_length(len); }
+            else {
+                size_t cap = dstr_capacity(rhs);
+                m_imp.length   = len;
+                m_imp.capacity = cap;
+                if (cap == DSTR_INITIAL_CAPACITY) {
+                    memcpy(m_imp.sso_buffer, rhs->sso_buffer, DSTR_INITIAL_CAPACITY);
+                    m_imp.data = m_imp.sso_buffer;  }
+                else {
+                    m_imp.data = rhs->data; }
+
+                // put rhs in an intial state
+                dstr_init_data(rhs); }}
     }
 
     explicit DString(CDSTR rhs)
