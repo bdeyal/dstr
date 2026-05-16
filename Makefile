@@ -60,20 +60,27 @@ endif
 
 CXXFLAGS += $(CFLAGS) -pedantic -std=c++20
 
+ifeq ($(NOREGEX),1)
+CFLAGS += -DNO_DSTRING_REGEX
+CXXFLAGS += -DNO_DSTRING_REGEX
+else
+RE_O = ./src/dstr_regex.o ./src/dstring_regex.o
+RE_PROGS = ./test/test_dstr_regex ./test/test_dstring_regex
+endif
+
+
 # Object files for libdstr.a
 #
 LIB_O = \
 	./src/dstr.o \
-	./src/dstr_regex.o \
 	./src/dstring.o \
-	./src/dstring_regex.o
+	$(RE_O)
 
 PROGRAMS = \
 	./test/test_dstr \
 	./test/test_dstring \
-	./test/test_dstr_regex \
-	./test/test_dstring_regex \
-	./test/test_dstringview
+	./test/test_dstringview \
+	$(RE_PROGS)
 
 DEPS = ./include/dstr/dstr.h Makefile
 DEPS_PP = \
