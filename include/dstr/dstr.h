@@ -280,6 +280,12 @@ size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR selectors);
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
 
 /* I/O functions*/
+static inline int dstr_fputs(CDSTR d, FILE* fp) {
+    return d ? fputs(d->data, fp) : 0; }
+
+static inline int dstr_puts(CDSTR d) {
+    return dstr_fputs(d, stdout); }
+
 int dstr_fgets(DSTR d, FILE* fp);
 int dstr_fgetline(DSTR d, FILE* fp);
 
@@ -758,9 +764,12 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrswapcase        dstr_ascii_swapcase
 #define dstrrev             dstr_reverse
 #define dstrswap            dstr_swap
+
 #define dgetline            dstr_fgetline
 #define dgets               dstr_fgets
 #define dstrtitle           dstr_title
+#define dstrputs            dstr_puts
+#define dstrfputs           dstr_fputs
 
 #define disdigits           dstr_isdigits
 #define disxdigits          dstr_isxdigits

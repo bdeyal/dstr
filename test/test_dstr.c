@@ -448,7 +448,6 @@ void test_format()
     sprintf(res2, "%d", 100);
     printf("res1=\"%s\", res2=\"%s\"\n", dstrdata(res1), res2);
     assert( dstreq(res1, res2) );
-    TRACE_LN();
 
     // simple double
     //
@@ -456,42 +455,35 @@ void test_format()
     dsprintf(res1, "%g", 100.0);
     sprintf(res2, "%g", 100.0);
     assert( dstreq(res1, res2) );
-    TRACE_LN();
 
     // hex
     //
     dsprintf(res1, "%08X", 100);
     sprintf(res2, "%08X", 100);
     assert( dstreq(res1, res2) );
-    TRACE_LN();
 
     // long string
     //
     char buffer[2048];
     memset(buffer, 'a', sizeof buffer);
     buffer[sizeof(buffer) - 1] = '\0';
-    TRACE_LN();
 
     dsprintf(res1, "%s", buffer);
     sprintf(res2, "%s", buffer);
     assert( dstreq(res1, res2) );
-    TRACE_LN();
 
     // Complicated format
     //
     dsprintf(res1, "%0X %g %10s %10d %-20s", 100, 4.55, "Hello World", 10, "A_String");
     sprintf(res2, "%0X %g %10s %10d %-20s", 100, 4.55, "Hello World", 10, "A_String");
     assert( dstreq(res1, res2) );
-    TRACE_LN();
 
     dsprintf(res1, "%s", "Hello ");
     dstrcat_sprintf(res1, "%s", "World");
     sprintf(res2, "%s", "Hello World");
     assert(dstreq(res1, res2 ));
-    TRACE_LN();
 
     dstrfree(res1);
-    TRACE_LN();
 }
 //-------------------------------------------------
 
@@ -1515,21 +1507,21 @@ void test_join()
 #define DSTRTRANS(s1, a1, a2, r) do {           \
         DSTR dd = dstrnew(s1);                  \
         dstrtrans(dd, (a1), (a2));              \
-        puts(dstrdata(dd));                     \
+        dstrputs(dd);                           \
         assert(dstreq(dd, (r)));                \
         dstrfree(dd); } while (0)
 
 #define DSTRTRSQZ(s1, a1, a2, r) do {           \
         DSTR dd = dstrnew(s1);                  \
         dstrtr_s(dd, (a1), (a2));               \
-        puts(dstrdata(dd));                     \
+        dstrputs(dd);                           \
         assert(dstreq(dd, (r)));                \
         dstrfree(dd); } while (0)
 
 #define DSTRSQZ(s1, a1, r) do {                 \
         DSTR dd = dstrnew(s1);                  \
         dstrsqz(dd, (a1));                      \
-        puts(dstrdata(dd));                     \
+        dstrputs(dd);                           \
         assert(dstreq(dd, (r)));                \
         dstrfree(dd); } while (0)
 /*--------------------------------------------------------------------------*/
@@ -1895,30 +1887,30 @@ void test_align()
 
     dstrcpy_ds(s2, s1);
     dstralign_l(s2, 30, '@');
-    puts(dstrdata(s2));
+    dstrputs(s2);
 
     dstrcpy_ds(s2, s1);
     dstralign_r(s2, 30, '@');
-    puts(dstrdata(s2));
+    dstrputs(s2);
 
     dstrcpy_ds(s2, s1);
     dstralign_l(s2, dstrlen(s1), '@');
-    puts(dstrdata(s2));
+    dstrputs(s2);
     assert(dstreq_ds(s1, s2));
 
     dstrcpy_ds(s2, s1);
     dstralign_r(s2, dstrlen(s1), '@');
-    puts(dstrdata(s2));
+    dstrputs(s2);
     assert(dstreq_ds(s1, s2));
 
     dstrcpy_ds(s2, s1);
     dstralign_l(s2, dstrlen(s1) - 1, '@');
-    puts(dstrdata(s2));
+    dstrputs(s2);
     assert(dstreq_ds(s1, s2));
 
     dstrcpy_ds(s2, s1);
     dstralign_r(s2, dstrlen(s1) - 1, '@');
-    puts(dstrdata(s2));
+    dstrputs(s2);
     assert(dstreq_ds(s1, s2));
 
     dstrfree(s1);
