@@ -1,4 +1,16 @@
-# DString — A Rich Dynamic String Library for C and C++
+---
+title: DSTR
+section: 3
+date: May 15, 2026
+header: Library Functions Manual
+footer: DSTR
+---
+
+# NAME
+
+DString — A Rich Dynamic String Library for C and C++
+
+# DESCRIPTION
 
 DString is a dynamic string library written in C with an optional C++
 wrapper. The core is a pure C implementation offering a Python-inspired
@@ -8,9 +20,7 @@ RAII, operator overloading,`std::format` integration, and STL compatibility
 while adding zero logic of its own — every operation delegates to the C
 implementation.
 
----
-
-## Design Philosophy
+## Design
 
 Most C string libraries offer a thin wrapper around `malloc` with a handful
 of functions. DString takes a different approach: it aims for the richness
@@ -26,10 +36,7 @@ The library is designed with three principles:
   strings are all handled correctly.
 - **Complete API** — the C API is complete and self-contained.
   The C++ wrapper is purely a vocabulary layer with no string logic of its own.
-- **Tested across compilers and platforms** — GCC, Clang, MSVC, clang-cl,
-  and Borland on Linux, FreeBSD, and Windows (32-bit and 64-bit).
-
----
+- **Tested across compilers and platforms** — See `Tested Compilers and Platforms` below.
 
 ## Key Features
 
@@ -351,8 +358,6 @@ dstr_regex_substitute(s, "\\bfoo\\b", 0, "bar", "g");
 The regex engine caches up to 40 compiled patterns per thread using an LRU
 strategy, so repeated use of the same pattern incurs no recompilation overhead.
 
----
-
 ## Short Names
 
 The library provides short aliases for the most commonly used functions.
@@ -471,7 +476,6 @@ dstrcat(&buf, " world");
 printf("%s\n", dstrdata(&buf));
 DONE_DSTR(buf);
 ```
----
 
 ## C++ Wrapper
 
@@ -526,8 +530,6 @@ DString t = s.trim();
 ### Examples
 More examples of C++ usage can be seen in test file test_dstring.cpp
 
----
-
 ## Building
 
 ### Linux
@@ -571,8 +573,6 @@ make COMP=mingw64           # cross-compile for Windows 64-bit
 make COMP=mingw32           # cross-compile for Windows 32-bit
 ```
 
----
-
 ## Tested Compilers and Platforms
 
 | Compiler | Platform | C | C++ | Regex |
@@ -589,8 +589,6 @@ make COMP=mingw32           # cross-compile for Windows 32-bit
 | MinGW64 (cross) | Linux → Win11 | ✓ | ✓ | ✓ |
 | MinGW32 (cross) | Linux → Win11 | ✓ | ✓ | ✓ |
 
----
-
 ## Dependencies
 
 | Component | Dependency | Optional |
@@ -602,8 +600,6 @@ make COMP=mingw32           # cross-compile for Windows 32-bit
 
 xxHash is bundled as a single header (`deps/xxhash.h`) and requires no
 separate installation.
-
----
 
 ## License
 

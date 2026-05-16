@@ -141,24 +141,24 @@ testvg: $(PROGRAMS)
 test_various: ./test/dstr_test.sh
 	./test/dstr_test.sh | tee ./test/test_various.txt
 
-clean:
-	rm -rf ./lib64
-	rm -f ./test/*.o ./src/*.o
-	rm -f ./test/test_various.txt $(PROGRAMS)
-	rm -f ./test/*.exe
-
 PREFIX_INCLUDE=$(PREFIX)/include/dstr
-PREFIX_LIB=$(PREFIX)/lib64
+PREFIX_LIB=$(PREFIX)/lib
+PREFIX_MAN=$(PREFIX)/share/man/man3
 
-# Tested on RHEL 10.0 ONLY
+dstr.3: README.md
+	pandoc --standalone --to man README.md -o dstr.3
+
+# Tested on AlmaLinux 10.0 (RHEL compatible), Fedora, FreeBSD 15.x
 #
-install: $(LIB)
+install: $(LIB) dstr.3
 	$(MKDIR) $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 include/dstr/dstr.h $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 include/dstr/dstring.hpp $(PREFIX_INCLUDE)
 	/usr/bin/install -m 0644 include/dstr/dstringstream.hpp $(PREFIX_INCLUDE)
 	$(MKDIR) $(PREFIX_LIB)
 	/usr/bin/install -m 0644 $(LIB) $(PREFIX_LIB)
+	$(MKDIR) $(PREFIX_MAN)
+	/usr/bin/install -m 0644 ./dstr.3 $(PREFIX_MAN)
 
 uninstall:
 	/bin/rm -f $(PREFIX_INCLUDE)/dstr.h
@@ -167,3 +167,12 @@ uninstall:
 	/bin/rmdir $(PREFIX_INCLUDE) 2>/dev/null || true
 	/bin/rm -f $(PREFIX_LIB)/libdstr.a
 	/bin/rmdir $(PREFIX_LIB) 2>/dev/null || true
+	/bin/rm -f $(PREFIX_MAN)/dstr.3
+	/bin/rmdir $(PREFIX_MAN) 2>/dev/null || true
+
+clean:
+	rm -rf ./lib64
+	rm -f ./test/*.o ./src/*.o
+	rm -f ./test/test_various.txt $(PROGRAMS)
+	rm -f ./test/*.exe
+	rm -f ./dstr.3
