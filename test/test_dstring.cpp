@@ -255,14 +255,19 @@ void test_dstr_ctor()
 
     DSTR ds1 = dstrnew("Hello");
 
+    // Equivalent operations
+    //
     DString s0(ds1);
     DString s1(ds1, DString::Copy);
     assert(s0 == "Hello");
     assert(s1 == "Hello");
 
+    // Move operation
+    //
     DString s2(ds1, DString::Move);
     assert(s2 == "Hello");
     assert(dstrempty(ds1));
+
     dstrfree(ds1);
 }
 //-------------------------------------------------

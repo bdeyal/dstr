@@ -673,11 +673,6 @@ public:
         dstr_init_data(pImp());
     }
 
-    explicit DString(std::nullptr_t) noexcept
-    {
-        dstr_init_data(pImp());
-    }
-
     // DString s('A', 100);
     //
     DString(char c, size_t count)
@@ -752,9 +747,10 @@ public:
     //
     DString(const char* buffer, size_t len)
     {
-        if (!buffer || (len = strnlen(buffer, len)) == 0) {
+        if (!buffer || !*buffer) {
             dstr_init_data(pImp()); }
         else {
+            len = strnlen(buffer, len);
             init_capacity(len);
             init_data(buffer, len);
             init_length(len); }
@@ -764,16 +760,11 @@ public:
     //
     DString(const char* first, const char* last)
     {
-        size_t len;
-
-        if (!first ||
-            (len = (last - first)) == 0 ||
-            (len = strnlen(first, len)) == 0)
-        {
+        if (!first || !*first || last <= first) {
             dstr_init_data(pImp());
-            return;
-        }
+            return; }
 
+        size_t len = strnlen(first, last - first);
         init_capacity(len);
         init_data(first, len);
         init_length(len);
@@ -789,6 +780,11 @@ public:
             init_capacity(sv.size());
             init_data(sv.data(), sv.size());
             init_length(sv.size()); }
+    }
+
+    explicit DString(std::nullptr_t) noexcept
+    {
+        dstr_init_data(pImp());
     }
 
     // Constructors from a DSTR
