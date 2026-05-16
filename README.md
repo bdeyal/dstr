@@ -319,8 +319,12 @@ size_t h = dstr_hash(s, 42);   // explicit fixed seed for reproducibility
 ### I/O
 
 ```c
-int dstr_fgetline(DSTR p, FILE* fp);   // read one line (no newline in result)
-int dstr_fgets(DSTR p, FILE* fp);      // read one whitespace-delimited token
+int dstr_getline(DSTR p);              // read one line from stdin
+int dstr_gets(DSTR p);                 // read one whitespace-delimited token from stdin
+int dstr_fgetline(DSTR p, FILE* fp);   // read one line from stream
+int dstr_fgets(DSTR p, FILE* fp);      // read one whitespace-delimited token from stream
+int dstr_puts(CDSTR p);                // write to stdout, append with newline
+int dstr_fputs(CDSTR p, FILE* fp);     // write to fp, append newline
 int dstr_slurp_stream(DSTR p, FILE* fp); // read entire stream
 DSTR dstr_create_fromfile(const char* fname); // slurp entire file
 ```
@@ -377,6 +381,20 @@ For the complete list see `dstr.h` and `test/test_dstr.c`.
 | `dstrnew_sprintf(fmt, ...)` | `dstr_create_sprintf` | Create via printf format |
 | `dstrfree(p)` | `dstr_destroy` | Destroy and free |
 | `dcleandata(p)` | `dstr_clean_data` | Release heap (stack-allocated DSTR) |
+
+### I/O
+
+| Short name | Full name | Description |
+|------------|-----------|-------------|
+| `dfgetline` | `dstr_fgetline` | Read a line from stream |
+| `dfgets` | `dstr_fgets` | Read until delimiter |
+| `dgetline` | `dstr_getline` | Read a line from stdin |
+| `dgets` | `dstr_gets` | Read until delimiter (stdin)|
+| `dstrputs` | `dstr_puts` | Write DSTR to stdout, append newline |
+| `dstrfputs` | `dstr_fputs` | Write DSTR to stream, append newline |
+| `dstrcpy_strm` | `dstr_slurp_stream` | Slurp whole stream into DSTR |
+| `dstrnew_slurp(fname)` | `dstr_create_fromfile` | Slurp entire file |
+
 
 ### Access
 

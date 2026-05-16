@@ -280,14 +280,20 @@ size_t dstr_flno_ds(CDSTR p, size_t pos, CDSTR selectors);
 size_t dstr_substr(CDSTR p, size_t index, size_t numbytes, char dest[], size_t destsize);
 
 /* I/O functions*/
+int dstr_fgets(DSTR d, FILE* fp);
+int dstr_fgetline(DSTR d, FILE* fp);
+
+static inline int dstr_gets(DSTR d) {
+    return dstr_fgets(d, stdin); }
+
+static inline int dstr_getline(DSTR d) {
+    return dstr_fgetline(d, stdin); }
+
 static inline int dstr_fputs(CDSTR d, FILE* fp) {
     return d ? fputs(d->data, fp) : 0; }
 
 static inline int dstr_puts(CDSTR d) {
     return dstr_fputs(d, stdout); }
-
-int dstr_fgets(DSTR d, FILE* fp);
-int dstr_fgetline(DSTR d, FILE* fp);
 
 /* translate and squeeze */
 void dstr_translate(DSTR dest, const char* arr1, const char* arr2);
@@ -765,11 +771,15 @@ static inline size_t my_strnlen(const char* s, size_t maxlen) {
 #define dstrrev             dstr_reverse
 #define dstrswap            dstr_swap
 
-#define dgetline            dstr_fgetline
-#define dgets               dstr_fgets
-#define dstrtitle           dstr_title
+#define dfgetline           dstr_fgetline
+#define dfgets              dstr_fgets
+#define dgetline            dstr_getline
+#define dgets               dstr_gets
 #define dstrputs            dstr_puts
 #define dstrfputs           dstr_fputs
+
+#define dstrtitle           dstr_title
+
 
 #define disdigits           dstr_isdigits
 #define disxdigits          dstr_isxdigits

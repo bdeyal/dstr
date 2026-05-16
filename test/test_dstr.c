@@ -1028,7 +1028,7 @@ void test_getline()
     int line_count = 0;
 
     size_t maxlen = 0;
-    while (dgetline(s1, fp) != EOF) {
+    while (dfgetline(s1, fp) != EOF) {
         ++line_count;
         if (dstrlen(s1) > maxlen)
             maxlen = dstrlen(s1);
@@ -1054,7 +1054,7 @@ void test_fgets()
     assert(dstrcap(s1) >= 500);
 
     size_t maxlen = 0;
-    while (dgets(s1, fp) != EOF) {
+    while (dfgets(s1, fp) != EOF) {
         if (dstrlen(s1) > maxlen)
             maxlen = dstrlen(s1);
     }
